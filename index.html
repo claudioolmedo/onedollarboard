@@ -1,1 +1,132 @@
-One Dollar Board
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>One Dollar Board — Awakening New Inventors</title>
+  <meta name="description" content="The One Dollar Board — an ultra‑affordable tool to awaken talent and inspire a new generation of inventors. Designed in Austin, TX to change the WORLD." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: {
+              bg: '#07090F', card: '#0D1220', soft: '#131A2A', line: '#1D2843',
+              text: '#E8EEF8', sub: '#A9B4C7', accent: '#48E1A7', sky: '#8AB4FF'
+            }
+          },
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica", "Arial"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .grid-radial { background: radial-gradient(1200px 800px at 80% -10%, rgba(72,225,167,.20), transparent 60%), radial-gradient(900px 600px at 10% 0%, rgba(138,180,255,.18), transparent 60%); }
+  </style>
+</head>
+<body class="h-full bg-base-bg text-base-text font-sans selection:bg-base-accent/30">
+  <header class="relative z-10">
+    <nav class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <a class="flex items-center gap-3" href="#">
+        <span class="inline-flex h-9 w-9 rounded-xl bg-base-soft items-center justify-center">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.5"/><path d="M9 9h6v6H9z" stroke-width="1.5"/></svg>
+        </span>
+        <span class="text-lg tracking-tight font-semibold">One Dollar Board</span>
+      </a>
+      <div class="hidden md:flex items-center gap-6 text-base-sub">
+        <a href="#about" class="hover:text-base-text">About</a>
+        <a href="#talent" class="hover:text-base-text">Awaken Talent</a>
+        <a href="#faq" class="hover:text-base-text">FAQ</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="relative overflow-hidden grid-radial">
+      <div class="max-w-7xl mx-auto px-6 pt-10 pb-24 lg:py-28">
+        <div class="text-center mb-12">
+          <img src="odb.png" alt="One Dollar Board - Green PCB with smiley face" class="max-w-sm mx-auto mb-8">
+          <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
+            A $1 computer to awaken new inventors
+          </h1>
+          <p class="mt-5 text-base-sub text-lg max-w-prose mx-auto">The One Dollar Board is more than a piece of hardware. It is an ultra‑affordable tool created to unlock creativity and awaken hidden talent. By being simple and friendly, it opens doors for classrooms, clubs, and curious minds everywhere. Above all, it exists to inspire a new generation of inventors.</p>
+        </div>
+        
+        <div class="grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 class="text-3xl font-bold mb-4">Start small · Dream big</h2>
+            <p class="text-base-sub text-lg">With a single dollar, anyone can begin. This board lowers the barrier and lights the path for the inventors of tomorrow.</p>
+          </div>
+          <div class="relative">
+            <div class="rounded-2xl border border-base-line/60 bg-gradient-to-br from-base-soft to-base-card p-6">
+              <div class="aspect-[5/3] rounded-xl border border-base-line/40 bg-black/20 grid place-items-center">
+                <div class="text-center">
+                  <h3 class="text-2xl font-bold">A spark for imagination</h3>
+                  <p class="mt-2 text-base-sub max-w-sm mx-auto">The friendly face of innovation that welcomes everyone to the world of invention.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="relative py-16">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+            <h3 class="font-semibold text-lg">Accessible</h3>
+            <p class="mt-2 text-base-sub">A price that anyone can reach, so opportunity spreads wider than ever before.</p>
+          </article>
+          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+            <h3 class="font-semibold text-lg">Easy to begin</h3>
+            <p class="mt-2 text-base-sub">No steep learning curve — just plug in and start discovering what you can create.</p>
+          </article>
+          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+            <h3 class="font-semibold text-lg">Learning by doing</h3>
+            <p class="mt-2 text-base-sub">Confidence comes from action. Small projects lead to big breakthroughs.</p>
+          </article>
+          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+            <h3 class="font-semibold text-lg">Open to everyone</h3>
+            <p class="mt-2 text-base-sub">Resources are shared freely, so knowledge can grow in every corner of the world.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="talent" class="relative py-16 border-t border-base-line/60">
+      <div class="max-w-4xl mx-auto px-6 text-center">
+        <h2 class="text-3xl font-bold">Awakening Talent Everywhere</h2>
+        <p class="mt-4 text-base-sub text-lg">The One Dollar Board is a symbol of possibility. It gives anyone — students, teachers, or curious dreamers — the chance to invent. Talent is everywhere, but often hidden. This board is the invitation to bring it forward.</p>
+        <p class="mt-6 text-base-sub text-lg">Our mission is simple: lower the barrier, open the door, and light the spark. With every board in someone’s hands, a new inventor can rise, carrying ideas that may one day change the world.</p>
+      </div>
+    </section>
+
+    <section id="faq" class="relative py-16">
+      <div class="max-w-5xl mx-auto px-6">
+        <h3 class="text-2xl font-bold">FAQ</h3>
+        <div class="mt-6 grid md:grid-cols-2 gap-5">
+          <details class="rounded-xl border border-base-line/60 bg-base-card p-5"><summary class="cursor-pointer font-semibold">What is it?</summary><p class="mt-2 text-base-sub">A tiny $1 board that awakens creativity and helps people become inventors.</p></details>
+          <details class="rounded-xl border border-base-line/60 bg-base-card p-5"><summary class="cursor-pointer font-semibold">Who is it for?</summary><p class="mt-2 text-base-sub">Beginners, students, teachers, and anyone who wants to turn curiosity into invention.</p></details>
+          <details class="rounded-xl border border-base-line/60 bg-base-card p-5"><summary class="cursor-pointer font-semibold">Do I need experience?</summary><p class="mt-2 text-base-sub">No. It’s designed so your first step can be small and easy, yet powerful.</p></details>
+          <details class="rounded-xl border border-base-line/60 bg-base-card p-5"><summary class="cursor-pointer font-semibold">Is it open?</summary><p class="mt-2 text-base-sub">Yes. We believe sharing knowledge is the best way to multiply invention.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="relative border-t border-base-line/60">
+    <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-base-sub text-sm">© <span id="y"></span> One Dollar Board</p>
+      <p class="text-sm font-semibold">Designed in Austin, TX — <span class="text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">to change the WORLD</span></p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
