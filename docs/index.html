@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Documentation — One Dollar Board</title>
+  <meta name="description" content="Documentation for the One Dollar Board - resources, guides, and tutorials for educators and inventors." />
+  <link rel="canonical" href="https://onedollarboard.com/docs/" />
+  <meta name="theme-color" content="#07090F" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: {
+              bg: '#07090F', card: '#0D1220', soft: '#131A2A', line: '#1D2843',
+              text: '#E8EEF8', sub: '#A9B4C7', accent: '#48E1A7', sky: '#8AB4FF'
+            }
+          },
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica", "Arial"]
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .grid-radial { background: radial-gradient(1200px 800px at 80% -10%, rgba(72,225,167,.20), transparent 60%), radial-gradient(900px 600px at 10% 0%, rgba(138,180,255,.18), transparent 60%); }
+    .prose-max { max-width: 65ch; }
+  </style>
+</head>
+<body class="h-full bg-base-bg text-base-text font-sans selection:bg-base-accent/30">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-base-card border border-base-line/60 rounded-md px-3 py-2">Skip to content</a>
+
+  <header class="relative z-10">
+    <nav class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <a class="flex items-center gap-3" href="../index.html">
+        <span class="inline-flex h-9 w-9 rounded-xl bg-base-soft items-center justify-center" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.5"/><path d="M9 9h6v6H9z" stroke-width="1.5"/></svg>
+        </span>
+        <span class="text-lg tracking-tight font-semibold">One Dollar Board</span>
+      </a>
+      <div class="hidden md:flex items-center gap-6 text-base-sub">
+        <a href="../index.html" class="hover:text-base-text">Home</a>
+        <a href="#getting-started" class="hover:text-base-text">Getting Started</a>
+
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="relative overflow-hidden grid-radial">
+      <div class="max-w-7xl mx-auto px-6 pt-10 pb-24 lg:py-28">
+        <div class="text-center mb-16">
+          <img src="../odb.png" alt="One Dollar Board — green PCB with a friendly face" class="max-w-sm mx-auto mb-8" loading="lazy">
+          <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
+            Documentation
+          </h1>
+          <p class="mt-5 text-base-sub text-lg prose-max mx-auto">Everything you need to get started with the One Dollar Board. From first steps to advanced projects, we've got you covered.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="getting-started" class="relative py-16 border-t border-base-line/60">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-8">Getting Started</h2>
+        <p class="text-base-sub text-lg">Documentation coming soon...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="relative border-t border-base-line/60">
+    <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p class="text-base-sub text-sm">© <span id="y"></span> One Dollar Board</p>
+      <p class="text-sm font-semibold">Designed in Austin, TX — <span class="text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">to change the WORLD</span></p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+  <noscript><div class="max-w-7xl mx-auto px-6 py-4 text-base-sub">This site works best with JavaScript enabled.</div></noscript>
+</body>
+</html>
