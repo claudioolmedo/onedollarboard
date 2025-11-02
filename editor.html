@@ -1,0 +1,1577 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>One Dollar Board - Black Board</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; 
+    }
+    body { 
+      margin: 0; 
+      background: #0b0d10; 
+      color: #e6edf3; 
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .header {
+      background: #11161b;
+      border-bottom: 1px solid #202830;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    h1 { 
+      font-size: 1.2rem; 
+      margin: 0;
+      color: #e6edf3;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    button {
+      background: #1f6feb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    button:hover {
+      background: #2a7de8;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.secondary {
+      background: #30363d;
+    }
+    button.secondary:hover {
+      background: #40464d;
+    }
+    button.compile {
+      background: #238636;
+    }
+    button.compile:hover {
+      background: #2ea043;
+    }
+    button.compile:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.download {
+      background: #238636;
+    }
+    button.download:hover {
+      background: #2ea043;
+    }
+    #status {
+      font-size: 0.85rem;
+      color: #9fbad1;
+      padding: 8px 12px;
+      background: #0d1117;
+      border-radius: 6px;
+      border: 1px solid #1f242e;
+    }
+    .status-connected {
+      color: #3fb950;
+      border-color: #238636;
+    }
+    .status-error {
+      color: #ff7b72;
+      border-color: #da3633;
+    }
+    .status-syncing {
+      color: #d29922;
+      border-color: #bb8009;
+    }
+    #syncIndicator {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+      background: #0d1117;
+      border-radius: 6px;
+      border: 1px solid #1f242e;
+      min-width: 20px;
+      text-align: center;
+    }
+    .sync-indicator-syncing {
+      color: #d29922;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .sync-indicator-synced {
+      color: #3fb950;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    #connectionIcon {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #connectionIcon.connected {
+      color: #3fb950;
+    }
+    #connectionIcon.disconnected {
+      color: #ff7b72;
+    }
+    #connectionIcon .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      background-color: #161b22;
+      color: #e6edf3;
+      text-align: center;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      position: absolute;
+      z-index: 1000;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      border: 1px solid #30363d;
+      transition: opacity 0.2s, visibility 0.2s;
+      pointer-events: none;
+    }
+    #connectionIcon .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #161b22;
+    }
+    #connectionIcon:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    #editor-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #editor {
+      width: 100%;
+      height: 100%;
+    }
+    .footer {
+      background: #11161b;
+      border-top: 1px solid #202830;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: #8093a7;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>One Dollar Board - Black Board</h1>
+    <div class="controls">
+      <button id="btnCompile" class="compile" disabled>🔨 Compile</button>
+      <button id="btnFlash" class="download" style="display: none;">💾 Flash</button>
+      <span id="status">Disconnected</span>
+      <span id="connectionIcon" class="disconnected" title="">
+        <span id="connectionIconSymbol">🔴</span>
+        <span class="tooltip" id="connectionTooltip">Offline</span>
+      </span>
+      <span id="syncIndicator" style="font-size: 0.75rem; color: #9fbad1;">⏳</span>
+    </div>
+  </div>
+  
+  <div id="editor-container">
+    <div id="editor"></div>
+  </div>
+
+  <div class="footer">
+    <b>One Dollar Board</b> - A low-cost mini computer main board for learning and prototyping.
+  </div>
+
+  <!-- Monaco Editor -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
+    import { getDatabase, ref, set, get, onValue } 
+      from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
+
+    // Firebase configuration (production)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBGp8r-Eir4NRnIRfeA6c6rIMZmdJnti4M",
+      authDomain: "onedollarboard-1b26a.firebaseapp.com",
+      databaseURL: "https://onedollarboard-1b26a-default-rtdb.firebaseio.com",
+      projectId: "onedollarboard-1b26a",
+      storageBucket: "onedollarboard-1b26a.firebasestorage.app",
+      messagingSenderId: "448761452728",
+      appId: "1:448761452728:web:f309f53f24cfbac5d8bc4d"
+    };
+
+    let app, database, codeRef;
+    
+    // Initialize Firebase (production)
+    try {
+      app = initializeApp(firebaseConfig);
+      database = getDatabase(app);
+      
+      // Create references
+      codeRef = ref(database, 'editor/code');
+    } catch (error) {
+      console.error('❌ Error initializing Firebase:', error);
+      alert('Error initializing Firebase. Check the console for details.');
+    }
+
+    // UI Elements
+    const status = document.getElementById('status');
+    const syncIndicator = document.getElementById('syncIndicator');
+    const btnCompile = document.getElementById('btnCompile');
+    const btnFlash = document.getElementById('btnFlash');
+    const connectionIcon = document.getElementById('connectionIcon');
+    const connectionIconSymbol = document.getElementById('connectionIconSymbol');
+    const connectionTooltip = document.getElementById('connectionTooltip');
+
+    let editor = null;
+    let isSyncing = false;
+    let isLocalChange = false; // Flag to avoid sync loops
+    let saveTimeout = null;
+    let lastSavedContent = '';
+    let isConnected = false; // Flag to control connection state
+    let reconnectInterval = null;
+    let isReconnecting = false;
+    const DEBOUNCE_DELAY = 1000; // 1 second after stopping typing
+
+    /**
+     * Shows the flash button and configures the handler
+     */
+    function showFlashButton(binary, size) {
+      btnFlash.style.display = 'block';
+      btnFlash.style.visibility = 'visible';
+      btnFlash.onclick = () => flashBinary(binary, size);
+      // Force repaint
+      btnFlash.offsetHeight;
+      console.log('✅ showFlashButton function called');
+      console.log('   - display:', btnFlash.style.display);
+      console.log('   - visibility:', btnFlash.style.visibility);
+    }
+
+    /**
+     * Hides the flash button
+     */
+    function hideFlashButton() {
+      btnFlash.style.display = 'none';
+      btnFlash.onclick = null;
+    }
+
+    /**
+     * Checks if the binary is valid for the current code
+     * Returns true if:
+     * 1. The binary exists
+     * 2. The content matches
+     * 3. The binary was compiled after or at the same time as the last code modification
+     */
+    function isBinaryValidForCode(data, currentContent, firebaseContent) {
+      // Check if binary exists
+      if (!data.binary) {
+        return false;
+      }
+
+      // Check if content matches
+      if (currentContent !== firebaseContent) {
+        return false;
+      }
+
+      // Check timestamps: binary must have been compiled after the last code modification
+      const codeTimestamp = data.timestamp || (data.lastModified ? new Date(data.lastModified).getTime() : 0);
+      const binaryTimestamp = data.binarySavedAt ? new Date(data.binarySavedAt).getTime() : 
+                             (data.compilationUpdatedAt ? new Date(data.compilationUpdatedAt).getTime() : 0);
+
+      // If we don't have timestamps, assume valid if content matches
+      if (!codeTimestamp || !binaryTimestamp) {
+        console.warn('⚠️ Timestamps not available, using content comparison only');
+        return true; // If content matches, assume valid
+      }
+
+      // Binary must have been compiled after or at the same time as code was modified
+      // Add small margin of error (1 second) for precision differences
+      const isValid = binaryTimestamp >= (codeTimestamp - 1000);
+      
+      if (!isValid) {
+        console.log('⚠️ Binary is not valid: compiled before last code modification');
+        console.log(`   - Code modified: ${new Date(codeTimestamp).toISOString()}`);
+        console.log(`   - Binary compiled: ${new Date(binaryTimestamp).toISOString()}`);
+      }
+      
+      return isValid;
+    }
+
+    // ======= WebHID Flash Functions (from index.html) =======
+    const VENDOR_ID = 0x1209;     // pid.codes community VID
+    const REPORT_ID = 0x00;       // No Report IDs -> 0
+    const CMD = { PING:0x01, INFO:0x02, ERASE64:0x10, LOAD64:0x11, PROG64:0x12, BOOT:0x20 };
+    const DEFAULT_REPORT_LEN = 64;   // default Output Report size
+    let OUT_REPORT_LEN = DEFAULT_REPORT_LEN; // will be adjusted dynamically
+
+    const PID_B003FUN = 0xB003;  // B003Fun bootloader (Feature Reports)
+    const PID_MIN = 0xB000, PID_MAX = 0xB00F; // WebHID bootloader range
+    function isB003Fun(pid){ return pid === PID_B003FUN; }
+    function isExpectedPid(pid){ return (pid >= PID_MIN && pid <= PID_MAX) || isB003Fun(pid); }
+
+    let flashDevice = null;
+    let inputReportDevice = null;
+    let inQueue = [];
+    let waiters = [];
+
+    function hex(u8) {
+      return Array.from(u8, b => b.toString(16).padStart(2,'0')).join(' ');
+    }
+
+    function addrBytes(addr) {
+      return [(addr>>>16)&0xFF, (addr>>>8)&0xFF, addr&0xFF];
+    }
+
+    function isBoardDevice(hidDevice) {
+      if (!hidDevice) return false;
+      return hidDevice.vendorId === VENDOR_ID && (isExpectedPid(hidDevice.productId) || isB003Fun(hidDevice.productId));
+    }
+
+    async function findKnownBoardDevice() {
+      if (!('hid' in navigator)) return null;
+      const devices = await navigator.hid.getDevices();
+      return devices.find(isBoardDevice) || null;
+    }
+
+    async function waitForBoardPresence({shouldBePresent, timeoutMs = 20000} = {}) {
+      const current = await findKnownBoardDevice();
+      if (shouldBePresent) {
+        if (current) return current;
+      } else {
+        if (!current) return null;
+      }
+
+      return new Promise((resolve, reject) => {
+        const eventName = shouldBePresent ? 'connect' : 'disconnect';
+        let handlerRef = null;
+
+        const cleanup = () => {
+          clearTimeout(timer);
+          if (handlerRef) {
+            navigator.hid.removeEventListener(eventName, handlerRef);
+            handlerRef = null;
+          }
+        };
+
+        const timer = setTimeout(() => {
+          cleanup();
+          reject(new Error('timeout'));
+        }, timeoutMs);
+
+        handlerRef = (event) => {
+          if (!isBoardDevice(event.device)) return;
+          cleanup();
+          if (shouldBePresent) {
+            resolve(event.device);
+          } else {
+            resolve(null);
+          }
+        };
+
+        navigator.hid.addEventListener(eventName, handlerRef);
+      });
+    }
+
+    function onInputReport(e) {
+      const u8 = new Uint8Array(e.data.buffer);
+      if (OUT_REPORT_LEN === DEFAULT_REPORT_LEN && u8 && u8.length >= 8 && u8.length !== OUT_REPORT_LEN) {
+        OUT_REPORT_LEN = u8.length;
+        console.log('Detected report size: IN=' + u8.length + 'B → OUT=' + OUT_REPORT_LEN + 'B');
+      }
+      if (waiters.length) {
+        const {resolve} = waiters.shift();
+        resolve(u8);
+      } else {
+        inQueue.push(u8);
+      }
+    }
+
+    function detachInputReportListener() {
+      if (inputReportDevice) {
+        try {
+          inputReportDevice.removeEventListener('inputreport', onInputReport);
+        } catch (err) {
+          console.warn('Failed to remove inputreport listener:', err);
+        }
+        inputReportDevice = null;
+      }
+    }
+
+    function recv(timeoutMs=300) {
+      return new Promise((resolve, reject) => {
+        if (inQueue.length) {
+          return resolve(inQueue.shift());
+        }
+        const timer = setTimeout(() => {
+          const idx = waiters.findIndex(w => w.resolve === resolve);
+          if (idx >= 0) waiters.splice(idx, 1);
+          reject(new Error('timeout'));
+        }, timeoutMs);
+        waiters.push({
+          resolve: (val)=>{ clearTimeout(timer); resolve(val); },
+          reject
+        });
+      });
+    }
+
+    async function send(bytes, {expect=true, timeout=300}={}) {
+      const raw = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes);
+      const buf = new Uint8Array(OUT_REPORT_LEN);
+      buf.fill(0);
+      buf.set(raw.subarray(0, Math.min(raw.length, OUT_REPORT_LEN)));
+      try {
+        await flashDevice.sendReport(REPORT_ID, buf);
+      } catch (e) {
+        let hint = '';
+        if (!flashDevice || !flashDevice.opened) hint = 'Device disconnected/closed.';
+        else if (!isExpectedPid(flashDevice.productId) && !isB003Fun(flashDevice.productId)) hint = 'Incompatible PID.';
+        else hint = 'Possible bootloader timeout.';
+        throw new Error((e && e.message ? e.message : 'Failed to send report') + ' — ' + hint);
+      }
+      if (!expect) return null;
+      return await recv(timeout);
+    }
+
+    async function txrx(bytes, tries=3, timeout=300) {
+      let lastErr = null;
+      for (let i=0;i<tries;i++) {
+        try {
+          const resp = await send(bytes, {expect:true, timeout});
+          return resp;
+        } catch (e) {
+          lastErr = e;
+          await new Promise(r=>setTimeout(r, 50));
+          try { await send([CMD.PING, 0x01,0,0,0,0,0,0], {expect:false}); } catch {}
+        }
+      }
+      throw lastErr || new Error('txrx failure');
+    }
+
+    async function setupOpenedDevice(foundDevice, {showIntro=true}={}) {
+      if (!foundDevice) return;
+
+      detachInputReportListener();
+      inQueue = [];
+      waiters = [];
+
+      flashDevice = foundDevice;
+      if (!flashDevice.opened) {
+        await flashDevice.open();
+      }
+
+      const productName = flashDevice.productName || 'ODB';
+      if (showIntro) {
+        updateStatus('Connected: ' + productName, 'connected');
+        console.log('Connected: VID=0x' + flashDevice.vendorId.toString(16) + ' PID=0x' + flashDevice.productId.toString(16));
+      }
+
+      if (isB003Fun(flashDevice.productId)) {
+        console.log('Detected B003Fun Bootloader (PID 0xB003). Using Feature Reports.');
+        updateStatus('Connected (B003Fun)', 'connected');
+        return;
+      }
+
+      if (!isExpectedPid(flashDevice.productId)) {
+        console.log('WARNING: PID 0x' + flashDevice.productId.toString(16) + ' not supported.');
+        updateStatus('Connected (incompatible)', 'error');
+        throw new Error('Incompatible PID. Use the correct bootloader (PID 0xB003 or 0xB000–0xB00F).');
+      }
+
+      OUT_REPORT_LEN = DEFAULT_REPORT_LEN;
+      flashDevice.addEventListener('inputreport', onInputReport);
+      inputReportDevice = flashDevice;
+
+      console.log('Using initial OUT report len = ' + OUT_REPORT_LEN + 'B (auto-adjusts on first input).');
+
+      const pong = await txrx([CMD.PING, 0x01,0,0,0,0,0,0]).catch(()=>null);
+      if (pong) console.log('PING ok (' + hex(pong) + ')');
+
+      const info = await txrx([CMD.INFO, 0,0,0,0,0,0,0]).catch(()=>null);
+      if (info) console.log('INFO: ' + hex(info));
+    }
+
+    async function ensureBootloaderReady() {
+      if (!('hid' in navigator)) {
+        throw new Error('This browser does not support WebHID. Use a recent Chrome/Edge.');
+      }
+
+      const permitted = await findKnownBoardDevice();
+      if (!permitted) {
+        throw new Error('Device is not paired. Pair the device first.');
+      }
+
+      if (flashDevice && flashDevice.opened) {
+        detachInputReportListener();
+        try { await flashDevice.close(); } catch (err) { console.warn('Failed to close current device:', err); }
+      }
+      flashDevice = null;
+
+      updateStatus('Disconnect the One Dollar Board now to enter bootloader mode.', '');
+      console.log('🔌 Disconnect the One Dollar Board now to enter bootloader mode.');
+
+      await waitForBoardPresence({shouldBePresent:false, timeoutMs:20000}).catch(() => {
+        throw new Error('Timeout waiting for you to disconnect the One Dollar Board.');
+      });
+
+      updateStatus('Connect the One Dollar Board in bootloader mode...', '');
+      console.log('⚡ Now connect the One Dollar Board in bootloader mode...');
+
+      const board = await waitForBoardPresence({shouldBePresent:true, timeoutMs:20000}).catch(() => {
+        throw new Error('Timeout waiting for the One Dollar Board to reconnect.');
+      });
+
+      await setupOpenedDevice(board, {showIntro:true});
+      console.log('✅ Bootloader detected. Starting flash...');
+    }
+
+    function pagePad64(srcU8, offset) {
+      const page = new Uint8Array(64).fill(0xFF);
+      const len = Math.min(64, srcU8.length - offset);
+      if (len > 0) page.set(srcU8.subarray(offset, offset + len));
+      return page;
+    }
+
+    // B003Fun Feature Reports (copied from index.html)
+    const word_wise_write_blob = new Uint8Array([
+      0x23,0xa0,0x05,0x00,0x13,0x07,0x45,0x03,0x0c,0x43,0x50,0x43,0x2e,0x96,0x21,0x07,
+      0x14,0x43,0x94,0xc1,0x91,0x05,0x11,0x07,0xe3,0xcc,0xc5,0xfe,0x93,0x06,0xf0,0xff,
+      0x14,0xc1,0x82,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    ]);
+    const word_wise_read_blob = new Uint8Array([
+      0x23,0xa0,0x05,0x00,0x13,0x07,0x45,0x03,0x0c,0x43,0x50,0x43,0x2e,0x96,0x21,0x07,
+      0x94,0x41,0x14,0xc3,0x91,0x05,0x11,0x07,0xe3,0xcc,0xc5,0xfe,0x93,0x06,0xf0,0xff,
+      0x14,0xc1,0x82,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    ]);
+    const write64_flash = new Uint8Array([
+      0x13,0x07,0x45,0x03,0x0c,0x43,0x13,0x86,0x05,0x04,0x5c,0x43,0x8c,0xc7,0x14,0x47,
+      0x94,0xc1,0xb7,0x06,0x05,0x00,0xd4,0xc3,0x94,0x41,0x91,0x05,0x11,0x07,0xe3,0xc8,
+      0xc5,0xfe,0xc1,0x66,0x93,0x86,0x06,0x04,0xd4,0xc3,0xfd,0x56,0x14,0xc1,0x82,0x80
+    ]);
+
+    function resetOp(){ const buffer=new Uint8Array(128); buffer.fill(0); buffer[0]=0xaa; return { buffer, commandplace:4 }; }
+    function writeOp4(op, v){ const dv=new DataView(op.buffer.buffer); dv.setUint32(op.commandplace, v, true); op.commandplace+=4; }
+    function writeOpArb(op, data){ op.buffer.set(data, op.commandplace); op.commandplace+=data.length; }
+
+    async function commitOpFeature(op, {noGetReport=false}={}){
+      const dv=new DataView(op.buffer.buffer);
+      dv.setUint32(124, 0x1234abcd, true);
+      op.buffer[0]=0xaa;
+      await flashDevice.sendFeatureReport(0xaa, op.buffer.subarray(1));
+      if (noGetReport) return null;
+      for (let t=0;t<60;t++){
+        await new Promise(r=>setTimeout(r, t?10:20));
+        try {
+          const view = await flashDevice.receiveFeatureReport(0xaa);
+          const raw = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+          const statusByte = raw.length ? raw[0] : 0;
+          if (statusByte === 0xff) {
+            const normalized = new Uint8Array(128);
+            normalized.fill(0);
+            normalized[0] = 0xaa;
+            const copyLen = Math.min(127, raw.length);
+            if (copyLen > 0) normalized.set(raw.subarray(0, copyLen), 1);
+            return normalized;
+          }
+        } catch (err){
+          if (t === 0) console.log('Failed to read feature report: '+(err?.message||err));
+        }
+      }
+      throw new Error('Timeout waiting for bootloader response (feature report)');
+    }
+
+    async function readWordFeature(addr){
+      const op=resetOp(); writeOpArb(op, word_wise_read_blob); writeOp4(op, addr); writeOp4(op, 4);
+      const resp = await commitOpFeature(op);
+      if (!resp || resp.length<64) return 0;
+      const dv=new DataView(resp.buffer, (resp.byteOffset||0)+60, 4);
+      return dv.getUint32(0, true);
+    }
+    async function writeWordFeature(addr, val){
+      const op=resetOp(); writeOpArb(op, word_wise_write_blob); writeOp4(op, addr); writeOp4(op, 4);
+      new DataView(op.buffer.buffer).setUint32(60, val, true);
+      await commitOpFeature(op);
+    }
+
+    let flashUnlocked=false;
+    async function unlockFlashFeature(){
+      if (flashUnlocked) return true;
+      const ctlr = await readWordFeature(0x40022010);
+      if (ctlr & 0x8080){
+        await writeWordFeature(0x40022004, 0x45670123);
+        await writeWordFeature(0x40022004, 0xCDEF89AB);
+        await writeWordFeature(0x40022008, 0x45670123);
+        await writeWordFeature(0x40022008, 0xCDEF89AB);
+        await writeWordFeature(0x40022024, 0x45670123);
+        await writeWordFeature(0x40022024, 0xCDEF89AB);
+        const ctlrAfter = await readWordFeature(0x40022010);
+        if (ctlrAfter & 0x8080) throw new Error('Flash locked');
+      }
+      flashUnlocked=true; return true;
+    }
+    async function isSectorErasedFeature(address){
+      const first = await readWordFeature(address & (~0x3f));
+      return first === 0xFFFFFFFF;
+    }
+    async function eraseSectorFeature(address){
+      await unlockFlashFeature();
+      const CR_PAGE_ER=0x00020000, CR_STRT_Set=0x00000040;
+      await writeWordFeature(0x40022010, CR_PAGE_ER);
+      await writeWordFeature(0x40022014, address);
+      await writeWordFeature(0x40022010, CR_STRT_Set | CR_PAGE_ER);
+      await new Promise(r=>setTimeout(r,50));
+      await writeWordFeature(0x40022010, 0);
+    }
+    async function blockWrite64Feature(address, data){
+      if (data.length!==64) throw new Error('block must be 64 bytes');
+      await unlockFlashFeature();
+      if (!await isSectorErasedFeature(address)) await eraseSectorFeature(address);
+      const CR_PAGE_PG=0x00010000, CR_BUF_RST=0x00080000;
+      await writeWordFeature(0x40022010, CR_PAGE_PG);
+      await writeWordFeature(0x40022010, CR_PAGE_PG|CR_BUF_RST);
+      const op=resetOp();
+      writeOpArb(op, write64_flash);
+      writeOp4(op, address);
+      writeOp4(op, 0x4002200c);
+      op.buffer.set(data, 60);
+      await commitOpFeature(op);
+      await new Promise(r=>setTimeout(r,10));
+    }
+    function isAddressFlash(a){ return (a & 0xff000000) === 0x08000000; }
+    async function writeBinaryBlobFeature(startAddress, dataU8){
+      let address=startAddress; let offset=0; const data = dataU8;
+      if (isAddressFlash(address)){
+        let currentAddress = address & (~0x3f);
+        if (currentAddress < address){
+          const pre = address - currentAddress;
+          const temp = new Uint8Array(64).fill(0xFF);
+          temp.set(data.slice(0, Math.min(64-pre, data.length)), pre);
+          await blockWrite64Feature(currentAddress, temp);
+          offset = 64 - pre; currentAddress += 64;
+          updateStatus('Flashing… ' + Math.min(100, Math.round((offset/data.length)*100)) + '%', '');
+        }
+        while ((data.length - offset) >= 64){
+          const blk = data.slice(offset, offset+64);
+          await blockWrite64Feature(currentAddress, blk);
+          offset += 64; currentAddress += 64;
+          const pct = Math.round((offset/data.length)*100);
+          updateStatus('Flashing… ' + pct + '%', '');
+        }
+        if (offset < data.length){
+          const temp = new Uint8Array(64).fill(0xFF);
+          temp.set(data.slice(offset), 0);
+          await blockWrite64Feature(currentAddress, temp);
+          offset = data.length;
+          updateStatus('Flashing… 100%', '');
+        }
+        return;
+      }
+    }
+    async function flashBinB003Fun(binU8){
+      try {
+        console.log('B003Fun compatible mode: using Feature Reports (0xaa, 128B).');
+        flashUnlocked = false;
+        const FLASH_BASE=0x08000000;
+        await writeBinaryBlobFeature(FLASH_BASE, binU8);
+        console.log('Flash completed successfully (B003Fun).');
+        updateStatus('Flash completed successfully! Disconnect and reconnect to run the code.', 'connected');
+      } catch (e) {
+        console.error('B003Fun flash error: ' + e.message);
+        updateStatus('Flash failed', 'error');
+        throw e;
+      }
+    }
+
+    async function flashBinWebHID(binU8) {
+      const totalPages = Math.ceil(binU8.length / 64);
+      let addr = 0, pageIdx = 0;
+
+      for (pageIdx = 0; pageIdx < totalPages; pageIdx++, addr += 64) {
+        const page = pagePad64(binU8, addr);
+        const [a2,a1,a0] = addrBytes(addr);
+
+        await txrx([CMD.ERASE64, 0, a2,a1,a0, 0,0,0]).catch(e=>{
+          throw new Error('ERASE64 failed at 0x'+addr.toString(16)+': '+e.message);
+        });
+
+        for (let i=0;i<16;i++){
+          const b0 = page[i*4+0], b1 = page[i*4+1], b2 = page[i*4+2], b3 = page[i*4+3];
+          await txrx([CMD.LOAD64,  i & 0x7F, a2,a1,a0, i & 0x7F, b0, b1]).catch(e=>{
+            throw new Error('LOAD64/lo failed idx '+i+' @0x'+addr.toString(16)+': '+e.message);
+          });
+          await txrx([CMD.LOAD64, (i | 0x80) & 0xFF, a2,a1,a0, i & 0x7F, b2, b3]).catch(e=>{
+            throw new Error('LOAD64/hi failed idx '+i+' @0x'+addr.toString(16)+': '+e.message);
+          });
+        }
+
+        await txrx([CMD.PROG64, 0, a2,a1,a0, 0,0,0], 3, 600).catch(e=>{
+          throw new Error('PROG64 failed at 0x'+addr.toString(16)+': '+e.message);
+        });
+
+        const pct = Math.round(((pageIdx+1)/totalPages)*100);
+        updateStatus('Flashing… ' + pct + '%', '');
+      }
+
+      console.log('Flash completed successfully!');
+      updateStatus('Flash completed successfully! Disconnect and reconnect to run the code.', 'connected');
+    }
+
+    /**
+     * Converts base64 binary to Uint8Array and flashes to device
+     */
+    async function flashBinary(binaryBase64, size = null) {
+      try {
+        btnFlash.disabled = true;
+        updateStatus('Preparing flash...', '');
+
+        // Check if WebHID is available
+        if (!('hid' in navigator)) {
+          throw new Error('This browser does not support WebHID. Use a recent Chrome/Edge.');
+        }
+
+        // Check if device is paired, if not, request pairing
+        const permitted = await findKnownBoardDevice();
+        if (!permitted) {
+          updateStatus('Pairing device...', '');
+          console.log('No device paired. Requesting pairing...');
+          
+          // Request device pairing
+          await connectWebHID();
+          
+          console.log('✅ Device paired successfully!');
+        }
+
+        // Convert base64 to Uint8Array
+        const byteCharacters = atob(binaryBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const binU8 = new Uint8Array(byteNumbers);
+
+        console.log(`Starting flash: ${binU8.length} bytes`);
+
+        await ensureBootloaderReady();
+
+        if (isB003Fun(flashDevice.productId)) {
+          await flashBinB003Fun(binU8);
+        } else {
+          await flashBinWebHID(binU8);
+        }
+
+        console.log(`✅ Flash completed: ${binU8.length} bytes`);
+        updateStatus('Flash completed successfully! Disconnect and reconnect to run the code.', 'connected');
+      } catch (error) {
+        console.error('❌ Error flashing:', error);
+        updateStatus('❌ Flash error: ' + (error.message || 'Unknown'), 'error');
+        throw error;
+      } finally {
+        btnFlash.disabled = false;
+      }
+    }
+
+    async function connectWebHID() {
+      if (!('hid' in navigator)) {
+        throw new Error('This browser does not support WebHID. Use a recent Chrome/Edge.');
+      }
+      try {
+        const devices = await navigator.hid.requestDevice({ filters: [{ vendorId: VENDOR_ID }] });
+        if (!devices || !devices.length) {
+          throw new Error('No device selected. Please select the One Dollar Board.');
+        }
+        await setupOpenedDevice(devices[0], {showIntro:true});
+        updateStatus('Device connected. Ready to flash.', 'connected');
+        console.log('✅ Device paired successfully');
+      } catch (error) {
+        console.error('Error connecting:', error);
+        updateStatus('Connection error: ' + (error.message || 'Unknown'), 'error');
+        throw error; // Re-throw error to be handled by caller
+      }
+    }
+
+    // Automatic reconnection function (defined early so it can be called from save errors)
+    async function tryReconnect() {
+      if (isReconnecting || isConnected) {
+        return;
+      }
+
+      isReconnecting = true;
+      updateStatus('Connecting...', '');
+      console.log('🔄 Trying to reconnect automatically...');
+      
+      const connected = await checkConnection();
+      isConnected = connected;
+      
+      if (connected) {
+        console.log('✅ Reconnected successfully');
+        updateStatus('', 'connected'); // Hide status when connected
+      } else {
+        console.log('❌ Reconnection failed, will try again...');
+      }
+      
+      isReconnecting = false;
+      return connected;
+    }
+
+    function updateStatus(text, className = '') {
+      // Hide status text when connected with generic messages (icon shows status)
+      // But show important messages like "Compiling...", "Compilation requested", "Connecting...", etc.
+      const hideMessages = ['Connected to Firebase', 'Synced', 'Connected', 'Editor ready - Sync active'];
+      const showMessages = ['Connecting...', 'Compiling...', 'Compilation', 'Connect to Internet', 'OFFLINE'];
+      const shouldShow = showMessages.some(msg => text.includes(msg));
+      const shouldHide = className === 'connected' && hideMessages.some(msg => text.includes(msg)) && !shouldShow;
+      
+      if (shouldHide) {
+        status.textContent = '';
+        status.className = '';
+      } else {
+        status.textContent = text;
+        status.className = className ? `status-${className}` : '';
+      }
+      
+      // Update connection icon based on status
+      if (text.includes('Connecting...')) {
+        connectionIcon.className = 'disconnected';
+        connectionIconSymbol.textContent = '🟡';
+        connectionTooltip.textContent = 'Connecting...';
+      } else if (className === 'connected' || text.includes('Connected') || text.includes('Synced')) {
+        connectionIcon.className = 'connected';
+        connectionIconSymbol.textContent = '🟢';
+        connectionTooltip.textContent = 'Connected';
+      } else if (className === 'error' || text.includes('Error') || text.includes('⚠️') || text.includes('Disconnected') || text.includes('OFFLINE') || text.includes('Connect to Internet')) {
+        connectionIcon.className = 'disconnected';
+        connectionIconSymbol.textContent = '🔴';
+        connectionTooltip.textContent = 'Offline';
+      } else {
+        connectionIcon.className = 'disconnected';
+        connectionIconSymbol.textContent = '⚪';
+        connectionTooltip.textContent = 'Offline';
+      }
+    }
+
+    function updateSyncIndicator(state) {
+      syncIndicator.className = '';
+      if (state === 'syncing') {
+        syncIndicator.textContent = '⏳ Syncing...';
+        syncIndicator.classList.add('sync-indicator-syncing');
+      } else if (state === 'synced') {
+        syncIndicator.textContent = '✓ Synced';
+        syncIndicator.classList.add('sync-indicator-synced');
+        setTimeout(() => {
+          syncIndicator.textContent = '●';
+          syncIndicator.className = '';
+        }, 2000);
+      } else {
+        syncIndicator.textContent = '●';
+      }
+    }
+
+    // Database configuration (production)
+    const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
+    const DATABASE_PATH = '/editor';
+
+    // Function to check connection using Fetch API (same approach as example.html)
+    async function checkConnection() {
+      try {
+        // Simple test using Fetch API (like example.html)
+        const testData = { 
+          timestamp: Date.now(), 
+          test: true,
+          message: 'Connection test'
+        };
+        
+        // Write test
+        const writeResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/test.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testData)
+        });
+        
+        if (!writeResponse.ok) {
+          throw new Error(`HTTP ${writeResponse.status}: ${writeResponse.statusText}`);
+        }
+        
+        // Read test
+        const readResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/test.json`);
+        if (!readResponse.ok) {
+          throw new Error(`HTTP ${readResponse.status}: ${readResponse.statusText}`);
+        }
+        
+        const data = await readResponse.json();
+        
+        if (data && data.test === true) {
+          updateStatus('✅ Connected to Firebase', 'connected');
+          console.log('✅ Connection test successful (Fetch API)');
+          isConnected = true;
+          return true;
+        } else {
+          throw new Error('Invalid Firebase response');
+        }
+      } catch (error) {
+        console.error('❌ Connection error:', error);
+        
+        // Show OFFLINE message
+        updateStatus('OFFLINE', 'error');
+        isConnected = false;
+        return false;
+      }
+    }
+
+    // Function to save code to Firebase using Fetch API (like example.html)
+    async function saveToFirebase(content) {
+      if (isSyncing || content === lastSavedContent) {
+        return; // Avoid duplicate saves
+      }
+
+      try {
+        isSyncing = true;
+        updateSyncIndicator('syncing');
+        
+        // Update lastSavedContent BEFORE saving to avoid listener update
+        lastSavedContent = content;
+        
+        // Ler dados atuais do Firebase para preservar campos de compilação
+        let currentData = {};
+        try {
+          const currentResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
+          if (currentResponse.ok) {
+            currentData = await currentResponse.json() || {};
+          }
+        } catch (e) {
+          // Se não conseguir ler, continuar com objeto vazio
+          console.warn('⚠️ Não foi possível ler dados atuais do Firebase:', e);
+        }
+        
+        // Verificar se o conteúdo compilado é o mesmo que estamos salvando
+        // Se for o mesmo, preservar campos de compilação; se não, remover (código mudou)
+        const contentMatchesCompiled = currentData.content === content;
+        const shouldPreserveCompilation = contentMatchesCompiled && 
+                                         currentData.compilationStatus === 'success' && 
+                                         currentData.binary;
+        
+        // Preservar campos de compilação apenas se o conteúdo não mudou
+        const data = {
+          content: content,
+          language: 'javascript',
+          lastModified: new Date().toISOString(),
+          timestamp: Date.now(),
+          size: content.length,
+          // Preservar campos de compilação apenas se o conteúdo não mudou
+          ...(shouldPreserveCompilation && {
+            compilationStatus: currentData.compilationStatus,
+            binary: currentData.binary,
+            binarySize: currentData.binarySize,
+            compilationResult: currentData.compilationResult,
+            compilationUpdatedAt: currentData.compilationUpdatedAt,
+            binarySavedAt: currentData.binarySavedAt
+          })
+          // Se o conteúdo mudou, não incluir campos de compilação (eles serão removidos)
+        };
+        
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        updateSyncIndicator('synced');
+        updateStatus('Synced', 'connected');
+        console.log('✅ Code saved to Firebase (Fetch API)');
+      } catch (error) {
+        console.error('❌ Error saving:', error);
+        // Revert lastSavedContent on error
+        if (editor) {
+          lastSavedContent = editor.getValue();
+        }
+        // Check if it's a network/fetch error
+        const errorMsgLower = (error.message || '').toLowerCase();
+        if (errorMsgLower.includes('failed to fetch') || 
+            errorMsgLower.includes('networkerror') ||
+            errorMsgLower.includes('network request failed') ||
+            errorMsgLower.includes('fetch')) {
+          updateStatus('Conecte a Internet', 'error');
+          isConnected = false;
+          // Try to reconnect automatically after 2 seconds
+          setTimeout(() => {
+            if (!isConnected) {
+              tryReconnect();
+            }
+          }, 2000);
+        } else {
+          updateStatus('❌ Sync error: ' + (error.message || 'Unknown'), 'error');
+        }
+        updateSyncIndicator('error');
+      } finally {
+        // Small delay before resetting isSyncing to avoid race conditions
+        setTimeout(() => {
+          isSyncing = false;
+        }, 100);
+      }
+    }
+
+    // Function to compile code - updates Firebase with pending compilation status
+    async function compileCode() {
+      if (!editor) {
+        updateStatus('❌ Editor not ready', 'error');
+        return;
+      }
+
+      const content = editor.getValue();
+      if (!content.trim()) {
+        updateStatus('⚠️ No code to compile', 'error');
+        return;
+      }
+
+      try {
+        btnCompile.disabled = true;
+        updateStatus('🔨 Compiling...', '');
+        
+        // Update Firebase with compilation request
+        const data = {
+          content: content,
+          language: 'javascript',
+          lastModified: new Date().toISOString(),
+          timestamp: Date.now(),
+          size: content.length,
+          compilationStatus: 'pending',
+          compilationRequested: true,
+          compilationRequestedAt: new Date().toISOString()
+        };
+        
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        updateStatus('✅ Compilation requested', 'connected');
+        console.log('✅ Compilation request sent to Firebase');
+        
+        // Re-enable button after 1 second
+        setTimeout(() => {
+          btnCompile.disabled = false;
+          updateStatus('Synced', 'connected');
+        }, 1000);
+      } catch (error) {
+        console.error('❌ Compilation error:', error);
+        updateStatus('❌ Compilation error: ' + (error.message || 'Unknown'), 'error');
+        btnCompile.disabled = false;
+      }
+    }
+
+    // Initialize Monaco Editor
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+    require(['vs/editor/editor.main'], async function () {
+      // Load initial code from Firebase using Fetch API (like example.html)
+      let initialCode = '// Your code here\nconsole.log("Hello, World!");\n';
+      let initialData = null;
+      try {
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
+        if (response.ok) {
+          const data = await response.json();
+          initialData = data;
+          if (data && data.content) {
+            initialCode = data.content;
+            lastSavedContent = initialCode;
+            console.log('✅ Code loaded from Firebase (Fetch API)');
+            
+            // Check if compiled binary already exists on load
+            if (data.compilationStatus === 'success' && data.binary) {
+              console.log('🔍 Compiled binary found on page load');
+              console.log('   - binary exists:', !!data.binary);
+              console.log('   - binarySize:', data.binarySize);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Error loading initial code:', error);
+        // Continue even if can't load
+      }
+
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: initialCode,
+        language: 'javascript',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        fontSize: 14,
+        minimap: { enabled: true },
+        scrollBeyondLastLine: false,
+        wordWrap: 'on'
+      });
+
+      // Check connection again after editor is ready
+      const connected = await checkConnectionWithFlag();
+      if (connected) {
+        updateStatus('Editor ready - Sync active', 'connected');
+        updateSyncIndicator('synced');
+        btnCompile.disabled = false;
+        
+        // Check if compiled binary already exists and show button
+        if (initialData && initialData.compilationStatus === 'success') {
+          const currentContent = editor.getValue();
+          const firebaseContent = initialData.content || '';
+          
+          // Use helper function to check if binary is valid
+          const isValidBinary = isBinaryValidForCode(initialData, currentContent, firebaseContent);
+          
+          if (isValidBinary) {
+            const size = initialData.binarySize || initialData.compilationResult?.size || 0;
+            showFlashButton(initialData.binary, size);
+            console.log('✅ Flash button shown on page load (valid binary)');
+            console.log('   - binarySize:', size, 'bytes');
+          } else {
+            console.log('⚠️ Binary found but not valid for current code');
+            hideFlashButton();
+          }
+        }
+      } else {
+        updateStatus('Editor ready - Waiting for connection...', '');
+        updateSyncIndicator('');
+      }
+
+      // Listen to editor changes (typing)
+      editor.onDidChangeModelContent(() => {
+        const currentContent = editor.getValue();
+        
+        // Esconder botão de gravação quando código é modificado
+        if (!isLocalChange && currentContent !== lastSavedContent) {
+          hideFlashButton();
+        }
+        
+        // If it wasn't a local change (e.g., came from Firebase), don't save
+        if (!isLocalChange) {
+          // Clear previous timeout
+          if (saveTimeout) {
+            clearTimeout(saveTimeout);
+          }
+
+          // Schedule save after user stops typing
+          saveTimeout = setTimeout(() => {
+            saveToFirebase(currentContent);
+          }, DEBOUNCE_DELAY);
+        }
+      });
+
+      // Compile button click handler
+      btnCompile.addEventListener('click', () => {
+        compileCode();
+      });
+
+      // Listen to real-time changes using polling (since Fetch API doesn't have EventSource)
+      // We'll use Firebase SDK only for real-time listener
+      if (codeRef) {
+        console.log('✅ Configurando listener do Firebase');
+        console.log('   - codeRef existe:', !!codeRef);
+        console.log('   - database existe:', !!database);
+        // Try to use Firebase SDK for real-time
+        try {
+          console.log('🔄 Chamando onValue...');
+          onValue(codeRef, (snapshot) => {
+            console.log('🔥🔥🔥 [LISTENER DISPARADO] Evento recebido do Firebase!');
+            console.log('   - snapshot.exists():', snapshot.exists());
+            if (!snapshot.exists()) {
+              console.log('   - Snapshot não existe, retornando');
+              return;
+            }
+
+            const data = snapshot.val();
+            if (!data || !data.content) {
+              return;
+            }
+
+            const currentContent = editor.getValue();
+            const firebaseContent = data.content;
+
+            // LOG SEMPRE: Para debug - ver todas as mudanças no Firebase
+            console.log('📡 [LISTENER] Dados recebidos do Firebase:');
+            console.log('   - compilationStatus:', data.compilationStatus);
+            console.log('   - binary existe:', !!data.binary);
+            console.log('   - binarySize:', data.binarySize);
+            console.log('   - isSyncing:', isSyncing);
+            console.log('   - firebaseContent === lastSavedContent:', firebaseContent === lastSavedContent);
+
+            // SEMPRE verificar primeiro se há binário disponível e se é válido
+            // Isso garante que o botão seja atualizado mesmo quando apenas o binário é removido ou adicionado
+            if (data.compilationStatus === 'success') {
+              // Status é success - verificar se binário existe e é válido
+              
+              // Se não há binário, esconder botão imediatamente
+              if (!data.binary) {
+                hideFlashButton();
+                updateStatus('✅ Compilação concluída (binário removido)', 'connected');
+                btnCompile.disabled = false;
+                console.log('⚠️ Status é success mas binary não existe - botão escondido');
+                // Continuar para verificar outras coisas, mas não mostrar botão
+              } else {
+                // Há binário - verificar se é válido
+                const size = data.binarySize || data.compilationResult?.size || 0;
+                updateStatus(`✅ Compilação bem-sucedida! (${size} bytes)`, 'connected');
+                btnCompile.disabled = false;
+                
+                // Verificar se o binário é válido para o código atual (usa comparação de conteúdo e timestamps)
+                const isValidBinary = isBinaryValidForCode(data, currentContent, firebaseContent);
+                
+                // Debug: Log completo dos dados recebidos
+                console.log('🔍 [SUCCESS] Dados recebidos do Firebase:');
+                console.log('   - compilationStatus:', data.compilationStatus);
+                console.log('   - binary existe:', !!data.binary);
+                console.log('   - binarySize:', data.binarySize);
+                console.log('   - binarySavedAt:', data.binarySavedAt);
+                console.log('   - code timestamp:', data.timestamp || data.lastModified);
+                console.log('   - isValidBinary:', isValidBinary);
+                
+                if (isValidBinary) {
+                  // FORÇAR mostrar o botão - garantir que está visível
+                  showFlashButton(data.binary, size);
+                  console.log('✅✅✅ Botão de gravação MOSTRADO!');
+                  console.log('   - Binário válido para o código atual');
+                } else {
+                  hideFlashButton();
+                  console.log('⚠️ Botão escondido: binário não é válido para o código atual');
+                  if (currentContent !== firebaseContent) {
+                    console.log('   - Motivo: código do editor não corresponde ao código compilado');
+                    console.log('   - Diferença:', Math.abs(currentContent.length - firebaseContent.length), 'chars');
+                  } else {
+                    console.log('   - Motivo: binário foi compilado antes da última modificação do código');
+                    console.log('   - binarySavedAt:', data.binarySavedAt);
+                    console.log('   - code timestamp:', data.timestamp || data.lastModified);
+                  }
+                }
+              }
+            } else if (data.compilationStatus === 'error') {
+              const errorMsg = data.compilationError || 'Erro desconhecido';
+              updateStatus(`❌ Erro na compilação: ${errorMsg}`, 'error');
+              btnCompile.disabled = false;
+              hideFlashButton();
+            } else if (data.compilationStatus === 'pending') {
+              updateStatus('🔨 Compilando...', '');
+              btnCompile.disabled = true;
+              hideFlashButton();
+            } else {
+              // Se não há status de compilação ou é diferente dos acima
+              // Verificar se havia um binário antes e esconder o botão se necessário
+              if (!data.binary || !data.compilationStatus) {
+                hideFlashButton();
+                console.log('⚠️ Botão escondido: sem status de compilação ou binário removido');
+              }
+            }
+
+            // VERIFICAÇÃO FINAL: Garantir que se não há binário, o botão está escondido
+            // Isso cobre casos onde o status pode ainda ser 'success' mas o binário foi removido
+            if (!data.binary) {
+              hideFlashButton();
+              console.log('⚠️ Verificação final: binary não existe - botão escondido');
+            } else if (data.compilationStatus === 'success') {
+              // Se há binário e status é success, garantir que o botão está visível se válido
+              const isValidBinary = isBinaryValidForCode(data, currentContent, firebaseContent);
+              if (isValidBinary && btnFlash.style.display === 'none') {
+                const size = data.binarySize || data.compilationResult?.size || 0;
+                showFlashButton(data.binary, size);
+                console.log('✅✅✅ Botão de gravação MOSTRADO na verificação final!');
+              }
+            }
+
+            // Evita loops: não atualiza conteúdo se estamos sincronizando ou se é nosso próprio conteúdo
+            // MAS sempre verificamos o status de compilação acima, então o botão já foi atualizado se necessário
+            // IMPORTANTE: Esta verificação acontece DEPOIS de verificar o status de compilação
+            if (isSyncing || firebaseContent === lastSavedContent) {
+              // Mesmo que o conteúdo não mude, o status de compilação pode ter mudado
+              // Por isso verificamos o status ANTES deste return
+              return;
+            }
+
+            // Só atualiza se o conteúdo do Firebase for diferente do atual no editor
+            if (currentContent !== firebaseContent) {
+              isLocalChange = true; // Flag para evitar que onDidChangeModelContent dispare salvamento
+              
+              // Limpa timeout de salvamento pendente (cancelar salvamento local)
+              if (saveTimeout) {
+                clearTimeout(saveTimeout);
+                saveTimeout = null;
+              }
+              
+              // Update editor with Firebase content
+              editor.setValue(firebaseContent);
+              lastSavedContent = firebaseContent;
+              
+              // Verificar se após atualizar o código, ainda temos uma compilação válida
+              // Usar a função helper para verificar se o binário é válido
+              const updatedContent = editor.getValue();
+              const isValidBinary = data.compilationStatus === 'success' && 
+                                   isBinaryValidForCode(data, updatedContent, firebaseContent);
+              
+              if (isValidBinary) {
+                const size = data.binarySize || data.compilationResult?.size || 0;
+                showFlashButton(data.binary, size);
+                console.log('✅ Botão de gravação mantido após atualização do Firebase (binário válido)');
+              } else {
+                // Código mudou ou binário não é válido, esconder botão
+                hideFlashButton();
+                console.log('⚠️ Botão escondido: código foi atualizado do Firebase e binário não é válido');
+              }
+              
+              updateStatus('🔄 Updated from Firebase', 'connected');
+              updateSyncIndicator('synced');
+              console.log('🔄 Code updated from Firebase');
+              
+              // Reset flag after a small delay
+              setTimeout(() => {
+                isLocalChange = false;
+                updateStatus('Synced', 'connected');
+              }, 200);
+            }
+          }, (error) => {
+            console.error('❌ Erro no listener do Firebase:', error);
+            console.warn('⚠️ Error in Firebase SDK listener, using polling:', error);
+            // Fallback to polling if SDK fails
+            startPolling();
+          });
+          console.log('✅ Listener do Firebase configurado com sucesso! Aguardando mudanças...');
+          
+          // FALLBACK: Verificação periódica adicional mesmo com listener ativo
+          // Isso garante que o botão apareça mesmo se o listener não disparar
+          console.log('🔄 Iniciando verificação periódica de fallback (a cada 2 segundos)...');
+          setInterval(async () => {
+            if (isSyncing) return;
+            
+            try {
+              const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
+              if (response.ok) {
+                const data = await response.json();
+                if (!data || !data.content) return;
+                
+                const currentContent = editor.getValue();
+                const firebaseContent = data.content;
+                
+                // Verificar status de compilação e atualizar botão se necessário
+                if (data.compilationStatus === 'success' && data.binary) {
+                  const isValidBinary = isBinaryValidForCode(data, currentContent, firebaseContent);
+                  if (isValidBinary && btnFlash.style.display === 'none') {
+                    const size = data.binarySize || data.compilationResult?.size || 0;
+                    showFlashButton(data.binary, size);
+                    console.log('✅✅✅ [FALLBACK] Botão de gravação MOSTRADO pela verificação periódica!');
+                  } else if (!isValidBinary && btnFlash.style.display !== 'none') {
+                    hideFlashButton();
+                    console.log('⚠️ [FALLBACK] Botão escondido pela verificação periódica (binário inválido)');
+                  }
+                } else if (!data.binary && btnFlash.style.display !== 'none') {
+                  hideFlashButton();
+                  console.log('⚠️ [FALLBACK] Botão escondido pela verificação periódica (sem binário)');
+                }
+              }
+            } catch (error) {
+              // Silently ignore polling errors
+            }
+          }, 2000); // Verificar a cada 2 segundos
+          
+        } catch (error) {
+          console.error('❌ Erro ao configurar listener:', error);
+          console.warn('⚠️ SDK not available, using polling:', error);
+          startPolling();
+        }
+      } else {
+        // If no codeRef, use polling
+        console.log('⚠️ codeRef não existe, usando polling');
+        startPolling();
+      }
+
+      // Polling function as fallback (similar to example)
+      function startPolling() {
+        let lastTimestamp = Date.now();
+        setInterval(async () => {
+          if (isSyncing) return; // Don't update while saving
+          
+          try {
+            const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
+            if (response.ok) {
+              const data = await response.json();
+              if (!data) return;
+              
+              const currentContent = editor.getValue();
+              const firebaseContent = data.content;
+              
+              // Verificar status de compilação
+              if (data.compilationStatus) {
+                if (data.compilationStatus === 'success') {
+                  // Se não há binário, esconder botão imediatamente
+                  if (!data.binary) {
+                    hideFlashButton();
+                    updateStatus('✅ Compilação concluída (binário removido)', 'connected');
+                    btnCompile.disabled = false;
+                    console.log('⚠️ [POLLING] Status é success mas binary não existe - botão escondido');
+                  } else {
+                    // Há binário - verificar se é válido
+                    const size = data.binarySize || data.compilationResult?.size || 0;
+                    updateStatus(`✅ Compilação bem-sucedida! (${size} bytes)`, 'connected');
+                    btnCompile.disabled = false;
+                    
+                    // Verificar se o binário é válido para o código atual
+                    const isValidBinary = isBinaryValidForCode(data, currentContent, firebaseContent);
+                    
+                    // Debug: Log completo dos dados recebidos (polling)
+                    console.log('🔍 [POLLING SUCCESS] Dados recebidos do Firebase:');
+                    console.log('   - compilationStatus:', data.compilationStatus);
+                    console.log('   - binary existe:', !!data.binary);
+                    console.log('   - binarySize:', data.binarySize);
+                    console.log('   - isValidBinary:', isValidBinary);
+                    
+                    if (isValidBinary) {
+                      showFlashButton(data.binary, size);
+                      console.log('✅✅✅ [POLLING] Botão de gravação MOSTRADO!');
+                      console.log('   - Binário válido para o código atual');
+                    } else {
+                      hideFlashButton();
+                      console.log('⚠️ [POLLING] Botão escondido: binário não é válido');
+                    }
+                  }
+                } else if (data.compilationStatus === 'error') {
+                  const errorMsg = data.compilationError || 'Erro desconhecido';
+                  updateStatus(`❌ Erro na compilação: ${errorMsg}`, 'error');
+                  btnCompile.disabled = false;
+                  hideFlashButton();
+                } else if (data.compilationStatus === 'pending') {
+                  updateStatus('🔨 Compilando...', '');
+                  btnCompile.disabled = true;
+                  hideFlashButton();
+                } else {
+                  // Sem status de compilação - esconder botão se não há binário
+                  if (!data.binary || !data.compilationStatus) {
+                    hideFlashButton();
+                  }
+                }
+                
+                // VERIFICAÇÃO FINAL [POLLING]: Garantir que se não há binário, o botão está escondido
+                if (!data.binary) {
+                  hideFlashButton();
+                  console.log('⚠️ [POLLING] Verificação final: binary não existe - botão escondido');
+                }
+              }
+              
+              // Atualizar conteúdo se mudou
+              if (data.content && data.timestamp > lastTimestamp) {
+                if (currentContent !== firebaseContent && firebaseContent !== lastSavedContent) {
+                  isLocalChange = true;
+                  editor.setValue(firebaseContent);
+                  lastSavedContent = firebaseContent;
+                  lastTimestamp = data.timestamp;
+                  
+                  // Verificar se o binário ainda é válido após atualizar o código
+                  const updatedContent = editor.getValue();
+                  const isValidBinary = data.compilationStatus === 'success' && 
+                                       isBinaryValidForCode(data, updatedContent, firebaseContent);
+                  
+                  if (isValidBinary) {
+                    const size = data.binarySize || data.compilationResult?.size || 0;
+                    showFlashButton(data.binary, size);
+                  } else {
+                    hideFlashButton();
+                  }
+                  
+                  updateStatus('🔄 Updated from Firebase', 'connected');
+                  setTimeout(() => {
+                    isLocalChange = false;
+                    updateStatus('Synced', 'connected');
+                  }, 200);
+                }
+              }
+            }
+          } catch (error) {
+            // Silently ignore polling errors
+          }
+        }, 2000); // Check every 2 seconds
+      }
+    });
+
+    // Function to download binary
+    function downloadBinary(binaryBase64, size = null) {
+      try {
+        // Converter base64 para Blob
+        const byteCharacters = atob(binaryBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        
+        // Criar URL temporária e fazer download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'code.bin';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Download iniciado: code.bin (${size || byteArray.length} bytes)`);
+        updateStatus(`📥 Download iniciado (${size || byteArray.length} bytes)`, 'connected');
+        setTimeout(() => {
+          updateStatus('Synced', 'connected');
+        }, 2000);
+      } catch (error) {
+        console.error('❌ Erro ao fazer download:', error);
+        updateStatus('❌ Erro ao fazer download', 'error');
+      }
+    }
+
+    // Improved function to check connection
+    async function checkConnectionWithFlag() {
+      const result = await checkConnection();
+      isConnected = result;
+      return result;
+    }
+
+    // Check connection when page loads
+    window.addEventListener('load', () => {
+      // Initial test after a longer delay to give Firebase time to initialize
+      setTimeout(async () => {
+        await checkConnectionWithFlag();
+      }, 1000);
+      
+      // Try to reconnect automatically every 3 seconds if not connected
+      reconnectInterval = setInterval(async () => {
+        if (!isConnected) {
+          await tryReconnect();
+        }
+      }, 3000);
+    });
+
+  </script>
+</body>
+</html>
+
