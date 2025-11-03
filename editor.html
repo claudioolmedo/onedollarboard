@@ -4,6 +4,58 @@
   <meta charset="utf-8" />
   <title>One Dollar Board - Black Board</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <!-- Script para verificar e gerar código do projeto - DEVE ESTAR NO INÍCIO PARA REDIRECIONAMENTO RÁPIDO -->
+  <script>
+    // Função para gerar UUID único para projetos (formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    function generateProjectID() {
+      // Gera um UUID no formato: dbfe2141-db11-4dc9-926c-4acf41b46
+      function randomHex(len) {
+        return Array.from({length: len}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+      }
+      
+      // Formato: 8-4-4-4-9 caracteres hexadecimais
+      return `${randomHex(8)}-${randomHex(4)}-${randomHex(4)}-${randomHex(4)}-${randomHex(9)}`;
+    }
+    
+    // Função para obter ID do projeto da URL
+    function getProjectIDFromURL() {
+      // Tenta obter da query string primeiro: ?projectID=xxx
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectIDFromQuery = urlParams.get('projectID');
+      if (projectIDFromQuery) {
+        return projectIDFromQuery;
+      }
+      
+      // Tenta obter do hash: #xxx ou #projectID=xxx
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        // Se o hash contém "projectID=", extrai o valor
+        if (hash.includes('projectID=')) {
+          const hashParams = new URLSearchParams(hash);
+          return hashParams.get('projectID');
+        }
+        // Caso contrário, assume que o hash inteiro é o ID
+        return hash;
+      }
+      
+      return null;
+    }
+    
+    // Verificar se há ID na URL - se não houver, gerar e redirecionar IMEDIATAMENTE
+    let projectID = getProjectIDFromURL();
+    if (!projectID) {
+      const newID = generateProjectID();
+      const newURL = `${window.location.pathname}?projectID=${newID}`;
+      // Usar replace para não criar entrada no histórico
+      window.location.replace(newURL);
+      // Não continua a execução após redirecionamento
+    } else {
+      // Armazenar o ID para uso no módulo
+      window.PROJECT_CODE = projectID;
+    }
+  </script>
+  
   <style>
     :root { 
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; 
@@ -232,8 +284,8 @@
       app = initializeApp(firebaseConfig);
       database = getDatabase(app);
       
-      // Create references
-      codeRef = ref(database, 'editor/code');
+      // O caminho do código será definido depois que o código do projeto for obtido
+      // A referência será criada dinamicamente mais tarde
     } catch (error) {
       console.error('❌ Error initializing Firebase:', error);
       alert('Error initializing Firebase. Check the console for details.');
@@ -892,7 +944,17 @@
 
     // Database configuration (production)
     const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
-    const DATABASE_PATH = '/editor';
+    
+    // Obter código do projeto da variável global (definida no script anterior)
+    const currentProjectCode = window.PROJECT_CODE;
+    
+    // Construir caminho do Firebase baseado no código do projeto
+    const DATABASE_PATH = `/projects/${currentProjectCode}`;
+    
+    // Criar referência do Firebase para o código do projeto
+    if (database && currentProjectCode) {
+      codeRef = ref(database, `${DATABASE_PATH}/code`);
+    }
 
     // Function to check connection using Fetch API (same approach as example.html)
     async function checkConnection() {
