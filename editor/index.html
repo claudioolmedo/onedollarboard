@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>One Dollar Board - Black Board</title>
+  <title>One Dollar Board</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   
   
@@ -77,6 +77,74 @@
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
+    }
+    .project-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    #projectNameDisplay {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #e6edf3;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: text;
+      user-select: none;
+      transition: background-color 0.2s, border-color 0.2s;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      position: relative;
+    }
+    #projectNameDisplay:hover {
+      background: #161b22;
+      border-color: #30363d;
+    }
+    #projectNameDisplay:active {
+      background: #0d1117;
+    }
+    #projectNameDisplay .edit-icon {
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 0.85rem;
+      color: #6e7681;
+      flex-shrink: 0;
+    }
+    #projectNameDisplay:hover .edit-icon {
+      opacity: 0.6;
+    }
+    #projectNameText {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+    #projectNameInput {
+      background: #0d1117;
+      border: 1px solid #1f6feb;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #e6edf3;
+      font-size: 1.2rem;
+      font-weight: 600;
+      font-family: inherit;
+      min-width: 200px;
+      max-width: 400px;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1);
+    }
+    #projectNameInput::placeholder {
+      color: #6e7681;
+      font-weight: normal;
     }
     h1 { 
       font-size: 1.2rem; 
@@ -236,7 +304,19 @@
 </head>
 <body>
   <div class="header">
-    <h1>One Dollar Board - Black Board</h1>
+    <div class="project-name-container">
+      <div id="projectNameDisplay" title="Double-click to edit">
+        <span id="projectNameText"></span>
+        <span class="edit-icon">✏️</span>
+      </div>
+      <input 
+        type="text" 
+        id="projectNameInput" 
+        placeholder="Project Name" 
+        maxlength="50"
+        style="display: none;"
+      />
+    </div>
     <div class="controls">
       <button id="btnCompile" class="compile" disabled>🔨 Compile</button>
       <button id="btnFlash" class="download" style="display: none;">💾 Flash</button>
@@ -402,6 +482,147 @@
     
     
     const DATABASE_PATH = `/projects/${currentProjectCode}`;
+    
+    
+    let projectNameTimeout = null;
+    async function saveProjectName(name) {
+      if (!name || !name.trim()) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/name.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            updatedAt: new Date().toISOString(),
+            timestamp: Date.now()
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Project name saved:', name.trim());
+        } else {
+          console.warn('⚠️ Failed to save project name');
+        }
+      } catch (error) {
+        console.error('❌ Error saving project name:', error);
+      }
+    }
+    
+    
+    function formatProjectNameDisplay(projectName) {
+      if (projectName && projectName.trim()) {
+        return `One Dollar Board/${projectName.trim()}`;
+      }
+      return 'One Dollar Board';
+    }
+    
+    
+    function extractProjectName(displayText) {
+      if (displayText && displayText.includes('/')) {
+        return displayText.split('/')[1] || '';
+      }
+      return displayText || '';
+    }
+    
+    
+    function updatePageTitle(projectName) {
+      if (projectName && projectName.trim()) {
+        document.title = `One Dollar Board/${projectName.trim()}`;
+      } else {
+        document.title = 'One Dollar Board';
+      }
+    }
+    
+    
+    function updateProjectNameDisplay(projectName) {
+      const projectNameText = document.getElementById('projectNameText');
+      if (projectNameText) {
+        projectNameText.textContent = formatProjectNameDisplay(projectName);
+      }
+      updatePageTitle(projectName);
+    }
+    
+    
+    async function loadProjectName() {
+      try {
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/name.json`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.name) {
+            updateProjectNameDisplay(data.name);
+            return data.name;
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Error loading project name:', error);
+      }
+      
+      updateProjectNameDisplay(null);
+      return null;
+    }
+    
+    
+    function enterEditMode() {
+      const display = document.getElementById('projectNameDisplay');
+      const input = document.getElementById('projectNameInput');
+      const text = document.getElementById('projectNameText');
+      
+      if (!display || !input || !text) return;
+      
+      
+      const displayWidth = display.offsetWidth;
+      
+      
+      display.style.display = 'none';
+      input.style.display = 'block';
+      input.style.width = displayWidth + 'px';
+      
+      
+      const currentDisplay = text.textContent || '';
+      const currentProjectName = extractProjectName(currentDisplay);
+      input.value = currentProjectName === 'One Dollar Board' || !currentProjectName ? '' : currentProjectName;
+      
+      
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 10);
+    }
+    
+    
+    function exitEditMode(save = true) {
+      const display = document.getElementById('projectNameDisplay');
+      const input = document.getElementById('projectNameInput');
+      const text = document.getElementById('projectNameText');
+      
+      if (!display || !input || !text) return;
+      
+      const newName = input.value.trim();
+      
+      if (save && newName) {
+        
+        updateProjectNameDisplay(newName);
+        
+        saveProjectName(newName);
+      } else if (!newName) {
+        
+        const currentDisplay = text.textContent || '';
+        const currentProjectName = extractProjectName(currentDisplay);
+        if (currentProjectName === 'One Dollar Board' || !currentProjectName) {
+          input.value = '';
+        } else {
+          input.value = currentProjectName;
+        }
+      }
+      
+      
+      input.style.display = 'none';
+      input.style.width = ''; 
+      display.style.display = 'flex';
+    }
     
     async function fetchBinaryFromCache(binaryHash) {
       if (!binaryHash) {
@@ -991,7 +1212,7 @@
       }
     }
 
-    // Criar referência do Firebase para o código do projeto (se ainda não foi criada)
+    // Create Firebase reference for project code (if not already created)
     if (database && currentProjectCode && !codeRef) {
       codeRef = ref(database, `${DATABASE_PATH}/code`);
     }
@@ -1065,7 +1286,7 @@
           }
         } catch (e) {
           
-          console.warn('⚠️ Não foi possível ler dados atuais do Firebase:', e);
+          console.warn('⚠️ Could not read current data from Firebase:', e);
         }
         
         
@@ -1121,7 +1342,7 @@
             errorMsgLower.includes('networkerror') ||
             errorMsgLower.includes('network request failed') ||
             errorMsgLower.includes('fetch')) {
-          updateStatus('Conecte a Internet', 'error');
+          updateStatus('Connect to Internet', 'error');
           isConnected = false;
           
           setTimeout(() => {
@@ -1290,6 +1511,39 @@
       });
 
       
+      await loadProjectName();
+      
+      
+      const projectNameDisplay = document.getElementById('projectNameDisplay');
+      const projectNameInput = document.getElementById('projectNameInput');
+      
+      if (projectNameDisplay) {
+        
+        projectNameDisplay.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          enterEditMode();
+        });
+      }
+      
+      if (projectNameInput) {
+        
+        projectNameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            exitEditMode(true);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            exitEditMode(false);
+          }
+        });
+        
+        
+        projectNameInput.addEventListener('blur', () => {
+          exitEditMode(true);
+        });
+      }
+
+      
       const connected = await checkConnectionWithFlag();
       if (connected) {
         updateStatus('Editor ready - Sync active', 'connected');
@@ -1422,17 +1676,17 @@
       
       
       if (codeRef) {
-        console.log('✅ Configurando listener do Firebase');
-        console.log('   - codeRef existe:', !!codeRef);
-        console.log('   - database existe:', !!database);
+        console.log('✅ Configuring Firebase listener');
+        console.log('   - codeRef exists:', !!codeRef);
+        console.log('   - database exists:', !!database);
         
         try {
-          console.log('🔄 Chamando onValue...');
+          console.log('🔄 Calling onValue...');
           onValue(codeRef, async (snapshot) => {
-            console.log('🔥🔥🔥 [LISTENER DISPARADO] Evento recebido do Firebase!');
+            console.log('🔥🔥🔥 [LISTENER TRIGGERED] Event received from Firebase!');
             console.log('   - snapshot.exists():', snapshot.exists());
             if (!snapshot.exists()) {
-              console.log('   - Snapshot não existe, retornando');
+              console.log('   - Snapshot does not exist, returning');
               return;
             }
 
@@ -1445,7 +1699,7 @@
             const firebaseContent = data.content;
 
             
-            console.log('📡 [LISTENER] Dados recebidos do Firebase:');
+            console.log('📡 [LISTENER] Data received from Firebase:');
             console.log('   - compilationStatus:', data.compilationStatus);
             console.log('   - binaryHash:', data.binaryHash);
             console.log('   - binarySize:', data.binarySize);
@@ -1460,9 +1714,9 @@
               
               if (!data.binaryHash) {
                 hideFlashButton();
-                updateStatus('✅ Compilação concluída (sem binaryHash)', 'connected');
+                updateStatus('✅ Compilation completed (no binaryHash)', 'connected');
                 btnCompile.disabled = false;
-                console.log('⚠️ Status é success mas binaryHash não existe - botão escondido');
+                console.log('⚠️ Status is success but binaryHash does not exist - button hidden');
                 
               } else {
                 
@@ -1470,9 +1724,9 @@
                 
                 if (!cacheData || !cacheData.binary) {
                   hideFlashButton();
-                  updateStatus('✅ Compilação concluída (binário não encontrado no cache)', 'connected');
+                  updateStatus('✅ Compilation completed (binary not found in cache)', 'connected');
                   btnCompile.disabled = false;
-                  console.log('⚠️ binaryHash existe mas binário não encontrado no cache');
+                  console.log('⚠️ binaryHash exists but binary not found in cache');
                   return;
                 }
                 
@@ -1480,7 +1734,7 @@
                 const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
                 
                 
-                console.log('🔍 [SUCCESS] Dados recebidos do Firebase:');
+                console.log('🔍 [SUCCESS] Data received from Firebase:');
                 console.log('   - compilationStatus:', data.compilationStatus);
                 console.log('   - binaryHash:', data.binaryHash);
                 console.log('   - binarySize:', cacheData.binarySize || data.binarySize);
@@ -1492,30 +1746,30 @@
                   
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
-                  updateStatus(`✅ Compilação bem-sucedida! (${size} bytes)`, 'connected');
+                  updateStatus(`✅ Compilation successful! (${size} bytes)`, 'connected');
                   btnCompile.disabled = false;
-                  console.log('✅✅✅ Botão de gravação MOSTRADO!');
-                  console.log('   - Binário válido para o código atual');
+                  console.log('✅✅✅ Flash button SHOWN!');
+                  console.log('   - Binary valid for current code');
                 } else {
                   hideFlashButton();
-                  console.log('⚠️ Botão escondido: binário não é válido para o código atual');
+                  console.log('⚠️ Button hidden: binary is not valid for current code');
                   if (currentContent !== firebaseContent) {
-                    console.log('   - Motivo: código do editor não corresponde ao código compilado');
-                    console.log('   - Diferença:', Math.abs(currentContent.length - firebaseContent.length), 'chars');
+                    console.log('   - Reason: editor code does not match compiled code');
+                    console.log('   - Difference:', Math.abs(currentContent.length - firebaseContent.length), 'chars');
                   } else {
-                    console.log('   - Motivo: binário foi compilado antes da última modificação do código');
+                    console.log('   - Reason: binary was compiled before last code modification');
                     console.log('   - binarySavedAt:', data.binarySavedAt);
                     console.log('   - code timestamp:', data.timestamp || data.lastModified);
                   }
                 }
               }
             } else if (data.compilationStatus === 'error') {
-              const errorMsg = data.compilationError || 'Erro desconhecido';
-              updateStatus(`❌ Erro na compilação: ${errorMsg}`, 'error');
+              const errorMsg = data.compilationError || 'Unknown error';
+              updateStatus(`❌ Compilation error: ${errorMsg}`, 'error');
               btnCompile.disabled = false;
               hideFlashButton();
             } else if (data.compilationStatus === 'pending') {
-              updateStatus('🔨 Compilando...', '');
+              updateStatus('🔨 Compiling...', '');
               btnCompile.disabled = true;
               hideFlashButton();
             } else {
@@ -1523,7 +1777,7 @@
               
               if (!data.binaryHash || !data.compilationStatus) {
                 hideFlashButton();
-                console.log('⚠️ Botão escondido: sem status de compilação ou binaryHash removido');
+                console.log('⚠️ Button hidden: no compilation status or binaryHash removed');
               }
             }
 
@@ -1531,7 +1785,7 @@
             
             if (!data.binaryHash) {
               hideFlashButton();
-              console.log('⚠️ Verificação final: binaryHash não existe - botão escondido');
+              console.log('⚠️ Final check: binaryHash does not exist - button hidden');
             } else if (data.compilationStatus === 'success') {
               
               const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
@@ -1540,7 +1794,7 @@
                 if (cacheData && cacheData.binary) {
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
-                  console.log('✅✅✅ Botão de gravação MOSTRADO na verificação final!');
+                  console.log('✅✅✅ Flash button SHOWN in final check!');
                 }
               }
             }
@@ -1580,15 +1834,15 @@
                 if (cacheData && cacheData.binary) {
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
-                  console.log('✅ Botão de gravação mantido após atualização do Firebase (binário válido do cache)');
+                  console.log('✅ Flash button kept after Firebase update (valid binary from cache)');
                 } else {
                   hideFlashButton();
-                  console.log('⚠️ binaryHash válido mas binário não encontrado no cache');
+                  console.log('⚠️ binaryHash valid but binary not found in cache');
                 }
               } else {
                 
                 hideFlashButton();
-                console.log('⚠️ Botão escondido: código foi atualizado do Firebase e binário não é válido');
+                console.log('⚠️ Button hidden: code was updated from Firebase and binary is not valid');
               }
               
               updateStatus('🔄 Updated from Firebase', 'connected');
@@ -1634,20 +1888,20 @@
                     if (isValidBinary && btnFlash.style.display === 'none') {
                       const size = cacheData.binarySize || data.binarySize || 0;
                       showFlashButton(cacheData.binary, size);
-                      console.log('✅✅✅ [FALLBACK] Botão de gravação MOSTRADO pela verificação periódica!');
+                      console.log('✅✅✅ [FALLBACK] Flash button SHOWN by periodic check!');
                     } else if (!isValidBinary && btnFlash.style.display !== 'none') {
                       hideFlashButton();
-                      console.log('⚠️ [FALLBACK] Botão escondido pela verificação periódica (binário inválido)');
+                      console.log('⚠️ [FALLBACK] Button hidden by periodic check (invalid binary)');
                     }
                   } else {
                     if (btnFlash.style.display !== 'none') {
                       hideFlashButton();
-                      console.log('⚠️ [FALLBACK] Botão escondido pela verificação periódica (binário não encontrado no cache)');
+                      console.log('⚠️ [FALLBACK] Button hidden by periodic check (binary not found in cache)');
                     }
                   }
                 } else if (!data.binaryHash && btnFlash.style.display !== 'none') {
                   hideFlashButton();
-                  console.log('⚠️ [FALLBACK] Botão escondido pela verificação periódica (sem binaryHash)');
+                  console.log('⚠️ [FALLBACK] Button hidden by periodic check (no binaryHash)');
                 }
               }
             } catch (error) {
@@ -1656,13 +1910,13 @@
           }, 2000); 
           
         } catch (error) {
-          console.error('❌ Erro ao configurar listener:', error);
+          console.error('❌ Error configuring listener:', error);
           console.warn('⚠️ SDK not available, using polling:', error);
           startPolling();
         }
       } else {
         
-        console.log('⚠️ codeRef não existe, usando polling');
+        console.log('⚠️ codeRef does not exist, using polling');
         startPolling();
       }
 
@@ -1687,29 +1941,29 @@
                   
                   if (!data.binaryHash) {
                     hideFlashButton();
-                    updateStatus('✅ Compilação concluída (sem binaryHash)', 'connected');
+                    updateStatus('✅ Compilation completed (no binaryHash)', 'connected');
                     btnCompile.disabled = false;
-                    console.log('⚠️ [POLLING] Status é success mas binaryHash não existe - botão escondido');
+                    console.log('⚠️ [POLLING] Status is success but binaryHash does not exist - button hidden');
                   } else {
                     
                     const cacheData = await fetchBinaryFromCache(data.binaryHash);
                     
                     if (!cacheData || !cacheData.binary) {
                       hideFlashButton();
-                      updateStatus('✅ Compilação concluída (binário não encontrado no cache)', 'connected');
+                      updateStatus('✅ Compilation completed (binary not found in cache)', 'connected');
                       btnCompile.disabled = false;
-                      console.log('⚠️ [POLLING] binaryHash existe mas binário não encontrado no cache');
+                      console.log('⚠️ [POLLING] binaryHash exists but binary not found in cache');
                     } else {
                       
                       const size = cacheData.binarySize || data.binarySize || 0;
-                      updateStatus(`✅ Compilação bem-sucedida! (${size} bytes)`, 'connected');
+                      updateStatus(`✅ Compilation successful! (${size} bytes)`, 'connected');
                       btnCompile.disabled = false;
                       
                       
                       const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
                       
                       
-                      console.log('🔍 [POLLING SUCCESS] Dados recebidos do Firebase:');
+                      console.log('🔍 [POLLING SUCCESS] Data received from Firebase:');
                       console.log('   - compilationStatus:', data.compilationStatus);
                       console.log('   - binaryHash:', data.binaryHash);
                       console.log('   - binarySize:', cacheData.binarySize || data.binarySize);
@@ -1717,11 +1971,11 @@
                       
                       if (isValidBinary) {
                         showFlashButton(cacheData.binary, size);
-                        console.log('✅✅✅ [POLLING] Botão de gravação MOSTRADO!');
-                        console.log('   - Binário válido para o código atual');
+                        console.log('✅✅✅ [POLLING] Flash button SHOWN!');
+                        console.log('   - Binary valid for current code');
                       } else {
                         hideFlashButton();
-                        console.log('⚠️ [POLLING] Botão escondido: binário não é válido');
+                        console.log('⚠️ [POLLING] Button hidden: binary is not valid');
                       }
                     }
                   }
@@ -1731,7 +1985,7 @@
                   btnCompile.disabled = false;
                   hideFlashButton();
                 } else if (data.compilationStatus === 'pending') {
-                  updateStatus('🔨 Compilando...', '');
+                  updateStatus('🔨 Compiling...', '');
                   btnCompile.disabled = true;
                   hideFlashButton();
                 } else {
@@ -1744,7 +1998,7 @@
                 
                 if (!data.binaryHash) {
                   hideFlashButton();
-                  console.log('⚠️ [POLLING] Verificação final: binaryHash não existe - botão escondido');
+                  console.log('⚠️ [POLLING] Final check: binaryHash does not exist - button hidden');
                 }
               }
               
