@@ -77,6 +77,29 @@
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
+      position: relative;
+    }
+    /* Mobile: header responsivo */
+    @media (max-width: 767px) {
+      .header {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .project-name-container {
+        width: 100%;
+        justify-content: center;
+      }
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      #btnHome {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 10;
+      }
     }
     .project-name-container {
       display: flex;
@@ -103,6 +126,22 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       position: relative;
+    }
+    /* Mobile: permitir quebra de linha no nome do projeto */
+    @media (max-width: 767px) {
+      #projectNameDisplay {
+        font-size: 1rem;
+        white-space: normal;
+        line-height: 1.4;
+        max-width: calc(100vw - 32px);
+        justify-content: center;
+      }
+      #projectNameText {
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.4;
+        text-align: center;
+      }
     }
     #projectNameDisplay:hover {
       background: #161b22;
@@ -195,6 +234,30 @@
     button.download:hover {
       background: #2ea043;
     }
+    button.run-on-board {
+      background: #238636;
+    }
+    button.run-on-board:hover {
+      background: #2ea043;
+    }
+    button.run-on-board:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .controls button.hidden {
+      display: none !important;
+    }
+    button.home {
+      background: #30363d;
+      padding: 8px 12px;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button.home:hover {
+      background: #40464d;
+    }
     #status {
       font-size: 0.85rem;
       color: #9fbad1;
@@ -202,6 +265,12 @@
       background: #0d1117;
       border-radius: 6px;
       border: 1px solid #1f242e;
+      min-width: 200px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity 0.2s ease;
     }
     .status-connected {
       color: #3fb950;
@@ -299,11 +368,65 @@
       font-size: 0.85rem;
       color: #8093a7;
       flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+    .footer-text {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+      order: 2;
+    }
+    .footer-status {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+      order: 3;
+    }
+    /* Desktop: texto centralizado, indicadores à direita */
+    @media (min-width: 768px) {
+      .footer {
+        flex-wrap: nowrap;
+      }
+      .footer-text {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      .footer-status {
+        margin-left: auto;
+      }
+    }
+    /* Mobile: quebra em duas linhas elegante */
+    @media (max-width: 767px) {
+      .footer {
+        justify-content: center;
+        flex-direction: column;
+      }
+      .footer-text {
+        width: 100%;
+        order: 1;
+        text-align: center;
+        margin-bottom: 4px;
+      }
+      .footer-status {
+        order: 2;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body>
   <div class="header">
+    <button id="btnHome" class="home" title="Go to home" onclick="window.location.href='../'">🏠</button>
     <div class="project-name-container">
       <div id="projectNameDisplay" title="Double-click to edit">
         <span id="projectNameText"></span>
@@ -318,14 +441,10 @@
       />
     </div>
     <div class="controls">
-      <button id="btnCompile" class="compile" disabled>🔨 Compile</button>
-      <button id="btnFlash" class="download" style="display: none;">💾 Flash</button>
       <span id="status">Disconnected</span>
-      <span id="connectionIcon" class="disconnected" title="">
-        <span id="connectionIconSymbol">🔴</span>
-        <span class="tooltip" id="connectionTooltip">Offline</span>
-      </span>
-      <span id="syncIndicator" style="font-size: 0.75rem; color: #9fbad1;">⏳</span>
+      <button id="btnRunOnBoard" class="run-on-board" disabled>▶ Run on Board</button>
+      <button id="btnCompile" class="compile hidden" disabled>🔨 Compile</button>
+      <button id="btnFlash" class="download hidden" style="display: none;">💾 Flash</button>
     </div>
   </div>
   
@@ -334,7 +453,16 @@
   </div>
 
   <div class="footer">
-    <b>One Dollar Board</b> - A low-cost mini computer main board for learning and prototyping.
+    <div class="footer-text">
+      <b>Design in Austin/TX</b>  A low-cost mini computer main board for learning and prototyping.
+    </div>
+    <div class="footer-status">
+      <span id="syncIndicator" style="font-size: 0.75rem; color: #9fbad1;"></span>
+      <span id="connectionIcon" class="disconnected" title="">
+        <span id="connectionIconSymbol">🔴</span>
+        <span class="tooltip" id="connectionTooltip">Offline</span>
+      </span>
+    </div>
   </div>
 
   
@@ -374,6 +502,7 @@
     
     const status = document.getElementById('status');
     const syncIndicator = document.getElementById('syncIndicator');
+    const btnRunOnBoard = document.getElementById('btnRunOnBoard');
     const btnCompile = document.getElementById('btnCompile');
     const btnFlash = document.getElementById('btnFlash');
     const connectionIcon = document.getElementById('connectionIcon');
@@ -1168,11 +1297,14 @@
       const shouldHide = className === 'connected' && hideMessages.some(msg => text.includes(msg)) && !shouldShow;
       
       if (shouldHide) {
-        status.textContent = '';
+        // Usar zero-width space para manter o espaço reservado e evitar movimento do botão
+        status.textContent = '\u200B';
         status.className = '';
+        status.style.opacity = '0';
       } else {
         status.textContent = text;
         status.className = className ? `status-${className}` : '';
+        status.style.opacity = '1';
       }
       
       
@@ -1204,15 +1336,15 @@
         syncIndicator.textContent = '✓ Synced';
         syncIndicator.classList.add('sync-indicator-synced');
         setTimeout(() => {
-          syncIndicator.textContent = '●';
+          syncIndicator.textContent = '';
           syncIndicator.className = '';
         }, 2000);
       } else {
-        syncIndicator.textContent = '●';
+        syncIndicator.textContent = '';
       }
     }
 
-    // Create Firebase reference for project code (if not already created)
+    
     if (database && currentProjectCode && !codeRef) {
       codeRef = ref(database, `${DATABASE_PATH}/code`);
     }
@@ -1299,7 +1431,7 @@
         
         const data = {
           content: content,
-          language: 'javascript',
+          language: 'c',
           lastModified: new Date().toISOString(),
           timestamp: Date.now(),
           size: content.length,
@@ -1403,7 +1535,7 @@
         const data = {
           content: content,
           binaryHash: binaryHash,
-          language: 'javascript',
+          language: 'c',
           lastModified: new Date().toISOString(),
           timestamp: Date.now(),
           size: content.length,
@@ -1437,6 +1569,149 @@
         console.error('❌ Compilation error:', error);
         updateStatus('❌ Compilation error: ' + (error.message || 'Unknown'), 'error');
         btnCompile.disabled = false;
+      }
+    }
+
+    
+    async function runOnBoard() {
+      if (!editor) {
+        updateStatus('❌ Editor not ready', 'error');
+        return;
+      }
+
+      const content = editor.getValue();
+      if (!content.trim()) {
+        updateStatus('⚠️ No code to run', 'error');
+        return;
+      }
+
+      try {
+        btnRunOnBoard.disabled = true;
+        updateStatus('Compiling…', '');
+
+        
+        const hash = await getCodeHash(content);
+        console.log('🔍 Calculated hash:', hash);
+
+        
+        const cacheData = await fetchBinaryFromCache(hash);
+        let binaryBase64 = null;
+        let binarySize = 0;
+
+        if (cacheData && cacheData.binary) {
+          
+          binaryBase64 = cacheData.binary;
+          binarySize = cacheData.binarySize || 0;
+          updateStatus('⚡ Loaded from cache', 'connected');
+          console.log('⚡ Cache hit, skipping compilation');
+        } else {
+          
+          console.log('📦 Cache miss, requesting compilation');
+          
+          
+          const compileData = {
+            content: content,
+            binaryHash: hash,
+            language: 'c',
+            lastModified: new Date().toISOString(),
+            timestamp: Date.now(),
+            size: content.length,
+            compilationStatus: 'pending',
+            compilationRequested: true,
+            compilationRequestedAt: new Date().toISOString()
+          };
+
+          const compileResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(compileData)
+          });
+
+          if (!compileResponse.ok) {
+            throw new Error(`HTTP ${compileResponse.status}: ${compileResponse.statusText}`);
+          }
+
+          
+          const startTime = Date.now();
+          const timeoutMs = 60000; 
+          const pollInterval = 1000; 
+
+          while (Date.now() - startTime < timeoutMs) {
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+            const statusResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
+            if (!statusResponse.ok) {
+              continue; 
+            }
+
+            const statusData = await statusResponse.json();
+            
+            if (statusData.compilationStatus === 'error') {
+              const errorMsg = statusData.compilationError || 'Unknown error';
+              updateStatus('❌ Compilation failed', 'error');
+              throw new Error(`Compilation failed: ${errorMsg}`);
+            }
+
+            if (statusData.compilationStatus === 'success' && statusData.binaryHash === hash) {
+              
+              const finalCacheData = await fetchBinaryFromCache(hash);
+              if (finalCacheData && finalCacheData.binary) {
+                binaryBase64 = finalCacheData.binary;
+                binarySize = finalCacheData.binarySize || 0;
+                updateStatus(`✅ Compilation successful! (${binarySize} bytes)`, 'connected');
+                console.log('✅ Compilation completed, binary fetched from cache');
+                break;
+              } else {
+                throw new Error('Binary not found in cache after successful compilation');
+              }
+            }
+
+            
+            if (statusData.compilationStatus === 'pending' || statusData.compilationStatus === 'processing') {
+              continue;
+            }
+          }
+
+          
+          if (!binaryBase64) {
+            updateStatus('❌ Compilation timeout', 'error');
+            throw new Error('Compilation timeout after 60 seconds');
+          }
+        }
+
+        
+        updateStatus('Checking device...', '');
+        const permitted = await findKnownBoardDevice();
+        if (!permitted) {
+          updateStatus('Pairing device...', '');
+          await connectWebHID();
+        }
+
+        
+        updateStatus('Flashing…', '');
+        await flashBinary(binaryBase64, binarySize);
+
+        
+        updateStatus(`✅ Done (${binarySize} bytes)`, 'connected');
+        console.log('✅ Run on Board completed successfully');
+
+      } catch (error) {
+        console.error('❌ Error in runOnBoard:', error);
+        const errorMsg = error.message || 'Unknown error';
+        
+        if (errorMsg.includes('timeout')) {
+          updateStatus('❌ Compilation timeout', 'error');
+        } else if (errorMsg.includes('Compilation failed')) {
+          updateStatus('❌ Compilation failed', 'error');
+        } else if (errorMsg.includes('Device not paired') || errorMsg.includes('WebHID')) {
+          updateStatus('❌ Device not paired', 'error');
+        } else if (errorMsg.includes('Connect to Internet') || errorMsg.includes('fetch')) {
+          updateStatus('❌ Connect to Internet', 'error');
+        } else {
+          updateStatus(`❌ ${errorMsg}`, 'error');
+        }
+      } finally {
+        btnRunOnBoard.disabled = false;
       }
     }
 
@@ -1501,7 +1776,7 @@
 
       editor = monaco.editor.create(document.getElementById('editor'), {
         value: initialCode,
-        language: 'javascript',
+        language: 'c',
         theme: 'vs-dark',
         automaticLayout: true,
         fontSize: 14,
@@ -1549,6 +1824,7 @@
         updateStatus('Editor ready - Sync active', 'connected');
         updateSyncIndicator('synced');
         btnCompile.disabled = false;
+        btnRunOnBoard.disabled = false;
         
         
         if (initialData && initialData.compilationStatus === 'success' && initialData.binaryHash) {
@@ -1671,6 +1947,11 @@
           }
           compileCode();
         })();
+      });
+
+      
+      btnRunOnBoard.addEventListener('click', () => {
+        runOnBoard();
       });
 
       
