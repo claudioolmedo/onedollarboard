@@ -395,6 +395,14 @@
     }
 
     
+    const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
+    
+    
+    const currentProjectCode = window.PROJECT_CODE;
+    
+    
+    const DATABASE_PATH = `/projects/${currentProjectCode}`;
+    
     async function fetchBinaryFromCache(binaryHash) {
       if (!binaryHash) {
         return null;
@@ -803,8 +811,7 @@
     }
 
     async function flashBinWebHID(binU8) {
-      const totalPages = Math.ceil(binU8.length / 64);
-      let addr = 0, pageIdx = 0;
+      const totalPages = Math.ceil(binU8.length / 64);      let addr = 0, pageIdx = 0;
 
       for (pageIdx = 0; pageIdx < totalPages; pageIdx++, addr += 64) {
         const page = pagePad64(binU8, addr);
@@ -984,17 +991,8 @@
       }
     }
 
-    
-    const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
-    
-    
-    const currentProjectCode = window.PROJECT_CODE;
-    
-    
-    const DATABASE_PATH = `/projects/${currentProjectCode}`;
-    
-    
-    if (database && currentProjectCode) {
+    // Criar referência do Firebase para o código do projeto (se ainda não foi criada)
+    if (database && currentProjectCode && !codeRef) {
       codeRef = ref(database, `${DATABASE_PATH}/code`);
     }
 
@@ -1147,7 +1145,7 @@
     function cleanCodeForHash(code) {
       return code
         .replace(/\/\/.*$/gm, "")
-        .replace(/\/\*[\s\S]*?\*\
+        .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/\s+/g, " ")
         .trim();
     }
@@ -1221,7 +1219,6 @@
       }
     }
 
-    
     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
     require(['vs/editor/editor.main'], async function () {
       
