@@ -361,6 +361,290 @@
       width: 100%;
       height: 100%;
     }
+    
+    /* Drag and Drop Overlay */
+    .drag-drop-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(31, 111, 235, 0.15);
+      border: 3px dashed #1f6feb;
+      border-radius: 8px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+    .drag-drop-overlay.active {
+      display: flex;
+    }
+    .drag-drop-content {
+      text-align: center;
+      color: #e6edf3;
+    }
+    .drag-drop-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      animation: bounce 1s ease-in-out infinite;
+    }
+    .drag-drop-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .drag-drop-hint {
+      font-size: 0.9rem;
+      color: #9fbad1;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* Files Sidebar - Barra fina quando fechada */
+    .files-sidebar {
+      position: fixed;
+      top: 60px; /* Começar abaixo do header */
+      right: 0;
+      bottom: 60px; /* Acima do footer */
+      width: 48px;
+      height: auto; /* Altura será calc(100vh - header - footer) */
+      background: #11161b;
+      border-left: 1px solid #202830;
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transition: width 0.3s ease;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .files-sidebar.open {
+      width: 400px;
+      cursor: default;
+    }
+    
+    /* Ajustar editor quando sidebar está aberta - margem será controlada via JavaScript */
+    #editor-container {
+      margin-right: 48px;
+      transition: margin-right 0.3s ease;
+    }
+    .files-sidebar:not(.open):hover {
+      background: #161b22;
+    }
+    /* Barra fina quando fechada - mostra ícone */
+    .files-sidebar:not(.open) .sidebar-content {
+      display: none;
+    }
+    .files-sidebar:not(.open) .sidebar-header {
+      padding: 16px 8px;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .files-sidebar:not(.open) .sidebar-header h3 {
+      display: none;
+    }
+    .files-sidebar:not(.open) .sidebar-close {
+      display: none;
+    }
+    .files-sidebar:not(.open) .sidebar-header::before {
+      content: '📁';
+      font-size: 1.5rem;
+      display: block;
+    }
+    .files-sidebar:not(.open) .sidebar-header:hover {
+      background: #161b22;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid #202830;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #11161b;
+    }
+    .sidebar-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #e6edf3;
+    }
+    .sidebar-close {
+      background: transparent;
+      border: none;
+      color: #9fbad1;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .sidebar-close:hover {
+      background: #202830;
+      color: #e6edf3;
+    }
+    .sidebar-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px;
+    }
+    .sidebar-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+    .btn-create-file,
+    .btn-add-file {
+      width: 100%;
+      background: #238636;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-add-file {
+      background: #1f6feb;
+    }
+    .btn-add-file:hover {
+      background: #2a7de8;
+    }
+    .btn-create-file:hover {
+      background: #2ea043;
+    }
+    .btn-create-file span,
+    .btn-add-file span {
+      font-size: 1.2rem;
+    }
+    .files-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .files-empty {
+      text-align: center;
+      color: #6e7681;
+      padding: 32px 16px;
+      font-size: 0.9rem;
+    }
+    .file-item {
+      background: #161b22;
+      border: 1px solid #202830;
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .file-item:hover {
+      background: #202830;
+      border-color: #30363d;
+    }
+    .file-item.active {
+      background: #1f6feb;
+      border-color: #1f6feb;
+    }
+    .file-item.active .file-item-name {
+      color: #fff;
+      font-weight: 700;
+    }
+    .file-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .file-item-name {
+      font-weight: 600;
+      color: #e6edf3;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: text;
+      user-select: text;
+    }
+    .file-item-name.editing {
+      cursor: text;
+    }
+    .file-item-name-input {
+      background: #0d1117;
+      border: 1px solid #1f6feb;
+      border-radius: 4px;
+      padding: 4px 8px;
+      color: #e6edf3;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.2);
+    }
+    .file-item-size {
+      font-size: 0.75rem;
+      color: #6e7681;
+    }
+    .file-item-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .file-item-btn {
+      background: transparent;
+      border: none;
+      color: #9fbad1;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .file-item-btn:hover {
+      background: #202830;
+      color: #e6edf3;
+    }
+    .file-item-btn.delete:hover {
+      color: #ff7b72;
+    }
+    
+    /* Mobile: sidebar full width */
+    @media (max-width: 767px) {
+      .files-sidebar {
+        width: 100vw;
+        right: -100vw;
+      }
+      .sidebar-toggle {
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+      }
+      .sidebar-toggle:hover {
+        transform: translateY(-50%) scale(1.1);
+      }
+    }
     .footer {
       background: #11161b;
       border-top: 1px solid #202830;
@@ -450,6 +734,36 @@
   
   <div id="editor-container">
     <div id="editor"></div>
+    
+    <div id="dragDropOverlay" class="drag-drop-overlay">
+      <div class="drag-drop-content">
+        <div class="drag-drop-icon">📁</div>
+        <div class="drag-drop-text">Drop files here to add them to your project</div>
+        <div class="drag-drop-hint">Supported: .h, .c files</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="filesSidebar" class="files-sidebar">
+    <div class="sidebar-header">
+      <h3>Project Files</h3>
+      <button id="sidebarClose" class="sidebar-close" title="Close">×</button>
+    </div>
+    <div class="sidebar-content">
+      <div class="sidebar-actions">
+        <button id="btnCreateFile" class="btn-create-file" title="Create new file">
+          <span>+</span> Create File
+        </button>
+        <button id="btnAddFile" class="btn-add-file" title="Add file">
+          <span>📁</span> Add File
+        </button>
+        <input type="file" id="fileInput" multiple accept=".h,.c,.txt" style="display: none;">
+      </div>
+      <div id="filesList" class="files-list">
+        <div class="files-empty">No files yet. Create a new file or add existing files.</div>
+      </div>
+    </div>
   </div>
 
   <div class="footer">
@@ -508,6 +822,15 @@
     const connectionIcon = document.getElementById('connectionIcon');
     const connectionIconSymbol = document.getElementById('connectionIconSymbol');
     const connectionTooltip = document.getElementById('connectionTooltip');
+    
+    
+    const sidebarClose = document.getElementById('sidebarClose');
+    const filesSidebar = document.getElementById('filesSidebar');
+    const filesList = document.getElementById('filesList');
+    const btnAddFile = document.getElementById('btnAddFile');
+    const fileInput = document.getElementById('fileInput');
+    const dragDropOverlay = document.getElementById('dragDropOverlay');
+    const editorContainer = document.getElementById('editor-container');
 
     let editor = null;
     let isSyncing = false;
@@ -1860,6 +2183,10 @@
 
       
       editor.onDidChangeModelContent(() => {
+        
+        if (currentOpenFile === 'main.c') {
+          updateMainCInFiles();
+        }
         const currentContent = editor.getValue();
         
         
@@ -2365,10 +2692,599 @@
     }
 
     
+    
+    let projectFiles = {};
+    let currentOpenFile = 'main.c'; 
+    
+    
+    function updateEditorMargin() {
+      const isOpen = filesSidebar.classList.contains('open');
+      editorContainer.style.marginRight = isOpen ? '400px' : '48px';
+    }
+    
+    
+    function toggleSidebar(e) {
+      if (e) {
+        e.stopPropagation();
+      }
+      filesSidebar.classList.toggle('open');
+      updateEditorMargin();
+    }
+    
+    
+    const sidebarHeader = document.querySelector('.sidebar-header');
+    sidebarHeader.addEventListener('click', (e) => {
+      if (!filesSidebar.classList.contains('open')) {
+        toggleSidebar(e);
+      }
+    });
+    
+    
+    filesSidebar.addEventListener('click', (e) => {
+      if (!filesSidebar.classList.contains('open') && e.target === filesSidebar) {
+        toggleSidebar(e);
+      }
+    });
+    
+    
+    sidebarClose.addEventListener('click', toggleSidebar);
+    
+    
+    updateEditorMargin();
+    
+    
+    btnCreateFile.addEventListener('click', () => {
+      createNewFile();
+    });
+    
+    
+    btnAddFile.addEventListener('click', () => {
+      fileInput.click();
+    });
+    
+    
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      await handleFiles(files);
+      fileInput.value = ''; 
+    });
+    
+    
+    let dragCounter = 0;
+    
+    editorContainer.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (dragCounter === 1) {
+        dragDropOverlay.classList.add('active');
+      }
+    });
+    
+    editorContainer.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        dragDropOverlay.classList.remove('active');
+      }
+    });
+    
+    editorContainer.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+    
+    editorContainer.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dragDropOverlay.classList.remove('active');
+      
+      const files = Array.from(e.dataTransfer.files);
+      const validFiles = files.filter(file => 
+        file.name.endsWith('.h') || 
+        file.name.endsWith('.c') || 
+        file.name.endsWith('.txt')
+      );
+      
+      if (validFiles.length > 0) {
+        await handleFiles(validFiles);
+      } else {
+        updateStatus('⚠️ Only .h, .c, and .txt files are supported', 'error');
+      }
+    });
+    
+    
+    async function handleFiles(files) {
+      for (const file of files) {
+        try {
+          const content = await file.text();
+          const fileData = {
+            name: file.name,
+            content: content,
+            size: file.size,
+            type: file.type || 'text/plain',
+            uploadedAt: new Date().toISOString(),
+            timestamp: Date.now()
+          };
+          
+          
+          projectFiles[file.name] = fileData;
+          
+          
+          await saveFileToFirebase(file.name, fileData);
+          
+          console.log(`✅ File added: ${file.name}`);
+        } catch (error) {
+          console.error(`❌ Error processing file ${file.name}:`, error);
+          updateStatus(`❌ Error adding ${file.name}`, 'error');
+        }
+      }
+      
+      
+      renderFilesList();
+      updateStatus(`✅ Added ${files.length} file(s)`, 'connected');
+    }
+    
+    
+    function encodeFileNameForFirebase(fileName) {
+      return btoa(fileName).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+    
+    
+    function decodeFileNameFromFirebase(encodedKey) {
+      try {
+        
+        let padded = encodedKey.replace(/-/g, '+').replace(/_/g, '/');
+        while (padded.length % 4) {
+          padded += '=';
+        }
+        return atob(padded);
+      } catch (e) {
+        console.error('Error decoding file name:', e);
+        return encodedKey; 
+      }
+    }
+    
+    
+    async function saveFileToFirebase(fileName, fileData) {
+      try {
+        
+        const safeKey = encodeFileNameForFirebase(fileName);
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/files/${safeKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fileData)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Firebase error response:', errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('❌ Error saving file to Firebase:', error);
+        throw error;
+      }
+    }
+    
+    
+    async function loadFilesFromFirebase() {
+      try {
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/files.json`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+            
+            projectFiles = {};
+            for (const [key, fileData] of Object.entries(data)) {
+              const originalFileName = decodeFileNameFromFirebase(key);
+              projectFiles[originalFileName] = fileData;
+            }
+          }
+        }
+        
+        
+        
+        if (editor) {
+          const mainContent = editor.getValue();
+          projectFiles['main.c'] = {
+            name: 'main.c',
+            content: mainContent,
+            size: new Blob([mainContent]).size,
+            type: 'text/x-csrc',
+            uploadedAt: new Date().toISOString(),
+            timestamp: Date.now()
+          };
+          
+          currentOpenFile = 'main.c';
+        }
+        
+        renderFilesList();
+      } catch (error) {
+        console.warn('⚠️ Error loading files from Firebase:', error);
+      }
+    }
+    
+    
+    function updateMainCInFiles() {
+      if (editor && currentOpenFile === 'main.c') {
+        const mainContent = editor.getValue();
+        projectFiles['main.c'] = {
+          name: 'main.c',
+          content: mainContent,
+          size: new Blob([mainContent]).size,
+          type: 'text/x-csrc',
+          uploadedAt: new Date().toISOString(),
+          timestamp: Date.now()
+        };
+      }
+    }
+    
+    
+    function renderFilesList() {
+      const files = Object.values(projectFiles);
+      
+      
+      files.sort((a, b) => {
+        if (a.name === 'main.c') return -1;
+        if (b.name === 'main.c') return 1;
+        return a.name.localeCompare(b.name);
+      });
+      
+      if (files.length === 0) {
+        filesList.innerHTML = '<div class="files-empty">No files yet. Drop files here or click "Add File".</div>';
+        return;
+      }
+      
+      filesList.innerHTML = files.map(file => {
+        const sizeKB = (file.size / 1024).toFixed(2);
+        const isActive = currentOpenFile === file.name;
+        return `
+          <div class="file-item ${isActive ? 'active' : ''}" data-file-name="${file.name}">
+            <div class="file-item-info">
+              <div class="file-item-name" data-file-name="${file.name}">${file.name}</div>
+              <div class="file-item-size">${sizeKB} KB</div>
+            </div>
+            <div class="file-item-actions">
+              <button class="file-item-btn view" data-file-name="${file.name}" title="Open in editor">👁</button>
+              ${file.name !== 'main.c' ? `<button class="file-item-btn delete" data-file-name="${file.name}" title="Delete">🗑</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Add event listeners - use event delegation for better reliability
+      filesList.addEventListener('click', (e) => {
+        // Handle view button click
+        if (e.target.classList.contains('view') || e.target.closest('.file-item-btn.view')) {
+          e.stopPropagation();
+          const btn = e.target.classList.contains('view') ? e.target : e.target.closest('.file-item-btn.view');
+          const fileName = btn?.getAttribute('data-file-name');
+          console.log('🔍 View button clicked for:', fileName);
+          if (fileName) {
+            viewFile(fileName);
+          }
+          return;
+        }
+        
+        // Handle delete button click
+        if (e.target.classList.contains('delete') || e.target.closest('.file-item-btn.delete')) {
+          e.stopPropagation();
+          const btn = e.target.classList.contains('delete') ? e.target : e.target.closest('.file-item-btn.delete');
+          const fileName = btn?.getAttribute('data-file-name');
+          if (fileName) {
+            deleteFile(fileName);
+          }
+          return;
+        }
+        
+        // Handle file item click (clicking on the item itself, not buttons)
+        const fileItem = e.target.closest('.file-item');
+        if (fileItem && !e.target.closest('.file-item-btn') && !e.target.classList.contains('file-item-name')) {
+          const fileName = fileItem.getAttribute('data-file-name');
+          console.log('🔍 File item clicked:', fileName);
+          if (fileName) {
+            viewFile(fileName);
+          }
+          return;
+        }
+      });
+      
+      // Double click on file name to rename
+      filesList.querySelectorAll('.file-item-name').forEach(nameEl => {
+        nameEl.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          const oldFileName = nameEl.getAttribute('data-file-name');
+          renameFile(oldFileName, nameEl);
+        });
+      });
+    }
+    
+    // Create new file
+    async function createNewFile() {
+      const fileName = prompt('Enter file name (e.g., keypad.h):');
+      if (!fileName || !fileName.trim()) return;
+      
+      const trimmedName = fileName.trim();
+      
+      // Check if file already exists
+      if (projectFiles[trimmedName]) {
+        updateStatus(`⚠️ File ${trimmedName} already exists`, 'error');
+        return;
+      }
+      
+      // Validate file extension
+      if (!trimmedName.includes('.')) {
+        updateStatus('⚠️ Please include file extension (e.g., .h, .c)', 'error');
+        return;
+      }
+      
+      try {
+        const fileData = {
+          name: trimmedName,
+          content: '',
+          size: 0,
+          type: 'text/plain',
+          uploadedAt: new Date().toISOString(),
+          timestamp: Date.now()
+        };
+        
+        // Store in local state
+        projectFiles[trimmedName] = fileData;
+        
+        // Save to Firebase
+        await saveFileToFirebase(trimmedName, fileData);
+        
+        renderFilesList();
+        updateStatus(`✅ Created ${trimmedName}`, 'connected');
+      } catch (error) {
+        console.error('❌ Error creating file:', error);
+        updateStatus(`❌ Error creating ${trimmedName}`, 'error');
+      }
+    }
+    
+    // Rename file
+    async function renameFile(oldFileName, nameElement) {
+      const file = projectFiles[oldFileName];
+      if (!file) return;
+      
+      // Create input element
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = oldFileName;
+      input.className = 'file-item-name-input';
+      input.style.width = '100%';
+      
+      // Replace name element with input
+      nameElement.replaceWith(input);
+      input.focus();
+      input.select();
+      
+      // Handle rename
+      const handleRename = async () => {
+        const newFileName = input.value.trim();
+        
+        if (!newFileName || newFileName === oldFileName) {
+          // Cancel rename - restore original
+          renderFilesList();
+          return;
+        }
+        
+        // Check if new name already exists
+        if (projectFiles[newFileName]) {
+          updateStatus(`⚠️ File ${newFileName} already exists`, 'error');
+          renderFilesList();
+          return;
+        }
+        
+        try {
+          // Update file data
+          const updatedFile = { ...file, name: newFileName };
+          
+          // Save new file to Firebase
+          await saveFileToFirebase(newFileName, updatedFile);
+          
+          // Delete old file from Firebase
+          const oldSafeKey = encodeFileNameForFirebase(oldFileName);
+          await fetch(`${DATABASE_URL}${DATABASE_PATH}/files/${oldSafeKey}.json`, {
+            method: 'DELETE'
+          });
+          
+          // Update local state
+          delete projectFiles[oldFileName];
+          projectFiles[newFileName] = updatedFile;
+          
+          renderFilesList();
+          updateStatus(`✅ Renamed ${oldFileName} to ${newFileName}`, 'connected');
+        } catch (error) {
+          console.error('❌ Error renaming file:', error);
+          updateStatus(`❌ Error renaming ${oldFileName}`, 'error');
+          renderFilesList();
+        }
+      };
+      
+      // Save on Enter or blur
+      input.addEventListener('blur', handleRename);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+        } else if (e.key === 'Escape') {
+          renderFilesList();
+        }
+      });
+    }
+    
+    // View file content - opens in editor
+    async function viewFile(fileName) {
+      console.log('📂 viewFile called with:', fileName);
+      
+      if (!editor) {
+        updateStatus('⚠️ Editor not ready yet', 'error');
+        console.error('❌ Editor not ready');
+        return;
+      }
+      
+      // If main.c, load the main code from Firebase (the primary editor content)
+      if (fileName === 'main.c') {
+        console.log('📝 Loading main.c from Firebase...');
+        
+        // If we're switching from another file, save it first
+        if (currentOpenFile !== 'main.c' && currentOpenFile) {
+          console.log('💾 Saving current file before switching:', currentOpenFile);
+          
+          const currentContent = editor.getValue();
+          if (projectFiles[currentOpenFile]) {
+            projectFiles[currentOpenFile].content = currentContent;
+            projectFiles[currentOpenFile].size = new Blob([currentContent]).size;
+          }
+        }
+        
+        try {
+          
+          const firebaseUrl = `${DATABASE_URL}${DATABASE_PATH}/code.json`;
+          console.log('🌐 Fetching main.c from:', firebaseUrl);
+          
+          const response = await fetch(firebaseUrl);
+          console.log('📡 Response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('📦 Data received:', data ? 'yes' : 'no');
+            
+            const mainContent = (data && data.content !== undefined) ? data.content : '';
+            console.log('📝 Content length:', mainContent.length);
+            
+            
+            console.log('✅ Loading main.c content into editor');
+            isLocalChange = true; 
+            editor.setValue(mainContent);
+            isLocalChange = false;
+            
+            
+            currentOpenFile = 'main.c';
+            updateStatus(`✅ Opened ${fileName}`, 'connected');
+            
+            
+            projectFiles['main.c'] = {
+              name: 'main.c',
+              content: mainContent,
+              size: new Blob([mainContent]).size,
+              type: 'text/x-csrc',
+              uploadedAt: new Date().toISOString(),
+              timestamp: Date.now()
+            };
+            
+            
+            monaco.editor.setModelLanguage(editor.getModel(), 'c');
+            
+            
+            renderFilesList();
+            console.log('✅ main.c loaded successfully, content length:', mainContent.length);
+          } else {
+            console.error('❌ Firebase response not OK:', response.status);
+            
+            const currentContent = editor.getValue();
+            console.log('🔄 Using current editor content as fallback');
+            isLocalChange = true;
+            editor.setValue(currentContent);
+            isLocalChange = false;
+            currentOpenFile = 'main.c';
+            updateStatus(`✅ Opened ${fileName}`, 'connected');
+            projectFiles['main.c'] = {
+              name: 'main.c',
+              content: currentContent,
+              size: new Blob([currentContent]).size,
+              type: 'text/x-csrc',
+              uploadedAt: new Date().toISOString(),
+              timestamp: Date.now()
+            };
+            renderFilesList();
+          }
+        } catch (error) {
+          console.error('❌ Error loading main.c:', error);
+          
+          const currentContent = editor.getValue();
+          console.log('🔄 Using current editor content as fallback (error)');
+          isLocalChange = true;
+          editor.setValue(currentContent);
+          isLocalChange = false;
+          currentOpenFile = 'main.c';
+          updateStatus(`✅ Opened ${fileName}`, 'connected');
+          projectFiles['main.c'] = {
+            name: 'main.c',
+            content: currentContent,
+            size: new Blob([currentContent]).size,
+            type: 'text/x-csrc',
+            uploadedAt: new Date().toISOString(),
+            timestamp: Date.now()
+          };
+          renderFilesList();
+        }
+        return;
+      }
+      
+      const file = projectFiles[fileName];
+      if (!file) {
+        updateStatus(`⚠️ File ${fileName} not found`, 'error');
+        return;
+      }
+      
+      
+      if (currentOpenFile === 'main.c') {
+        updateMainCInFiles();
+      }
+      
+      
+      editor.setValue(file.content || '');
+      currentOpenFile = fileName;
+      updateStatus(`✅ Opened ${fileName}`, 'connected');
+      
+      
+      const extension = fileName.split('.').pop().toLowerCase();
+      let language = 'c';
+      if (extension === 'h') {
+        language = 'c';
+      } else if (extension === 'c') {
+        language = 'c';
+      } else if (extension === 'txt') {
+        language = 'plaintext';
+      }
+      
+      
+      monaco.editor.setModelLanguage(editor.getModel(), language);
+      
+      
+      renderFilesList();
+    }
+    
+    
+    async function deleteFile(fileName) {
+      if (!confirm(`Delete ${fileName}?`)) return;
+      
+      try {
+        
+        const safeKey = encodeFileNameForFirebase(fileName);
+        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/files/${safeKey}.json`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          
+          delete projectFiles[fileName];
+          renderFilesList();
+          updateStatus(`✅ Deleted ${fileName}`, 'connected');
+        }
+      } catch (error) {
+        console.error('❌ Error deleting file:', error);
+        updateStatus(`❌ Error deleting ${fileName}`, 'error');
+      }
+    }
+
     window.addEventListener('load', () => {
       
       setTimeout(async () => {
         await checkConnectionWithFlag();
+        
+        await loadFilesFromFirebase();
       }, 1000);
       
       
