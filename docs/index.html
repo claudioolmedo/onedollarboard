@@ -42,14 +42,14 @@
 
   <header class="relative z-10">
     <nav class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-      <a class="flex items-center gap-3" href="../index.html">
+      <a class="flex items-center gap-3" href="https://github.com/claudioolmedo/onedollarboard.com/" target="_blank" rel="noopener">
         <span class="inline-flex h-9 w-9 rounded-xl bg-base-soft items-center justify-center" aria-hidden="true">
           <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.5"/><path d="M9 9h6v6H9z" stroke-width="1.5"/></svg>
         </span>
         <span class="text-lg tracking-tight font-semibold">One Dollar Board</span>
       </a>
       <div class="hidden md:flex items-center gap-6 text-base-sub">
-        <a href="../index.html" class="hover:text-base-text">Home</a>
+        <a href="https://github.com/claudioolmedo/onedollarboard.com/" class="hover:text-base-text" target="_blank" rel="noopener">GitHub</a>
         <a href="#getting-started" class="hover:text-base-text">Getting Started</a>
 
       </div>
@@ -57,10 +57,12 @@
   </header>
 
   <main id="main">
+    <section class="relative w-full bg-black overflow-hidden h-[50vh] md:h-[60vh]" aria-label="One Dollar Board">
+      <img src="../one_dollar_board_top.png" alt="One Dollar Board — green PCB with a friendly face" class="absolute inset-0 w-full h-full object-cover object-center" loading="eager" />
+    </section>
     <section class="relative overflow-hidden grid-radial">
       <div class="max-w-7xl mx-auto px-6 pt-10 pb-24 lg:py-28">
         <div class="text-center mb-16">
-          <img src="../odb.png" alt="One Dollar Board — green PCB with a friendly face" class="max-w-sm mx-auto mb-8" loading="lazy">
           <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
             Documentation
           </h1>
@@ -71,8 +73,17 @@
 
     <section id="getting-started" class="relative py-16 border-t border-base-line/60">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl font-bold mb-8">Getting Started</h2>
-        <p class="text-base-sub text-lg">Documentation coming soon...</p>
+        <h2 class="text-3xl font-bold mb-8">Resources</h2>
+        <ul class="space-y-3">
+          <li>
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/docs/OneDollarBoard.com.v1.004.r1.pinout.pdf" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download Pinout Diagram (PDF)
+            </a>
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -87,6 +98,30 @@
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Force direct download for GitHub links (cross-origin download attribute is ignored)
+    document.querySelectorAll('a.js-direct-download').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = this.getAttribute('href');
+        var filename = url.split('/').pop();
+        var fetchUrl = url.replace(/github\.com\/([^/]+\/[^/]+)\/raw\/([^/]+)\//, 'https://raw.githubusercontent.com/$1/$2/');
+        fetch(fetchUrl)
+          .then(function (r) { return r.blob(); })
+          .then(function (blob) {
+            var blobUrl = URL.createObjectURL(blob);
+            var tmp = document.createElement('a');
+            tmp.href = blobUrl;
+            tmp.download = filename;
+            tmp.style.display = 'none';
+            document.body.appendChild(tmp);
+            tmp.click();
+            document.body.removeChild(tmp);
+            URL.revokeObjectURL(blobUrl);
+          })
+          .catch(function () { window.open(url, '_blank'); });
+      });
+    });
   </script>
   <noscript><div class="max-w-7xl mx-auto px-6 py-4 text-base-sub">This site works best with JavaScript enabled.</div></noscript>
 </body>

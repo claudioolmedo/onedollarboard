@@ -121,7 +121,7 @@
 
   <header class="relative z-10">
     <nav class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-      <a class="flex items-center gap-3" href="#">
+      <a class="flex items-center gap-3" href="https://github.com/claudioolmedo/onedollarboard.com/" target="_blank" rel="noopener">
         <span class="inline-flex h-9 w-9 rounded-xl bg-base-soft items-center justify-center" aria-hidden="true">
           <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.5"/><path d="M9 9h6v6H9z" stroke-width="1.5"/></svg>
         </span>
@@ -138,21 +138,32 @@
   </header>
 
   <main id="main">
+    <section class="relative w-full bg-black overflow-hidden h-[50vh] md:h-[60vh]" aria-label="One Dollar Board">
+      <img src="/one_dollar_board_top.png" alt="One Dollar Board — green PCB with a friendly face" class="absolute inset-0 w-full h-full object-cover object-center" loading="eager" />
+    </section>
     <section class="relative overflow-hidden grid-radial">
       <div class="max-w-7xl mx-auto px-6 pt-10 pb-24 lg:py-28">
         <div class="text-center mb-12">
-          <img src="/odb.png" alt="One Dollar Board — green PCB with a friendly face" class="max-w-sm mx-auto mb-8" loading="lazy">
           <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
             A $1 computer to awaken new inventors
           </h1>
           <p class="mt-5 text-base-sub text-lg prose-max mx-auto">The One Dollar Board is more than hardware. It's an ultra‑affordable tool designed to unlock creativity and awaken hidden talent. Simple and friendly, it opens doors for classrooms, clubs, and curious minds everywhere. Above all, it exists to inspire a new generation of inventors.</p>
-          <div class="mt-8">
-            <a href="/editor.html" class="inline-flex items-center gap-2 px-6 py-3 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors">
-              <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="4" y="4" width="16" height="16" rx="2"/>
-                <path d="M9 9h6v6H9z"/>
-              </svg>
-              Start Coding
+          <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.sch" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Schematic
+            </a>
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.brd" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Board
+            </a>
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.step" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              3D
+            </a>
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.BOM.1.004.r1.csv" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              BOM
             </a>
           </div>
         </div>
@@ -317,7 +328,7 @@
           </details>
           <details class="rounded-xl border border-base-line/60 bg-base-card p-5">
             <summary class="cursor-pointer font-semibold">Is it open?</summary>
-            <p class="mt-2 text-base-sub">Yes. We believe sharing knowledge is the best way to multiply invention. See more at <a href="@index.html" class="text-base-accent underline hover:text-base-sky">index.html</a>.</p>
+            <p class="mt-2 text-base-sub">Yes. We believe sharing knowledge is the best way to multiply invention. See more at <a href="https://github.com/claudioolmedo/onedollarboard.com/" class="text-base-accent underline hover:text-base-sky" target="_blank" rel="noopener">GitHub</a>.</p>
           </details>
         </div>
       </div>
@@ -333,6 +344,31 @@
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Force direct download for GitHub links (cross-origin download attribute is ignored)
+    document.querySelectorAll('a.js-direct-download').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = this.getAttribute('href');
+        var filename = url.split('/').pop();
+        // Use raw URL for fetch (CORS-friendly); convert github.com/.../raw/main/ -> raw.githubusercontent.com/.../main/
+        var fetchUrl = url.replace(/github\.com\/([^/]+\/[^/]+)\/raw\/([^/]+)\//, 'raw.githubusercontent.com/$1/$2/');
+        fetch(fetchUrl)
+          .then(function (r) { return r.blob(); })
+          .then(function (blob) {
+            var blobUrl = URL.createObjectURL(blob);
+            var tmp = document.createElement('a');
+            tmp.href = blobUrl;
+            tmp.download = filename;
+            tmp.style.display = 'none';
+            document.body.appendChild(tmp);
+            tmp.click();
+            document.body.removeChild(tmp);
+            URL.revokeObjectURL(blobUrl);
+          })
+          .catch(function () { window.open(url, '_blank'); });
+      });
+    });
   </script>
   <noscript><div class="max-w-7xl mx-auto px-6 py-4 text-base-sub">This site works best with JavaScript enabled.</div></noscript>
 </body>
