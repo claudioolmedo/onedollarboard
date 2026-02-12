@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Favicons (early so browser shows icon in tab) -->
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>One Dollar Board — Awakening New Inventors</title>
   <meta name="description" content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds. Designed in Austin, TX — to change the WORLD." />
   <link rel="canonical" href="https://onedollarboard.com/" />
@@ -37,11 +42,6 @@
   <meta name="twitter:image:alt" content="One Dollar Board - Green PCB with friendly face" />
   <meta name="twitter:creator" content="@onedollarboard" />
   <meta name="twitter:site" content="@onedollarboard" />
-
-  <!-- Favicons -->
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -114,6 +114,131 @@
   <style>
     .grid-radial { background: radial-gradient(1200px 800px at 80% -10%, rgba(72,225,167,.20), transparent 60%), radial-gradient(900px 600px at 10% 0%, rgba(138,180,255,.18), transparent 60%); }
     .prose-max { max-width: 65ch; }
+
+    /* Project status timeline — minimal, full-width, responsive (site dark theme) */
+    .timeline-bar {
+      width: 100%;
+      background: #0D1220;
+      border-bottom: 1px solid rgba(29,40,67,.6);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      animation: timeline-fade-in .5s ease-out;
+    }
+    @keyframes timeline-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .timeline-inner {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 1.25rem;
+    }
+    .timeline-label {
+      font-size: .6875rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #A9B4C7;
+      margin-bottom: .25rem;
+    }
+    .timeline-phase {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #48E1A7;
+      margin-bottom: 1rem;
+    }
+    .timeline-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      position: relative;
+    }
+    .timeline-track-line {
+      position: absolute;
+      height: 2px;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1D2843;
+      border-radius: 1px;
+    }
+    .timeline-track-line-progress {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 80%;
+      background: #48E1A7;
+      border-radius: 1px;
+      transition: width .3s ease;
+    }
+    .timeline-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      position: relative;
+      z-index: 1;
+    }
+    .timeline-item-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1D2843;
+      flex-shrink: 0;
+    }
+    .timeline-item.completed .timeline-item-dot {
+      background: #48E1A7;
+    }
+    .timeline-item.current .timeline-item-dot {
+      width: 10px;
+      height: 10px;
+      background: #48E1A7;
+      box-shadow: 0 0 0 2px rgba(72,225,167,.35);
+    }
+    .timeline-item.future .timeline-item-dot {
+      background: #1D2843;
+      opacity: .8;
+    }
+    .timeline-item.future { opacity: .6; }
+    .timeline-item-label {
+      font-size: .6875rem;
+      font-weight: 500;
+      color: #A9B4C7;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .timeline-item.completed .timeline-item-label { color: #A9B4C7; }
+    .timeline-item.current .timeline-item-label {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #48E1A7;
+    }
+    .timeline-item.future .timeline-item-label { color: #6B7280; }
+    @media (max-width: 767px) {
+      .timeline-track {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .5rem;
+        padding-left: 2px;
+      }
+      .timeline-track-line {
+        width: 2px;
+        height: 100%;
+        left: 4px;
+        right: auto;
+        top: 0;
+        bottom: 0;
+        transform: none;
+      }
+      .timeline-track-line-progress { width: 100%; height: 80%; }
+      .timeline-item {
+        flex: none;
+        flex-direction: row;
+        align-items: center;
+        gap: .5rem;
+        width: 100%;
+      }
+      .timeline-item-label { text-align: left; white-space: normal; }
+    }
   </style>
 </head>
 <body class="h-full bg-base-bg text-base-text font-sans selection:bg-base-accent/30">
@@ -133,6 +258,7 @@
         <a href="#hardware" class="hover:text-base-text">Hardware</a>
         <a href="#talent" class="hover:text-base-text">Awaken Talent</a>
         <a href="#faq" class="hover:text-base-text">FAQ</a>
+        <a href="/docs/" class="hover:text-base-text">Docs</a>
       </div>
     </nav>
   </header>
@@ -141,6 +267,26 @@
     <section class="relative w-full bg-black overflow-hidden h-[50vh] md:h-[60vh]" aria-label="One Dollar Board">
       <img src="/one_dollar_board_top.png" alt="One Dollar Board — green PCB with a friendly face" class="absolute inset-0 w-full h-full object-cover object-center" loading="eager" />
     </section>
+
+    <!-- Project status timeline -->
+    <div class="timeline-bar" role="status" aria-label="Project stage: Manufacturing">
+      <div class="timeline-inner">
+        <div class="timeline-label">Current project stage</div>
+        <div class="timeline-phase">Manufacturing Phase</div>
+        <div class="timeline-track">
+          <span class="timeline-track-line" aria-hidden="true">
+            <span class="timeline-track-line-progress"></span>
+          </span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Concept</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Design</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Prototype</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Validation</span></span>
+          <span class="timeline-item current"><span class="timeline-item-dot"></span><span class="timeline-item-label">Manufacturing</span></span>
+          <span class="timeline-item future"><span class="timeline-item-dot"></span><span class="timeline-item-label">Distribution</span></span>
+        </div>
+      </div>
+    </div>
+
     <section class="relative overflow-hidden grid-radial">
       <div class="max-w-7xl mx-auto px-6 pt-10 pb-24 lg:py-28">
         <div class="text-center mb-12">

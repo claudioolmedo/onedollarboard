@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- PCB shape (rounded rect) -->
+  <rect width="64" height="64" rx="12" fill="#1a3d2e"/>
+  <!-- Smiley eyes -->
+  <circle cx="24" cy="28" r="6" fill="none" stroke="#fff" stroke-width="3"/>
+  <circle cx="40" cy="28" r="6" fill="none" stroke="#fff" stroke-width="3"/>
+  <circle cx="24" cy="28" r="2" fill="#1a3d2e"/>
+  <circle cx="40" cy="28" r="2" fill="#1a3d2e"/>
+  <!-- Smile -->
+  <path d="M20 38 Q32 50 44 38" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
+</svg>
