@@ -1,0 +1,103 @@
+board: One Dollar Board
+version: 1.004 R1
+mcu: CH32V003F4U6
+connector: ODB Port
+rj_connector: RJ45
+
+pins:
+  1:
+    printed_label: "1"
+    description: "Connect here on PCB label 1"
+    signal: PC0
+    mcu_pin: MCU-7
+    rj_pin: RJ-3
+    functions: [GPIO, T2CH3, NSS, T1CH3, UTX_]
+
+  2:
+    printed_label: "2"
+    description: "Connect here on PCB label 2"
+    signal: PC1
+    mcu_pin: MCU-8
+    rj_pin: RJ-3
+    functions: [GPIO, SDA, NSS, T2CH4_, T2CH1ETR_, T1BKIN_, URX_]
+
+  3:
+    printed_label: "3"
+    description: "Connect here on PCB label 3"
+    signal: PC2
+    mcu_pin: MCU-9
+    rj_pin: RJ-2
+    functions: [GPIO, SCL, URTS, T1ETR, T2CH2_, AETR_]
+
+  4:
+    printed_label: "4"
+    description: "Connect here on PCB label 4"
+    signal: PC3
+    mcu_pin: MCU-10
+    rj_pin: RJ-2
+    functions: [GPIO, T1CH3, T1CH1N_, UCTS_]
+
+  5:
+    printed_label: "5"
+    description: "Connect here on PCB label 5"
+    signal: PC4
+    mcu_pin: MCU-11
+    rj_pin: RJ-6
+    functions: [GPIO, A2, T1CH4, MCO, T1CH1CH2N_]
+
+  6:
+    printed_label: "6"
+    description: "Connect here on PCB label 6"
+    signal: PC5
+    mcu_pin: MCU-12
+    rj_pin: RJ-5
+    functions: [GPIO, SCK, T1ETR, T2CH1ETR_, SCL_, T1CH3_]
+
+  7:
+    printed_label: "7"
+    description: "Connect here on PCB label 7"
+    signal: PC6
+    mcu_pin: MCU-13
+    rj_pin: RJ-2
+    functions: [GPIO, MOSI, T1CH1CH3N_, UCTS_, SDA_]
+
+  8:
+    printed_label: "8"
+    description: "Connect here on PCB label 8"
+    signal: PC7
+    mcu_pin: MCU-14
+    rj_pin: RJ-1
+    functions: [GPIO, MISO, T1CH2_, T2CH2_, URTS_]
+
+  9:
+    printed_label: "9"
+    description: "Connect here on PCB label 9"
+    signal: PA1
+    mcu_pin: MCU-2
+    functions: [GPIO, A1, OSCI, T1CH2, OPN0]
+
+  10:
+    printed_label: "10"
+    description: "Connect here on PCB label 10"
+    signal: PA2
+    mcu_pin: MCU-3
+    functions: [GPIO, A0, OSCO, T1CH2N, OPP0, AETR2_]
+
+  11:
+    printed_label: "11"
+    description: "3.3V power output"
+    type: power
+    signal: +3V3
+
+  12:
+    printed_label: "12"
+    description: "Ground"
+    type: ground
+    signal: GND
+
+  20:
+    printed_label: "20"
+    description: "Onboard LED (BLINK)"
+    signal: PD6
+    mcu_pin: MCU-20
+    functions: [GPIO, A6, URX, T2CH3, UTX_]

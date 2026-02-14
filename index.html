@@ -48,49 +48,93 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
-  <!-- Structured Data -->
+  <!-- Structured Data (Schema.org) -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "One Dollar Board",
-    "url": "https://onedollarboard.com",
-    "logo": "https://onedollarboard.com/odb.png",
-    "description": "A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds.",
-    "foundingLocation": {
-      "@type": "Place",
-      "name": "Austin, TX"
-    },
-    "sameAs": [
-      "https://twitter.com/onedollarboard"
-    ]
-  }
-  </script>
-  
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": "One Dollar Board",
-    "description": "A $1 computer designed to awaken new inventors and make technology education accessible to everyone.",
-    "image": "https://onedollarboard.com/odb.png",
-    "brand": {
-      "@type": "Brand",
-      "name": "One Dollar Board"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "1.00",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    },
-    "category": "Educational Technology",
-    "audience": {
-      "@type": "Audience",
-      "audienceType": "Students, Teachers, Inventors, Educators"
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+    
+        {
+          "@type": "Brand",
+          "@id": "https://onedollarboard.com/#brand",
+          "name": "One Dollar Board",
+          "url": "https://onedollarboard.com",
+          "logo": "https://onedollarboard.com/odb.png",
+          "description": "Ultra-affordable open hardware platform designed to awaken inventors worldwide."
+        },
+    
+        {
+          "@type": "Organization",
+          "@id": "https://onedollarboard.com/#organization",
+          "name": "One Dollar Board Project",
+          "url": "https://onedollarboard.com",
+          "logo": "https://onedollarboard.com/odb.png",
+          "sameAs": [
+            "https://github.com/claudioolmedo/onedollarboard.com"
+          ]
+        },
+    
+        {
+          "@type": ["Product", "HardwareDevice"],
+          "@id": "https://onedollarboard.com/#product",
+          "name": "One Dollar Board V1.004",
+          "image": "https://onedollarboard.com/odb.png",
+          "brand": {
+            "@id": "https://onedollarboard.com/#brand"
+          },
+          "description": "A $1 RISC-V based open-source educational microcontroller board designed to awaken new inventors. Single-sided SMD design, ultra-minimal BOM, WebHID programmable, and community-fabricatable.",
+          "category": "Educational Technology",
+          "manufacturer": {
+            "@id": "https://onedollarboard.com/#organization"
+          },
+          "material": "FR4 PCB",
+          "isAccessibleForFree": true,
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": [
+              "Student",
+              "Teacher",
+              "Inventor",
+              "Maker",
+              "Engineer"
+            ]
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": "https://onedollarboard.com",
+            "price": "1.00",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/PreOrder",
+            "priceValidUntil": "2026-12-31"
+          }
+        },
+    
+        {
+          "@type": "CreativeWork",
+          "@id": "https://onedollarboard.com/#opensource",
+          "name": "One Dollar Board Open Source Files",
+          "creator": {
+            "@id": "https://onedollarboard.com/#organization"
+          },
+          "license": "https://opensource.org/licenses/MIT",
+          "url": "https://github.com/claudioolmedo/onedollarboard.com/tree/main/download",
+          "description": "Complete open-source hardware design files including schematics, Gerbers, BOM, and pick-and-place data for community fabrication."
+        },
+    
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://onedollarboard.com/#webcompiler",
+          "name": "One Dollar Board Web Compiler",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "Web Browser",
+          "description": "Browser-based RISC-V firmware compilation and WebHID flashing system compatible with Chromebooks and modern browsers.",
+          "url": "https://onedollarboard.com",
+          "isAccessibleForFree": true
+        }
+    
+      ]
     }
-  }
-  </script>
+    </script>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
