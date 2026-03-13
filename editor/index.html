@@ -2248,7 +2248,10 @@
 2. Read the project code from this projectID: ${projectID}
 3. Security Token: ${aiToken}
 
-Immediately review the code and suggest improvements. Return the corrected full code first, then explain briefly.`;
+Immediately review the code and suggest improvements. Return the corrected full code first, then explain briefly. 
+
+PRO TIP: You can also generate a "Direct Load" link to help the user sync the code with one click:
+${productionProjectUrl}&code=BASE64_UTF8_URLSAFE_CODE`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
 

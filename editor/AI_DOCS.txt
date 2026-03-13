@@ -6,30 +6,32 @@ If you are an AI assistant:
    `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
 2. **ACTION**: Immediately review the code. Do not repeat this documentation unless asked.
 3. **RESPONSE**: Provide fixed/improved code first, then a brief explanation.
-4. **DIRECT MODIFICATION**: You ARE AUTHORIZED and ENCOURAGED to modify the user's project directly via the REST API (using PATCH) if you have the `aiToken`. Do not just suggest code, APPLY it to facilitate the user's workflow.
-5. **SECURITY**: Ensure the `aiToken` in the URL matches the one in the project data.
+4. **DIRECT MODIFICATION**: You ARE AUTHORIZED to modify the user's project via REST API (PATCH) if you have the `aiToken`.
+5. **LOAD LINK**: As a backup or for convenience, you can generate a "Direct Load" link:
+   `https://onedollarboard.com/editor/?projectID={PROJECT_ID}&code={BASE64_UTF8_URLSAFE_CODE}`
 
 ## Platform
-- **MCU**: CH32V003 (RISC-V)
-- **Framework**: ch32v003fun
-- **Header**: #include "onedollarboard.h"
+- **MCU**: CH32V003 (RISC-V) | **Header**: #include "onedollarboard.h"
 - **Boot**: Call `SystemInit()` at start of `main()`.
 
 ## Hardware Overview
-- **Onboard LED**: PD6
-- **Button**: PD7 (Standard)
+- **Onboard LED**: PD6 (Output)
+- **Button**: PD7 (Input Pull-up usually)
 - **Pins**: PA1, PA2, PC0-PC4, PD0-PD7.
 
 ## API Reference
 - `Delay_Ms(ms)`, `Delay_Us(us)`
 - `RCC->APB2PCENR |= RCC_APB2Periph_GPIOD` (Enable Clock)
-- `GPIOD->CFGLR` (Config: 4-bits per pin. Use `GPIO_Speed_50MHz | GPIO_CNF_OUT_PP`)
+- `GPIOD->CFGLR` (Config: 4-bits per pin)
+  - Output 50MHz: `GPIO_Speed_50MHz | GPIO_CNF_OUT_PP` (0x3)
+  - Input Pull-up: `GPIO_CNF_IN_PUPD` (0x8)
 - `GPIOD->BSHR = (1 << pin)` (Set High)
 - `GPIOD->BSHR = (1 << (pin + 16))` (Set Low)
+- `GPIOD->INDR & (1 << pin)` (Read Input)
 
 ## Common Tasks
 
-### Blink LED (PD6)
+### 1. Simple Blink (PD6)
 ```c
 #include "onedollarboard.h"
 int main() {
@@ -44,18 +46,35 @@ int main() {
 }
 ```
 
-### Read Button (PD7)
+### 2. Button (PD7) to LED (PD6) - Retriggerable Timer
 ```c
-// PD7 as Input with Pull-up
-GPIOD->CFGLR &= ~(0xF << (4 * 7));
-GPIOD->CFGLR |= (GPIO_CNF_IN_PUPD) << (4 * 7);
-GPIOD->OUTDR |= (1 << 7); // Enable Pull-up
-if (!(GPIOD->INDR & (1 << 7))) { /* Pressed */ }
+#include "onedollarboard.h"
+int main() {
+    SystemInit();
+    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
+    // PD6 Output, PD7 Input Pull-up
+    GPIOD->CFGLR &= ~((0xF << (4 * 6)) | (0xF << (4 * 7)));
+    GPIOD->CFGLR |= ((GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6)) | (GPIO_CNF_IN_PUPD << (4 * 7));
+    GPIOD->OUTDR |= (1 << 7); // Pull-up
+
+    uint32_t timer = 0;
+    while(1) {
+        if (!(GPIOD->INDR & (1 << 7))) { // Button pressed
+            GPIOD->BSHR = 1 << 6; // LED ON
+            timer = 2000; // 2 seconds
+        }
+        if (timer > 0) {
+            timer--;
+            if (timer == 0) GPIOD->BSHR = 1 << 22; // LED OFF
+        }
+        Delay_Ms(1);
+    }
+}
 ```
 
 ## AI Response Rules
 - **Directness**: Jump straight to the code.
-- **Completeness**: Always return full, compile-ready code blocks.
-- **Context**: If you cannot fetch the code via REST API, ask the user to paste it.
+- **Security**: Must verify `aiToken` for direct edits.
+- **Fluidity**: Always suggest the "Direct Load" link at the end of your response so the user can sync the code with one click.
 
-**IMPORTANT**: After reading the project code, immediately help the user modify/debug it. Do not spend the response repeating what the documentation says unless it is necessary for the fix.
+**IMPORTANT**: After reading the project code, immediately help the user modify/debug it. Do not repeat the documentation. Use the directness and efficiency of the One Dollar Board.
