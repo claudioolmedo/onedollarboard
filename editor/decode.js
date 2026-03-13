@@ -1,10 +1,18 @@
-
+/**
+ * decode.js - Load source code into the editor via URL parameter
+ *
+ * Usage: index.html?code=BASE64_ENCODED_CODE
+ *
+ * This script runs before Monaco initialization.
+ */
 
 (function () {
-  
+  /**
+   * Decodes Base64 to string, handling UTF-8 and URL-safe characters.
+   */
   function decodeBase64(encoded) {
     try {
-      
+      // Handle URL-safe Base64 normalization
       const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
       const padded = normalized + '=='.slice(0, (4 - normalized.length % 4) % 4);
       
@@ -17,7 +25,9 @@
     }
   }
 
-  
+  /**
+   * Extracts 'code' from URL and decodes it.
+   */
   function getCodeFromURL() {
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get('code');
@@ -29,7 +39,7 @@
     return null;
   }
 
-  
+  // Expose the result for index.html to use during editor creation
   window.DECODED_CODE_FROM_URL = getCodeFromURL();
   
   if (window.DECODED_CODE_FROM_URL) {

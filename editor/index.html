@@ -1,5 +1,61 @@
 <!doctype html>
+<!--
+  ============================================================
+  INSTRUCTIONS FOR AI ASSISTANTS (ChatGPT, Grok, Gemini, etc.)
+  ============================================================
 
+  This is the One Dollar Board (ODB) Web Editor.
+  It compiles C/C++ code for the CH32V003 RISC-V microcontroller.
+
+  YOU CAN SEND C/C++ CODE DIRECTLY TO THIS EDITOR VIA URL.
+
+  HOW TO GENERATE A LINK WITH CODE:
+  ----------------------------------
+  1. Write the C/C++ code for the user.
+  2. Encode it to Base64.
+  3. Append it to the editor URL as: ?code=<BASE64>
+
+  URL FORMAT:
+    https://<editor-host>/index.html?code=BASE64_ENCODED_CODE
+
+  ENCODING EXAMPLES:
+
+  JavaScript (use this in your reasoning):
+    const code = `#include "onedollarboard.h"\nint main() { ... }`;
+    const encoded = btoa(unescape(encodeURIComponent(code)));
+    const url = `https://<editor-host>/index.html?code=${encoded}`;
+
+  Python:
+    import base64
+    encoded = base64.b64encode(code.encode("utf-8")).decode()
+    url = f"https://<editor-host>/index.html?code={encoded}"
+
+  FULL EXAMPLE:
+    Code:
+      #include "onedollarboard.h"
+      int main() {
+        SystemInit();
+        while(1) {
+          GPIOD->BSHR = 1 << 6;
+          Delay_Ms(500);
+          GPIOD->BSHR = 1 << 22;
+          Delay_Ms(500);
+        }
+      }
+
+    Base64: I2luY2x1ZGUgIm9uZWRvbGxhcmJvYXJkLmgi...
+
+    URL: https://<editor-host>/index.html?code=I2luY2x1ZGUgIm9uZWRvbGxhcmJvYXJkLmgi...
+
+  NOTES:
+  - The editor auto-generates a projectID if not present in the URL.
+  - Chrome supports URLs up to ~2MB — enough for any C source file.
+  - The default include `#include "onedollarboard.h"` gives access to
+    SystemInit(), Delay_Ms(), GPIOD, GPIOC, GPIOA, RCC, etc.
+  - After loading, the user can click "Compile" to build the code
+    and then flash it to the board via USB (WebHID).
+  ============================================================
+-->
 <html lang="en">
 
 <head>
@@ -7,58 +63,58 @@
   <title>One Dollar Board - Editor</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  
+  <!-- Script to verify and generate project code - MUST BE AT THE BEGINNING FOR FAST REDIRECT -->
   <script>
-    
+    // Function to generate a unique UUID for projects (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     function generateProjectID() {
-      
+      // Generates a UUID in the format: dbfe2141-db11-4dc9-926c-4acf41b46
       function randomHex(len) {
         return Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
       }
 
-      
+      // Format: 8-4-4-4-9 hexadecimal characters
       return `${randomHex(8)}-${randomHex(4)}-${randomHex(4)}-${randomHex(4)}-${randomHex(9)}`;
     }
 
-    
+    // Function to get the project ID from the URL
     function getProjectIDFromURL() {
-      
+      // Try to get from the query string first: ?projectID=xxx
       const urlParams = new URLSearchParams(window.location.search);
       const projectIDFromQuery = urlParams.get('projectID');
       if (projectIDFromQuery) {
         return projectIDFromQuery;
       }
 
-      
+      // Try to get from the hash: #xxx or #projectID=xxx
       const hash = window.location.hash.substring(1);
       if (hash) {
-        
+        // If the hash contains "projectID=", extract the value
         if (hash.includes('projectID=')) {
           const hashParams = new URLSearchParams(hash);
           return hashParams.get('projectID');
         }
-        
+        // Otherwise, assume the entire hash is the ID
         return hash;
       }
 
       return null;
     }
 
-    
+    // Check if there's an ID in the URL - if not, generate and redirect IMMEDIATELY
     let projectID = getProjectIDFromURL();
     if (!projectID) {
       const newID = generateProjectID();
       
-      
+      // Preservation of current parameters (like ?code=) during redirect
       const params = new URLSearchParams(window.location.search);
       params.set('projectID', newID);
       const newURL = `${window.location.pathname}?${params.toString()}`;
 
-      
+      // Use replace to not create a history entry
       window.location.replace(newURL);
-      
+      // Does not continue execution after redirection
     } else {
-      
+      // Store the ID for module use
       window.PROJECT_CODE = projectID;
     }
   </script>
@@ -471,12 +527,12 @@
     <b>One Dollar Board</b> - A low-cost mini computer main board for learning and prototyping.
   </div>
 
-  
+  <!-- AI Help Button -->
   <button id="btnAIHelp" class="ai-help-btn">
     <span>🤖</span> Help
   </button>
 
-  
+  <!-- AI Help Modal -->
   <div id="aiModal" class="ai-modal-overlay">
     <div class="ai-modal-content">
       <h2>AI Coding Assistant</h2>
@@ -496,7 +552,13 @@
     </div>
   </div>
 
-  
+  <!--
+    AI ASSISTANT INSTRUCTIONS (machine-readable, also in HTML comment at top of file)
+    To load code into this editor via URL, encode C/C++ source as Base64 and use:
+      ?code=BASE64_HERE
+    Example JS encoding: btoa(unescape(encodeURIComponent(code)))
+    Example Python: base64.b64encode(code.encode()).decode()
+  -->
   <div id="ai-instructions" aria-hidden="true" style="display:none" role="note">
     ONE DOLLAR BOARD EDITOR — AI ASSISTANT INSTRUCTIONS
 
@@ -542,22 +604,22 @@
       }
   </div>
 
-  
+  <!-- Decode ?code=BASE64 from URL (must run before Monaco) -->
   <script src="decode.js"></script>
 
-  
+  <!-- QRCode Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  
+  <!-- Monaco Editor -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 
-  
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
     import { getDatabase, ref, set, get, onValue }
       from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
 
-    
+    // Firebase configuration (production)
     const firebaseConfig = {
       apiKey: "AIzaSyBGp8r-Eir4NRnIRfeA6c6rIMZmdJnti4M",
       authDomain: "onedollarboard-1b26a.firebaseapp.com",
@@ -570,19 +632,19 @@
 
     let app, database, codeRef;
 
-    
+    // Initialize Firebase (production)
     try {
       app = initializeApp(firebaseConfig);
       database = getDatabase(app);
 
-      
-      
+      // The code path will be defined after the project code is obtained
+      // The reference will be created dynamically later
     } catch (error) {
       console.error('❌ Error initializing Firebase:', error);
       alert('Error initializing Firebase. Check the console for details.');
     }
 
-    
+    // UI Elements
     const status = document.getElementById('status');
     const syncIndicator = document.getElementById('syncIndicator');
     const btnCompile = document.getElementById('btnCompile');
@@ -593,15 +655,17 @@
 
     let editor = null;
     let isSyncing = false;
-    let isLocalChange = false; 
+    let isLocalChange = false; // Flag to avoid sync loops
     let saveTimeout = null;
     let lastSavedContent = '';
-    let isConnected = false; 
+    let isConnected = false; // Flag to control connection state
     let reconnectInterval = null;
     let isReconnecting = false;
-    const DEBOUNCE_DELAY = 1000; 
+    const DEBOUNCE_DELAY = 1000; // 1 second after stopping typing
 
-    
+    /**
+     * Shows the flash button and configures the handler
+     */
     function showFlashButton(binary, size) {
       if (!btnFlash) {
         console.error('❌ btnFlash element not found!');
@@ -616,10 +680,10 @@
       btnFlash.style.display = 'block';
       btnFlash.style.visibility = 'visible';
       btnFlash.onclick = () => flashBinary(binary, size);
-      
+      // Force repaint
       btnFlash.offsetHeight;
 
-      
+      // Verify the button is actually visible
       const computedStyle = window.getComputedStyle(btnFlash);
       const isVisible = computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
 
@@ -637,23 +701,31 @@
       }
     }
 
-    
+    /**
+     * Hides the flash button
+     */
     function hideFlashButton() {
       btnFlash.style.display = 'none';
       btnFlash.onclick = null;
     }
 
-    
+    /**
+     * Checks if the binary is valid for the current code
+     * Returns true if:
+     * 1. The binaryHash exists
+     * 2. The hash of current code matches binaryHash (ignores comment changes)
+     * 3. The binary was compiled after or at the same time as the last code modification
+     */
     async function isBinaryValidForCode(data, currentContent, firebaseContent) {
-      
+      // Check if binaryHash exists (binary is now stored in cache, not in project data)
       if (!data.binaryHash) {
         return false;
       }
 
-      
+      // Calculate hash of current code (using cleaned code to ignore comments)
       const currentHash = await getCodeHash(currentContent);
 
-      
+      // Compare hash instead of raw content (this ignores comment changes)
       if (currentHash !== data.binaryHash) {
         console.log('⚠️ Binary hash mismatch:');
         console.log(`   - Current code hash: ${currentHash}`);
@@ -661,19 +733,19 @@
         return false;
       }
 
-      
+      // Check timestamps: binary must have been compiled after the last code modification
       const codeTimestamp = data.timestamp || (data.lastModified ? new Date(data.lastModified).getTime() : 0);
       const binaryTimestamp = data.binarySavedAt ? new Date(data.binarySavedAt).getTime() :
         (data.compilationUpdatedAt ? new Date(data.compilationUpdatedAt).getTime() : 0);
 
-      
+      // If we don't have timestamps, assume valid if hash matches
       if (!codeTimestamp || !binaryTimestamp) {
         console.warn('⚠️ Timestamps not available, using hash comparison only');
-        return true; 
+        return true; // If hash matches, assume valid
       }
 
-      
-      
+      // Binary must have been compiled after or at the same time as code was modified
+      // Add small margin of error (1 second) for precision differences
       const isValid = binaryTimestamp >= (codeTimestamp - 1000);
 
       if (!isValid) {
@@ -685,7 +757,9 @@
       return isValid;
     }
 
-    
+    /**
+     * Fetches binary from cache using binaryHash
+     */
     async function fetchBinaryFromCache(binaryHash) {
       if (!binaryHash) {
         return null;
@@ -709,15 +783,15 @@
       return null;
     }
 
-    
-    const VENDOR_ID = 0x1209;     
-    const REPORT_ID = 0x00;       
+    // ======= WebHID Flash Functions (from index.html) =======
+    const VENDOR_ID = 0x1209;     // pid.codes community VID
+    const REPORT_ID = 0x00;       // No Report IDs -> 0
     const CMD = { PING: 0x01, INFO: 0x02, ERASE64: 0x10, LOAD64: 0x11, PROG64: 0x12, BOOT: 0x20 };
-    const DEFAULT_REPORT_LEN = 64;   
-    let OUT_REPORT_LEN = DEFAULT_REPORT_LEN; 
+    const DEFAULT_REPORT_LEN = 64;   // default Output Report size
+    let OUT_REPORT_LEN = DEFAULT_REPORT_LEN; // will be adjusted dynamically
 
-    const PID_B003FUN = 0xB003;  
-    const PID_MIN = 0xB000, PID_MAX = 0xB00F; 
+    const PID_B003FUN = 0xB003;  // B003Fun bootloader (Feature Reports)
+    const PID_MIN = 0xB000, PID_MAX = 0xB00F; // WebHID bootloader range
     function isB003Fun(pid) { return pid === PID_B003FUN; }
     function isExpectedPid(pid) { return (pid >= PID_MIN && pid <= PID_MAX) || isB003Fun(pid); }
 
@@ -943,7 +1017,7 @@
       return page;
     }
 
-    
+    // B003Fun Feature Reports (copied from index.html)
     const word_wise_write_blob = new Uint8Array([
       0x23, 0xa0, 0x05, 0x00, 0x13, 0x07, 0x45, 0x03, 0x0c, 0x43, 0x50, 0x43, 0x2e, 0x96, 0x21, 0x07,
       0x14, 0x43, 0x94, 0xc1, 0x91, 0x05, 0x11, 0x07, 0xe3, 0xcc, 0xc5, 0xfe, 0x93, 0x06, 0xf0, 0xff,
@@ -1127,30 +1201,32 @@
       updateStatus('Flash completed successfully! Disconnect and reconnect to run the code.', 'connected');
     }
 
-    
+    /**
+     * Converts base64 binary to Uint8Array and flashes to device
+     */
     async function flashBinary(binaryBase64, size = null) {
       try {
         btnFlash.disabled = true;
         updateStatus('Preparing flash...', '');
 
-        
+        // Check if WebHID is available
         if (!('hid' in navigator)) {
           throw new Error('This browser does not support WebHID. Use a recent Chrome/Edge.');
         }
 
-        
+        // Check if device is paired, if not, request pairing
         const permitted = await findKnownBoardDevice();
         if (!permitted) {
           updateStatus('Pairing device...', '');
           console.log('No device paired. Requesting pairing...');
 
-          
+          // Request device pairing
           await connectWebHID();
 
           console.log('✅ Device paired successfully!');
         }
 
-        
+        // Convert base64 to Uint8Array
         const byteCharacters = atob(binaryBase64);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -1194,11 +1270,11 @@
       } catch (error) {
         console.error('Error connecting:', error);
         updateStatus('Connection error: ' + (error.message || 'Unknown'), 'error');
-        throw error; 
+        throw error; // Re-throw error to be handled by caller
       }
     }
 
-    
+    // Automatic reconnection function (defined early so it can be called from save errors)
     async function tryReconnect() {
       if (isReconnecting || isConnected) {
         return;
@@ -1213,7 +1289,7 @@
 
       if (connected) {
         console.log('✅ Reconnected successfully');
-        updateStatus('', 'connected'); 
+        updateStatus('', 'connected'); // Hide status when connected
       } else {
         console.log('❌ Reconnection failed, will try again...');
       }
@@ -1223,8 +1299,8 @@
     }
 
     function updateStatus(text, className = '') {
-      
-      
+      // Hide status text when connected with generic messages (icon shows status)
+      // But show important messages like "Compiling...", "Compilation requested", "Connecting...", etc.
       const hideMessages = ['Connected to Firebase', 'Synced', 'Connected', 'Editor ready - Sync active'];
       const showMessages = ['Connecting...', 'Compiling...', 'Compilation', 'Connect to Internet', 'OFFLINE'];
       const shouldShow = showMessages.some(msg => text.includes(msg));
@@ -1238,7 +1314,7 @@
         status.className = className ? `status-${className}` : '';
       }
 
-      
+      // Update connection icon based on status
       if (text.includes('Connecting...')) {
         connectionIcon.className = 'disconnected';
         connectionIconSymbol.textContent = '🟡';
@@ -1275,31 +1351,31 @@
       }
     }
 
-    
+    // Database configuration (production)
     const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
 
-    
+    // Get project code from the global variable (defined in the previous script)
     const currentProjectCode = window.PROJECT_CODE;
 
-    
+    // Build Firebase path based on project code
     const DATABASE_PATH = `/projects/${currentProjectCode}`;
 
-    
+    // Create Firebase reference for project code
     if (database && currentProjectCode) {
       codeRef = ref(database, `${DATABASE_PATH}/code`);
     }
 
-    
+    // Function to check connection using Fetch API (same approach as example.html)
     async function checkConnection() {
       try {
-        
+        // Simple test using Fetch API (like example.html)
         const testData = {
           timestamp: Date.now(),
           test: true,
           message: 'Connection test'
         };
 
-        
+        // Write test
         const writeResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/test.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -1310,7 +1386,7 @@
           throw new Error(`HTTP ${writeResponse.status}: ${writeResponse.statusText}`);
         }
 
-        
+        // Read test
         const readResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/test.json`);
         if (!readResponse.ok) {
           throw new Error(`HTTP ${readResponse.status}: ${readResponse.statusText}`);
@@ -1329,27 +1405,27 @@
       } catch (error) {
         console.error('❌ Connection error:', error);
 
-        
+        // Show OFFLINE message
         updateStatus('OFFLINE', 'error');
         isConnected = false;
         return false;
       }
     }
 
-    
+    // Function to save code to Firebase using Fetch API (like example.html)
     async function saveToFirebase(content) {
       if (isSyncing || content === lastSavedContent) {
-        return; 
+        return; // Avoid duplicate saves
       }
 
       try {
         isSyncing = true;
         updateSyncIndicator('syncing');
 
-        
+        // Update lastSavedContent BEFORE saving to avoid listener update
         lastSavedContent = content;
 
-        
+        // Read current data from Firebase to preserve compilation fields
         let currentData = {};
         try {
           const currentResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
@@ -1357,34 +1433,34 @@
             currentData = await currentResponse.json() || {};
           }
         } catch (e) {
-          
+          // If reading fails, continue with an empty object
           console.warn('⚠️ Could not read current data from Firebase:', e);
         }
 
-        
-        
+        // Check if compiled content is the same as we are saving
+        // If it's the same, preserve compilation fields; otherwise, remove them (code changed)
         const contentMatchesCompiled = currentData.content === content;
         const shouldPreserveCompilation = contentMatchesCompiled &&
           currentData.compilationStatus === 'success' &&
           currentData.binaryHash;
 
-        
+        // Preserve compilation fields only if content hasn't changed
         const data = {
           content: content,
-          code: content, 
-          projectID: currentProjectCode, 
-          name: currentData.name || 'Untitled Project', 
-          language: 'c', 
+          code: content, // Exact field requested for AI tools
+          projectID: currentProjectCode, // Field requested for AI tools
+          name: currentData.name || 'Untitled Project', // Field requested for AI tools
+          language: 'c', // Standard language for ODB
           lastModified: new Date().toISOString(),
-          updated: new Date().toISOString(), 
-          created: currentData.created || new Date().toISOString(), 
+          updated: new Date().toISOString(), // Alias requested for AI tools
+          created: currentData.created || new Date().toISOString(), // Preserve or set creation date
           timestamp: Date.now(),
           size: content.length,
           aiHelpUsed: currentData.aiHelpUsed || false,
           aiSessionToken: currentData.aiSessionToken || null,
           aiSessionActive: currentData.aiSessionActive || false,
           aiSessionStartedAt: currentData.aiSessionStartedAt || null,
-          
+          // Preserve compilation fields only if content hasn't changed
           ...(shouldPreserveCompilation && {
             compilationStatus: currentData.compilationStatus,
             binaryHash: currentData.binaryHash,
@@ -1393,7 +1469,7 @@
             compilationUpdatedAt: currentData.compilationUpdatedAt,
             binarySavedAt: currentData.binarySavedAt
           })
-          
+          // If content changed, do not include compilation fields (they will be removed)
         };
 
         const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
@@ -1413,11 +1489,11 @@
         console.log('✅ Code saved to Firebase (Fetch API)');
       } catch (error) {
         console.error('❌ Error saving:', error);
-        
+        // Revert lastSavedContent on error
         if (editor) {
           lastSavedContent = editor.getValue();
         }
-        
+        // Check if it's a network/fetch error
         const errorMsgLower = (error.message || '').toLowerCase();
         if (errorMsgLower.includes('failed to fetch') ||
           errorMsgLower.includes('networkerror') ||
@@ -1425,7 +1501,7 @@
           errorMsgLower.includes('fetch')) {
           updateStatus('Connect to Internet', 'error');
           isConnected = false;
-          
+          // Try to reconnect automatically after 2 seconds
           setTimeout(() => {
             if (!isConnected) {
               tryReconnect();
@@ -1436,7 +1512,7 @@
         }
         updateSyncIndicator('error');
       } finally {
-        
+        // --- Update URL with code ---
         try {
           const encoded = btoa(unescape(encodeURIComponent(content)));
           const url = new URL(window.location.href);
@@ -1447,14 +1523,14 @@
           console.warn('⚠️ Could not update URL:', e);
         }
 
-        
+        // Small delay before resetting isSyncing to avoid race conditions
         setTimeout(() => {
           isSyncing = false;
         }, 100);
       }
     }
 
-    
+    // ====== Utility functions to generate clean code hash ======
     function cleanCodeForHash(code) {
       return code
         .replace(/\/\/.*$/gm, "")
@@ -1471,7 +1547,7 @@
       return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
-    
+    // Function to compile code - updates Firebase with pending compilation status
     async function compileCode() {
       if (!editor) {
         updateStatus('❌ Editor not ready', 'error');
@@ -1488,10 +1564,10 @@
         btnCompile.disabled = true;
         updateStatus('🔨 Compiling...', '');
 
-        
+        // Compute binaryHash using helper functions
         const binaryHash = await getCodeHash(content);
 
-        
+        // Update Firebase with compilation request
         const data = {
           content: content,
           binaryHash: binaryHash,
@@ -1510,7 +1586,7 @@
           body: JSON.stringify(data)
         });
 
-        
+        // Debug: log the binaryHash just after sending to Firebase
         console.log('🧩 Saved binaryHash before compile:', binaryHash);
 
         if (!response.ok) {
@@ -1520,7 +1596,7 @@
         updateStatus('✅ Compilation requested', 'connected');
         console.log('✅ Compilation request sent to Firebase');
 
-        
+        // Re-enable button after 1 second
         setTimeout(() => {
           btnCompile.disabled = false;
           updateStatus('Synced', 'connected');
@@ -1532,10 +1608,10 @@
       }
     }
 
-    
+    // Initialize Monaco Editor
     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
     require(['vs/editor/editor.main'], async function () {
-      
+      // Load initial code from Firebase using Fetch API (like example.html)
       let initialCode = `#include "onedollarboard.h"
 
 int main()
@@ -1571,15 +1647,15 @@ int main()
 `;
       let initialData = null;
 
-      
-      
+      // --- ?code=BASE64 URL parameter support ---
+      // If decode.js found a code in the URL, use it directly (no Firebase load needed)
       const urlCode = window.DECODED_CODE_FROM_URL || null;
       if (urlCode) {
         initialCode = urlCode;
         lastSavedContent = urlCode;
         console.log('🔗 Code loaded from URL parameter (?code=BASE64)');
       } else {
-        
+        // Normal flow: load from Firebase
         try {
           const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
           if (response.ok) {
@@ -1590,7 +1666,7 @@ int main()
               lastSavedContent = initialCode;
               console.log('✅ Code loaded from Firebase (Fetch API)');
 
-              
+              // Check if compiled binaryHash already exists on load
               if (data.compilationStatus === 'success' && data.binaryHash) {
                 console.log('🔍 Compiled binaryHash found on page load');
                 console.log('   - binaryHash:', data.binaryHash);
@@ -1600,7 +1676,7 @@ int main()
           }
         } catch (error) {
           console.warn('⚠️ Error loading initial code:', error);
-          
+          // Continue even if can't load
         }
       }
 
@@ -1615,11 +1691,11 @@ int main()
         wordWrap: 'on'
       });
 
-      
-      
-      
+      // --- If code came from URL, immediately save it to Firebase ---
+      // This prevents the Firebase onValue listener from overwriting the editor
+      // with the old content stored for this projectID.
       if (urlCode) {
-        isSyncing = true; 
+        isSyncing = true; // Lock incoming updates
         console.log('🔗 Saving URL code to Firebase to prevent listener overwrite...');
         try {
           await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
@@ -1631,25 +1707,25 @@ int main()
               lastModified: new Date().toISOString(),
               timestamp: Date.now(),
               size: urlCode.length
-              
+              // No compilationStatus: fresh code starts clean
             })
           });
           console.log('✅ URL code saved to Firebase');
         } catch (e) {
           console.warn('⚠️ Could not save URL code to Firebase:', e.message);
         } finally {
-          isSyncing = false; 
+          isSyncing = false; // Release lock
         }
       }
 
-      
+      // Check connection again after editor is ready
       const connected = await checkConnectionWithFlag();
       if (connected) {
         updateStatus('Editor ready - Sync active', 'connected');
         updateSyncIndicator('synced');
         btnCompile.disabled = false;
 
-        
+        // Check if AI help was already used for this project
         if (!initialData || !initialData.aiHelpUsed) {
           btnAIHelp.classList.add('new-help');
           console.log('✨ Project is new for AI help');
@@ -1657,16 +1733,16 @@ int main()
           console.log('🤖 AI help already used for this project');
         }
 
-        
+        // Check if compiled binaryHash already exists and show button
         if (initialData && initialData.compilationStatus === 'success' && initialData.binaryHash) {
           const currentContent = editor.getValue();
           const firebaseContent = initialData.content || '';
 
-          
+          // Use helper function to check if binaryHash is valid
           const isValidBinary = await isBinaryValidForCode(initialData, currentContent, firebaseContent);
 
           if (isValidBinary) {
-            
+            // Fetch binary from cache
             const cacheData = await fetchBinaryFromCache(initialData.binaryHash);
 
             if (cacheData && cacheData.binary) {
@@ -1689,30 +1765,30 @@ int main()
         updateSyncIndicator('');
       }
 
-      
+      // Listen to editor changes (typing)
       editor.onDidChangeModelContent(() => {
         const currentContent = editor.getValue();
 
-        
+        // Hide record button when code is modified
         if (!isLocalChange && currentContent !== lastSavedContent) {
           hideFlashButton();
         }
 
-        
+        // If it wasn't a local change (e.g., came from Firebase), don't save
         if (!isLocalChange) {
-          
+          // Clear previous timeout
           if (saveTimeout) {
             clearTimeout(saveTimeout);
           }
 
-          
+          // Schedule save after user stops typing
           saveTimeout = setTimeout(() => {
             saveToFirebase(currentContent);
           }, DEBOUNCE_DELAY);
         }
       });
 
-      
+      // Compile button click handler
       btnCompile.addEventListener('click', () => {
         (async () => {
           const code = editor.getValue();
@@ -1725,7 +1801,7 @@ int main()
                 console.log('⚡ Binary loaded from cache:', hash);
                 updateStatus('⚡ Loaded from cache', 'connected');
 
-                
+                // Update Firebase to reflect that compilation is successful
                 try {
                   const currentDataResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
                   const currentData = currentDataResponse.ok ? await currentDataResponse.json() : {};
@@ -1753,20 +1829,20 @@ int main()
                     console.log('   - binaryHash:', hash);
                     console.log('   - binarySize:', cached.binarySize || 0);
 
-                    
-                    
+                    // Show button after Firebase is updated
+                    // Small delay to ensure listener processes the update
                     setTimeout(() => {
                       showFlashButton(cached.binary, cached.binarySize || 0);
                       console.log('✅ Flash button shown after Firebase update');
                     }, 100);
                   } else {
                     console.warn('⚠️ Failed to update Firebase:', updateResponse.status, updateResponse.statusText);
-                    
+                    // Show button anyway
                     showFlashButton(cached.binary, cached.binarySize || 0);
                   }
                 } catch (updateError) {
                   console.warn('⚠️ Failed to update Firebase:', updateError);
-                  
+                  // Show button anyway
                   showFlashButton(cached.binary, cached.binarySize || 0);
                 }
 
@@ -1780,12 +1856,12 @@ int main()
         })();
       });
 
-      
+      // We'll use Firebase SDK only for real-time listener
       if (codeRef) {
         console.log('✅ Setting up Firebase listener');
         console.log('   - codeRef exists:', !!codeRef);
         console.log('   - database exists:', !!database);
-        
+        // Try to use Firebase SDK for real-time
         try {
           console.log('🔄 Calling onValue...');
           onValue(codeRef, async (snapshot) => {
@@ -1804,7 +1880,7 @@ int main()
             const currentContent = editor.getValue();
             const firebaseContent = data.content || data.code;
 
-            
+            // ALWAYS LOG: For debugging - see all changes in Firebase
             console.log('📡 [LISTENER] Data received from Firebase:');
             console.log('   - compilationStatus:', data.compilationStatus);
             console.log('   - binaryHash:', data.binaryHash);
@@ -1812,7 +1888,7 @@ int main()
             console.log('   - isSyncing:', isSyncing);
             console.log('   - firebaseContent === lastSavedContent:', firebaseContent === lastSavedContent);
 
-            
+            // --- AI Session Validation ---
             const urlParams = new URLSearchParams(window.location.search);
             const tokenInUrl = urlParams.get('aiToken');
             const aiSessionBadge = document.getElementById('aiSessionBadge');
@@ -1828,7 +1904,7 @@ int main()
                   aiSessionBadge.className = 'ai-session-badge ai-session-invalid';
                   aiSessionBadge.title = 'This AI link is old or invalid. Generate a new one.';
                 } else {
-                  
+                  // No token in URL, hide badge
                   aiSessionBadge.style.display = 'none';
                 }
               } else {
@@ -1836,20 +1912,20 @@ int main()
               }
             }
 
-            
-            
+            // ALWAYS check first if binaryHash is available and if it's valid
+            // This ensures the button is updated even when only binary is removed or added
             if (data.compilationStatus === 'success') {
-              
+              // Status is success - check if binaryHash exists and fetch binary from cache
 
-              
+              // If no binaryHash, hide button immediately
               if (!data.binaryHash) {
                 hideFlashButton();
                 updateStatus('✅ Compilation completed (no binaryHash)', 'connected');
                 btnCompile.disabled = false;
                 console.log('⚠️ Status is success but binaryHash doesn\'t exist - button hidden');
-                
+                // Continue to check other things, but don't show the button
               } else {
-                
+                // binaryHash exists - fetch binary from cache
                 const cacheData = await fetchBinaryFromCache(data.binaryHash);
 
                 if (!cacheData || !cacheData.binary) {
@@ -1860,10 +1936,10 @@ int main()
                   return;
                 }
 
-                
+                // Check if binary is valid for current code
                 const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
 
-                
+                // Debug: Full log of received data
                 console.log('🔍 [SUCCESS] Data received from Firebase:');
                 console.log('   - compilationStatus:', data.compilationStatus);
                 console.log('   - binaryHash:', data.binaryHash);
@@ -1873,7 +1949,7 @@ int main()
                 console.log('   - isValidBinary:', isValidBinary);
 
                 if (isValidBinary) {
-                  
+                  // FORCE showing the button - ensure it's visible
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
                   updateStatus(`✅ Compilation successful! (${size} bytes)`, 'connected');
@@ -1903,21 +1979,21 @@ int main()
               btnCompile.disabled = true;
               hideFlashButton();
             } else {
-              
-              
+              // If there's no compilation status or it's different from above
+              // Check if there was a binaryHash before and hide button if necessary
               if (!data.binaryHash || !data.compilationStatus) {
                 hideFlashButton();
                 console.log('⚠️ Button hidden: no compilation status or binaryHash removed');
               }
             }
 
-            
-            
+            // FINAL CHECK: Ensure if no binaryHash, button is hidden
+            // This covers cases where status might still be 'success' but binaryHash was removed
             if (!data.binaryHash) {
               hideFlashButton();
               console.log('⚠️ Final check: binaryHash doesn\'t exist - button hidden');
             } else if (data.compilationStatus === 'success') {
-              
+              // If binaryHash exists and status is success, fetch from cache and ensure button is visible if valid
               const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
               if (isValidBinary && btnFlash.style.display === 'none') {
                 const cacheData = await fetchBinaryFromCache(data.binaryHash);
@@ -1929,37 +2005,37 @@ int main()
               }
             }
 
-            
-            
-            
+            // Avoid loops: don't update content if syncing or if it's our own content
+            // BUT always check compilation status above, so the button has been updated if needed
+            // IMPORTANT: This check happens AFTER checking compilation status
             if (isSyncing || firebaseContent === lastSavedContent) {
-              
-              
+              // Even if content doesn't change, compilation status might have changed
+              // That's why we check status BEFORE this return
               return;
             }
 
-            
+            // Only update if Firebase content is different from current editor content
             if (currentContent !== firebaseContent) {
-              isLocalChange = true; 
+              isLocalChange = true; // Flag to avoid onDidChangeModelContent from triggering save
 
-              
+              // Clear pending save timeout (cancel local save)
               if (saveTimeout) {
                 clearTimeout(saveTimeout);
                 saveTimeout = null;
               }
 
-              
+              // Update editor with Firebase content
               editor.setValue(firebaseContent);
               lastSavedContent = firebaseContent;
 
-              
-              
+              // Check if after updating code, we still have valid compilation
+              // Use helper function to check if binary is valid
               const updatedContent = editor.getValue();
               const isValidBinary = data.compilationStatus === 'success' &&
                 await isBinaryValidForCode(data, updatedContent, firebaseContent);
 
               if (isValidBinary && data.binaryHash) {
-                
+                // Fetch binary from cache
                 const cacheData = await fetchBinaryFromCache(data.binaryHash);
                 if (cacheData && cacheData.binary) {
                   const size = cacheData.binarySize || data.binarySize || 0;
@@ -1970,7 +2046,7 @@ int main()
                   console.log('⚠️ valid binaryHash but binary not found in cache');
                 }
               } else {
-                
+                // Code changed or binary is not valid, hide button
                 hideFlashButton();
                 console.log('⚠️ Button hidden: code was updated from Firebase and binary is not valid');
               }
@@ -1979,7 +2055,7 @@ int main()
               updateSyncIndicator('synced');
               console.log('🔄 Code updated from Firebase');
 
-              
+              // Reset flag after a small delay
               setTimeout(() => {
                 isLocalChange = false;
                 updateStatus('Synced', 'connected');
@@ -1988,13 +2064,13 @@ int main()
           }, (error) => {
             console.error('❌ Error in Firebase listener:', error);
             console.warn('⚠️ Error in Firebase SDK listener, using polling:', error);
-            
+            // Fallback to polling if SDK fails
             startPolling();
           });
           console.log('✅ Firebase listener configured successfully! Waiting for changes...');
 
-          
-          
+          // FALLBACK: Additional periodic check even with active listener
+          // This ensures the button appears even if the listener doesn't trigger
           console.log('🔄 Starting periodic fallback check (every 2 seconds)...');
           setInterval(async () => {
             if (isSyncing) return;
@@ -2008,9 +2084,9 @@ int main()
                 const currentContent = editor.getValue();
                 const firebaseContent = data.content;
 
-                
+                // Check compilation status and update button if necessary
                 if (data.compilationStatus === 'success' && data.binaryHash) {
-                  
+                  // Fetch binary from cache
                   const cacheData = await fetchBinaryFromCache(data.binaryHash);
 
                   if (cacheData && cacheData.binary) {
@@ -2035,9 +2111,9 @@ int main()
                 }
               }
             } catch (error) {
-              
+              // Silently ignore polling errors
             }
-          }, 2000); 
+          }, 2000); // Check every 2 seconds
 
         } catch (error) {
           console.error('❌ Error configuring listener:', error);
@@ -2045,16 +2121,16 @@ int main()
           startPolling();
         }
       } else {
-        
+        // If no codeRef, use polling
         console.log('⚠️ codeRef doesn\'t exist, using polling');
         startPolling();
       }
 
-      
+      // Polling function as fallback (similar to example)
       function startPolling() {
         let lastTimestamp = Date.now();
         setInterval(async () => {
-          if (isSyncing) return; 
+          if (isSyncing) return; // Don't update while saving
 
           try {
             const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
@@ -2065,17 +2141,17 @@ int main()
               const currentContent = editor.getValue();
               const firebaseContent = data.content;
 
-              
+              // Check compilation status
               if (data.compilationStatus) {
                 if (data.compilationStatus === 'success') {
-                  
+                  // If no binaryHash, hide button immediately
                   if (!data.binaryHash) {
                     hideFlashButton();
                     updateStatus('✅ Compilation completed (no binaryHash)', 'connected');
                     btnCompile.disabled = false;
                     console.log('⚠️ [POLLING] Status is success but binaryHash doesn\'t exist - button hidden');
                   } else {
-                    
+                    // binaryHash exists - fetch binary from cache
                     const cacheData = await fetchBinaryFromCache(data.binaryHash);
 
                     if (!cacheData || !cacheData.binary) {
@@ -2084,15 +2160,15 @@ int main()
                       btnCompile.disabled = false;
                       console.log('⚠️ [POLLING] binaryHash exists but binary not found in cache');
                     } else {
-                      
+                      // Binary in cache - check if valid
                       const size = cacheData.binarySize || data.binarySize || 0;
                       updateStatus(`✅ Compilation successful! (${size} bytes)`, 'connected');
                       btnCompile.disabled = false;
 
-                      
+                      // Check if binary is valid for current code
                       const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
 
-                      
+                      // Debug: Full log of received data (polling)
                       console.log('🔍 [POLLING SUCCESS] Data received from Firebase:');
                       console.log('   - compilationStatus:', data.compilationStatus);
                       console.log('   - binaryHash:', data.binaryHash);
@@ -2119,20 +2195,20 @@ int main()
                   btnCompile.disabled = true;
                   hideFlashButton();
                 } else {
-                  
+                  // No compilation status - hide button if no binaryHash
                   if (!data.binaryHash || !data.compilationStatus) {
                     hideFlashButton();
                   }
                 }
 
-                
+                // FINAL CHECK [POLLING]: Ensure if no binaryHash, button is hidden
                 if (!data.binaryHash) {
                   hideFlashButton();
                   console.log('⚠️ [POLLING] Final check: binaryHash doesn\'t exist - button hidden');
                 }
               }
 
-              
+              // Update content if changed
               if (data.content && data.timestamp > lastTimestamp) {
                 if (currentContent !== firebaseContent && firebaseContent !== lastSavedContent) {
                   isLocalChange = true;
@@ -2140,13 +2216,13 @@ int main()
                   lastSavedContent = firebaseContent;
                   lastTimestamp = data.timestamp;
 
-                  
+                  // Check if binary is still valid after updating code
                   const updatedContent = editor.getValue();
                   const isValidBinary = data.compilationStatus === 'success' &&
                     await isBinaryValidForCode(data, updatedContent, firebaseContent);
 
                   if (isValidBinary && data.binaryHash) {
-                    
+                    // Fetch binary from cache
                     const cacheData = await fetchBinaryFromCache(data.binaryHash);
                     if (cacheData && cacheData.binary) {
                       const size = cacheData.binarySize || data.binarySize || 0;
@@ -2167,16 +2243,16 @@ int main()
               }
             }
           } catch (error) {
-            
+            // Silently ignore polling errors
           }
-        }, 2000); 
+        }, 2000); // Check every 2 seconds
       }
     });
 
-    
+    // Function to download binary
     function downloadBinary(binaryBase64, size = null) {
       try {
-        
+        // Convert base64 to Blob
         const byteCharacters = atob(binaryBase64);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -2185,7 +2261,7 @@ int main()
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'application/octet-stream' });
 
-        
+        // Create temporary URL and download
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -2206,28 +2282,28 @@ int main()
       }
     }
 
-    
+    // Improved function to check connection
     async function checkConnectionWithFlag() {
       const result = await checkConnection();
       isConnected = result;
       return result;
     }
 
-    
+    // Check connection when page loads
     window.addEventListener('load', () => {
-      
+      // Initial test after a longer delay to give Firebase time to initialize
       setTimeout(async () => {
         await checkConnectionWithFlag();
       }, 1000);
 
-      
+      // Reconnect automatically every 3 seconds
       reconnectInterval = setInterval(async () => {
         if (!isConnected) {
           await tryReconnect();
         }
       }, 3000);
 
-      
+      // --- AI Help Logic ---
       const aiModal = document.getElementById('aiModal');
       const btnAIHelp = document.getElementById('btnAIHelp');
       const btnCloseAI = document.getElementById('btnCloseAI');
@@ -2238,11 +2314,11 @@ int main()
       let qrcode = null;
 
       btnAIHelp.addEventListener('click', () => {
-        
+        // Generate a random session token for the AI (6 characters)
         const aiToken = Math.random().toString(36).substring(2, 8).toUpperCase();
         
-        
-        
+        // Mark AI help as used and set the new session token
+        // This token will be required for the AI to "handshake" or modify the project
         const updateData = { 
           aiHelpUsed: true,
           aiSessionToken: aiToken,
@@ -2250,7 +2326,7 @@ int main()
           aiSessionStartedAt: new Date().toISOString()
         };
 
-        
+        // Update Firebase with the new token
         fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -2261,19 +2337,19 @@ int main()
         const urlObj = new URL(currentUrl);
         const projectID = urlObj.searchParams.get('projectID');
         
-        
+        // Base documentation URL (Production)
         const docsUrl = `https://onedollarboard.com/editor/AI_DOCS.txt`;
         
-        
+        // Construct a "Short Link" that only uses projectID (much smaller QR code)
         const shortUrl = `${window.location.origin}${window.location.pathname}?projectID=${projectID}`;
         
-        
+        // Clear previous QR code
         qrcodeContainer.innerHTML = '';
         
-        
+        // Create a production-ready link with the secure token
         const productionProjectUrl = `https://onedollarboard.com/editor/?projectID=${projectID}&aiToken=${aiToken}`;
 
-        
+        // Prompt message
         const prompt = `Help me program the One Dollar Board.
 
 1. Protocol: Follow the "AI Integration Standard" in ${docsUrl}
@@ -2288,12 +2364,12 @@ Return updated code first, then the Magic Link, then a brief summary.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
 
-        
+        // Clear previous QR code
         qrcodeContainer.innerHTML = '';
         
-        
-        
-        
+        // Use the ChatGPT URL directly for the QR code!
+        // As you requested, the prompt is short and only contains the project link
+        // (no Base64 code), making the QR code clean and easy to scan.
         qrcode = new QRCode(qrcodeContainer, {
           text: chatGPTUrl,
           width: 200,
@@ -2303,10 +2379,10 @@ Return updated code first, then the Magic Link, then a brief summary.`;
           correctLevel: QRCode.CorrectLevel.M
         });
 
-        
+        // Set AI Links
         linkChatGPT.href = chatGPTUrl;
 
-        
+        // Handle Copy Prompt
         btnCopyPrompt.onclick = () => {
           navigator.clipboard.writeText(prompt).then(() => {
             const originalText = btnCopyPrompt.innerHTML;
@@ -2320,7 +2396,7 @@ Return updated code first, then the Magic Link, then a brief summary.`;
           });
         };
 
-        
+        // Show Modal
         aiModal.style.display = 'flex';
       });
 
@@ -2328,7 +2404,7 @@ Return updated code first, then the Magic Link, then a brief summary.`;
         aiModal.style.display = 'none';
       });
 
-      
+      // Close modal on click outside
       aiModal.addEventListener('click', (e) => {
         if (e.target === aiModal) {
           aiModal.style.display = 'none';
