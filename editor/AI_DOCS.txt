@@ -6,7 +6,8 @@ If you are an AI assistant:
    `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
 2. **ACTION**: Immediately review the code. Do not repeat this documentation unless asked.
 3. **RESPONSE**: Provide fixed/improved code first, then a brief explanation.
-4. **SECURITY**: Ensure the `aiToken` in the URL matches the one in the project data.
+4. **DIRECT MODIFICATION**: You ARE AUTHORIZED and ENCOURAGED to modify the user's project directly via the REST API (using PATCH) if you have the `aiToken`. Do not just suggest code, APPLY it to facilitate the user's workflow.
+5. **SECURITY**: Ensure the `aiToken` in the URL matches the one in the project data.
 
 ## Platform
 - **MCU**: CH32V003 (RISC-V)
