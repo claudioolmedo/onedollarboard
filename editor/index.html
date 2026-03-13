@@ -21,6 +21,30 @@
     }
 
     
+    function getProjectIDFromURL() {
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectIDFromQuery = urlParams.get('projectID');
+      if (projectIDFromQuery) {
+        return projectIDFromQuery;
+      }
+
+      
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        
+        if (hash.includes('projectID=')) {
+          const hashParams = new URLSearchParams(hash);
+          return hashParams.get('projectID');
+        }
+        
+        return hash;
+      }
+
+      return null;
+    }
+
+    
     let projectID = getProjectIDFromURL();
     if (!projectID) {
       const newID = generateProjectID();
@@ -552,6 +576,90 @@
     let reconnectInterval = null;
     let isReconnecting = false;
     const DEBOUNCE_DELAY = 1000; 
+
+    
+    function showFlashButton(binary, size) {
+      if (!btnFlash) {
+        console.error('❌ btnFlash element not found!');
+        return;
+      }
+
+      if (!binary) {
+        console.error('❌ showFlashButton called without binary!');
+        return;
+      }
+
+      btnFlash.style.display = 'block';
+      btnFlash.style.visibility = 'visible';
+      btnFlash.onclick = () => flashBinary(binary, size);
+      
+      btnFlash.offsetHeight;
+
+      
+      const computedStyle = window.getComputedStyle(btnFlash);
+      const isVisible = computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
+
+      console.log('✅ showFlashButton function called');
+      console.log('   - display:', btnFlash.style.display);
+      console.log('   - visibility:', btnFlash.style.visibility);
+      console.log('   - computed display:', computedStyle.display);
+      console.log('   - computed visibility:', computedStyle.visibility);
+      console.log('   - isVisible:', isVisible);
+      console.log('   - binary size:', size, 'bytes');
+      console.log('   - binary length:', binary ? binary.length : 0, 'chars');
+
+      if (!isVisible) {
+        console.error('⚠️ Button should be visible but computed style says otherwise!');
+      }
+    }
+
+    
+    function hideFlashButton() {
+      btnFlash.style.display = 'none';
+      btnFlash.onclick = null;
+    }
+
+    
+    async function isBinaryValidForCode(data, currentContent, firebaseContent) {
+      
+      if (!data.binaryHash) {
+        return false;
+      }
+
+      
+      const currentHash = await getCodeHash(currentContent);
+
+      
+      if (currentHash !== data.binaryHash) {
+        console.log('⚠️ Binary hash mismatch:');
+        console.log(`   - Current code hash: ${currentHash}`);
+        console.log(`   - Binary hash: ${data.binaryHash}`);
+        return false;
+      }
+
+      
+      const codeTimestamp = data.timestamp || (data.lastModified ? new Date(data.lastModified).getTime() : 0);
+      const binaryTimestamp = data.binarySavedAt ? new Date(data.binarySavedAt).getTime() :
+        (data.compilationUpdatedAt ? new Date(data.compilationUpdatedAt).getTime() : 0);
+
+      
+      if (!codeTimestamp || !binaryTimestamp) {
+        console.warn('⚠️ Timestamps not available, using hash comparison only');
+        return true; 
+      }
+
+      
+      
+      const isValid = binaryTimestamp >= (codeTimestamp - 1000);
+
+      if (!isValid) {
+        console.log('⚠️ Binary is not valid: compiled before last code modification');
+        console.log(`   - Code modified: ${new Date(codeTimestamp).toISOString()}`);
+        console.log(`   - Binary compiled: ${new Date(binaryTimestamp).toISOString()}`);
+      }
+
+      return isValid;
+    }
 
     
     async function fetchBinaryFromCache(binaryHash) {
