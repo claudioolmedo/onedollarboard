@@ -66,7 +66,19 @@ int main() {
 ```
 
 ## AI Instructions for URL-based Collaboration
-Users can share their code via URL parameters.
-- **Link Format**: `?projectID=UUID&code=BASE64_CODE`
-- **Behavior**: The code in the URL will overwrite the local editor state.
-- **Goal**: Help the user debug, optimize, or implement new features based on the link provided. Always use register-level access as shown in the examples.
+Users can share their projects via projectID.
+- **Link Format**: `https://onedollarboard.com/editor/?projectID=UUID`
+
+### Project Read API
+AI assistants can fetch the source code directly from the Firebase REST API (No server required):
+`GET https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/UUID/code.json`
+
+This returns a JSON with the following fields:
+- `code`: The source code.
+- `projectID`: The unique project identifier.
+- `name`: Project name.
+- `language`: 'c'
+- `updated`: Last modification timestamp.
+
+### Goal
+Help the user debug, optimize, or implement new features. Fetch the code using the Firebase link above, analyze it, and provide improvements using the `onedollarboard.h` API patterns.

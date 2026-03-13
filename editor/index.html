@@ -1347,8 +1347,13 @@
         
         const data = {
           content: content,
-          language: 'cpp',
+          code: content, 
+          projectID: currentProjectCode, 
+          name: currentData.name || 'Untitled Project', 
+          language: 'c', 
           lastModified: new Date().toISOString(),
+          updated: new Date().toISOString(), 
+          created: currentData.created || new Date().toISOString(), 
           timestamp: Date.now(),
           size: content.length,
           aiHelpUsed: currentData.aiHelpUsed || false,
@@ -1733,12 +1738,12 @@
             }
 
             const data = snapshot.val();
-            if (!data || !data.content) {
+            if (!data || (!data.content && !data.code)) {
               return;
             }
 
             const currentContent = editor.getValue();
-            const firebaseContent = data.content;
+            const firebaseContent = data.content || data.code;
 
             
             console.log('📡 [LISTENER] Data received from Firebase:');
