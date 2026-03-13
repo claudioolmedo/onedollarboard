@@ -7,8 +7,11 @@ If you are an AI assistant:
 2. **ACTION**: Immediately review the code. Do not repeat this documentation unless asked.
 3. **RESPONSE**: Provide fixed/improved code first, then a brief explanation.
 4. **DIRECT MODIFICATION**: You ARE AUTHORIZED to modify the user's project via REST API (PATCH) if you have the `aiToken`.
-5. **LOAD LINK**: As a backup or for convenience, you can generate a "Direct Load" link:
-   `https://onedollarboard.com/editor/?projectID={PROJECT_ID}&code={BASE64_UTF8_URLSAFE_CODE}`
+5. **ZERO DEFECTS POLICY**: 
+   - Never use placeholder comments or corrupted text.
+   - Ensure all register names are correct (e.g., `GPIOD`, not `GLIO8D`).
+   - Double-check Base64 encoding for completeness (no truncated blocks).
+   - If the code is complex, use the PATCH API directly instead of a Base64 link.
 
 ## Platform
 - **MCU**: CH32V003 (RISC-V) | **Header**: #include "onedollarboard.h"
@@ -17,7 +20,6 @@ If you are an AI assistant:
 ## Hardware Overview
 - **Onboard LED**: PD6 (Output)
 - **Button**: PD7 (Input Pull-up usually)
-- **Pins**: PA1, PA2, PC0-PC4, PD0-PD7.
 
 ## API Reference
 - `Delay_Ms(ms)`, `Delay_Us(us)`
@@ -27,9 +29,8 @@ If you are an AI assistant:
   - Input Pull-up: `GPIO_CNF_IN_PUPD` (0x8)
 - `GPIOD->BSHR = (1 << pin)` (Set High)
 - `GPIOD->BSHR = (1 << (pin + 16))` (Set Low)
-- `GPIOD->INDR & (1 << pin)` (Read Input)
 
-## Common Tasks
+## Common Tasks (Copy-Paste Ready)
 
 ### 1. Simple Blink (PD6)
 ```c
@@ -46,35 +47,29 @@ int main() {
 }
 ```
 
-### 2. Button (PD7) to LED (PD6) - Retriggerable Timer
+### 2. Button Toggle Debounced
 ```c
 #include "onedollarboard.h"
 int main() {
     SystemInit();
     RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
-    // PD6 Output, PD7 Input Pull-up
-    GPIOD->CFGLR &= ~((0xF << (4 * 6)) | (0xF << (4 * 7)));
-    GPIOD->CFGLR |= ((GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6)) | (GPIO_CNF_IN_PUPD << (4 * 7));
-    GPIOD->OUTDR |= (1 << 7); // Pull-up
-
-    uint32_t timer = 0;
+    // PD6: Out, PD7: In Pull-up
+    GPIOD->CFGLR &= ~((0xF << (4*6)) | (0xF << (4*7)));
+    GPIOD->CFGLR |= ((GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4*6)) | (GPIO_CNF_IN_PUPD << (4*7));
+    GPIOD->OUTDR |= (1 << 7);
+    uint8_t state = 0; uint8_t last = 0;
     while(1) {
-        if (!(GPIOD->INDR & (1 << 7))) { // Button pressed
-            GPIOD->BSHR = 1 << 6; // LED ON
-            timer = 2000; // 2 seconds
+        uint8_t curr = !(GPIOD->INDR & (1 << 7));
+        if (curr && !last) {
+            state = !state;
+            if (state) GPIOD->BSHR = (1 << 6);
+            else GPIOD->BSHR = (1 << 22);
+            Delay_Ms(50); // Debounce
         }
-        if (timer > 0) {
-            timer--;
-            if (timer == 0) GPIOD->BSHR = 1 << 22; // LED OFF
-        }
-        Delay_Ms(1);
+        last = curr;
+        Delay_Ms(10);
     }
 }
 ```
 
-## AI Response Rules
-- **Directness**: Jump straight to the code.
-- **Security**: Must verify `aiToken` for direct edits.
-- **Fluidity**: Always suggest the "Direct Load" link at the end of your response so the user can sync the code with one click.
-
-**IMPORTANT**: After reading the project code, immediately help the user modify/debug it. Do not repeat the documentation. Use the directness and efficiency of the One Dollar Board.
+**IMPORTANT**: After reading the project code, immediately help the user modify/debug it. NEVER OUTPUT CORRUPTED OR TRUNCATED CODE. If the code is too long for a single message, use the REST API.
