@@ -29,6 +29,15 @@ When you reply, keep it ultra-short:
 - **Registers**: Use `GPIOD->CFGLR` for config, `GPIOD->BSHR` for state.
 - **Standard Pins**: LED = **PD6**, Button = **PD7** (Input Pull-up).
 
+## HARDWARE ORIENTATION & PHYSICAL PINOUT
+When guiding the user on wiring or connections, strictly use this physical reference (One Dollar Board ODB.1.004R1):
+- **Orientation**: Vertical (portrait) with the ODBPort (male edge connector) at the **Top** and USB-C port at the **Bottom**.
+- **ODBPort (Top Edge Connector)**: 8 gold fingers pointing UP. Left to right: Pin 7 (GPIO), Pin 6 (GPIO), Pin 1/RX, Pin 14/TX, Pin 5 (GPIO), Pin 4 (GPIO), GND, 3V3.
+- **Left Header (Vertical, Top to Bottom)**: Pins 0 to 9. Pins 1 & 2 have an "LED" label nearby.
+- **Right Header (Vertical, Top to Bottom)**: Pins 10 to 19. Around the top (pins 10-12) the board provides "3v3" and "GND" vertical markings.
+- **Indicators**: An onboard LED is near Pins 1 & 2 on the left. A tactile Button is near the top center below the ODBPort.
+- **Microcontroller**: CH32V003 (RISC-V architecture) in the center.
+
 ## PINOUT REFERENCE (Label -> Signal)
 - **Pins 1-8**: Port C (PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7)
 - **Pin 9**: PA1 (A1) | **Pin 10**: PA2 (A0)
