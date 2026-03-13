@@ -29,6 +29,12 @@ When you reply, keep it ultra-short:
 - **Registers**: Use `GPIOD->CFGLR` for config, `GPIOD->BSHR` for state.
 - **Standard Pins**: LED = **PD6**, Button = **PD7** (Input Pull-up).
 
+## PINOUT REFERENCE (Label -> Signal)
+- **Pins 1-8**: Port C (PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7)
+- **Pin 9**: PA1 (A1) | **Pin 10**: PA2 (A0)
+- **Pin 11**: 3.3V | **Pin 12**: GND
+- **Onboard Elements**: LED = **PD6**, Button = **PD7** (Input Pull-up).
+
 ## ZERO DEFECTS POLICY
 - **NO placeholder comments.** Wrap all code in a single, complete, compilable block.
 - **NO truncated code.** If the code is too long, strictly use Priority A (Firebase Patch).
