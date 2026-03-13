@@ -1,75 +1,39 @@
-# One Dollar Board (ODB) - AI Documentation
+# One Dollar Board (ODB) - AI Integration Standard
 
-## AI QUICK START
-If you are an AI assistant:
-1. **RETRIVAL**: Use the projectID to fetch the code from:
-   `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
-2. **ACTION**: Immediately review the code. Do not repeat this documentation unless asked.
-3. **RESPONSE**: Provide fixed/improved code first, then a brief explanation.
-4. **DIRECT MODIFICATION**: You ARE AUTHORIZED to modify the user's project via REST API (PATCH) if you have the `aiToken`.
-5. **ZERO DEFECTS POLICY**: 
-   - Never use placeholder comments or corrupted text.
-   - Ensure all register names are correct (e.g., `GPIOD`, not `GLIO8D`).
-   - Double-check Base64 encoding for completeness (no truncated blocks).
-   - If the code is complex, use the PATCH API directly instead of a Base64 link.
+## AI ASSISTANT MANDATORY PROTOCOL
+To provide a seamless experience, you MUST follow this hierarchy of actions:
 
-## Platform
-- **MCU**: CH32V003 (RISC-V) | **Header**: #include "onedollarboard.h"
-- **Boot**: Call `SystemInit()` at start of `main()`.
+### 1. [PRIORITY A] DIRECT SYNCHRONIZATION (via Firebase PATCH)
+If you can perform HTTP requests, immediately update the user's project:
+- **Endpoint**: `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
+- **Method**: `PATCH`
+- **Body**: `{"code": "FULL_CODE", "content": "FULL_CODE", "updated": "ISO_TIMESTAMP"}`
+- **Security**: ONLY valid if the `aiToken` matches the one stored in that project.
 
-## Hardware Overview
-- **Onboard LED**: PD6 (Output)
-- **Button**: PD7 (Input Pull-up usually)
+### 2. [PRIORITY B] MAGIC LOAD LINK (Direct URL)
+If you cannot perform a PATCH, you MUST provide a "Magic Link" so the user can sync with one click:
+- **URL Format**: `https://onedollarboard.com/editor/?projectID={PROJECT_ID}&aiToken={TOKEN}&code={BASE64_CODE}`
+- **Encoding**: Use standard Base64 (UTF-8) for the code. Ensure it is URL-safe.
 
-## API Reference
-- `Delay_Ms(ms)`, `Delay_Us(us)`
-- `RCC->APB2PCENR |= RCC_APB2Periph_GPIOD` (Enable Clock)
-- `GPIOD->CFGLR` (Config: 4-bits per pin)
-  - Output 50MHz: `GPIO_Speed_50MHz | GPIO_CNF_OUT_PP` (0x3)
-  - Input Pull-up: `GPIO_CNF_IN_PUPD` (0x8)
-- `GPIOD->BSHR = (1 << pin)` (Set High)
-- `GPIOD->BSHR = (1 << (pin + 16))` (Set Low)
+### 3. [RESPONSE FORMAT]
+When you reply, keep it ultra-short:
+- **Greeting**: "I've analyzed your project and fixed/improved the code."
+- **Code Block**: The full, updated C code.
+- **Sync Link**: The Magic Link from step 2.
+- **Explanation**: A very brief (3-bullet max) summary of what changed.
 
-## Common Tasks (Copy-Paste Ready)
+---
 
-### 1. Simple Blink (PD6)
-```c
-#include "onedollarboard.h"
-int main() {
-    SystemInit();
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
-    GPIOD->CFGLR &= ~(0xF << (4 * 6));
-    GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);
-    while(1) {
-        GPIOD->BSHR = 1 << 6; Delay_Ms(500);
-        GPIOD->BSHR = 1 << 22; Delay_Ms(500);
-    }
-}
-```
+## ODB DEVELOPER REFERENCE
+- **Microcontroller**: CH32V003 (RISC-V) | **Header**: #include "onedollarboard.h"
+- **Registers**: Use `GPIOD->CFGLR` for config, `GPIOD->BSHR` for state.
+- **Standard Pins**: LED = **PD6**, Button = **PD7** (Input Pull-up).
 
-### 2. Button Toggle Debounced
-```c
-#include "onedollarboard.h"
-int main() {
-    SystemInit();
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
-    // PD6: Out, PD7: In Pull-up
-    GPIOD->CFGLR &= ~((0xF << (4*6)) | (0xF << (4*7)));
-    GPIOD->CFGLR |= ((GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4*6)) | (GPIO_CNF_IN_PUPD << (4*7));
-    GPIOD->OUTDR |= (1 << 7);
-    uint8_t state = 0; uint8_t last = 0;
-    while(1) {
-        uint8_t curr = !(GPIOD->INDR & (1 << 7));
-        if (curr && !last) {
-            state = !state;
-            if (state) GPIOD->BSHR = (1 << 6);
-            else GPIOD->BSHR = (1 << 22);
-            Delay_Ms(50); // Debounce
-        }
-        last = curr;
-        Delay_Ms(10);
-    }
-}
-```
+## ZERO DEFECTS POLICY
+- **NO placeholder comments.** Wrap all code in a single, complete, compilable block.
+- **NO truncated code.** If the code is too long, strictly use Priority A (Firebase Patch).
+- **NO syntax errors.** Use standard CH32V003/wch-embedded headers logic.
 
-**IMPORTANT**: After reading the project code, immediately help the user modify/debug it. NEVER OUTPUT CORRUPTED OR TRUNCATED CODE. If the code is too long for a single message, use the REST API.
+---
+
+**FINAL INSTRUCTION**: Do not act like a generic chatbot. Act like an Integrated Development Assistant. Always prioritize a "One-Click Sync" experience for the user.

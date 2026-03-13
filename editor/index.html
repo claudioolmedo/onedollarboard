@@ -2244,14 +2244,15 @@
         
         const prompt = `Help me program the One Dollar Board.
 
-1. Read the API docs: ${docsUrl}
-2. Read the project code from this projectID: ${projectID}
-3. Security Token: ${aiToken}
+1. Protocol: Follow the "AI Integration Standard" in ${docsUrl}
+2. Context: projectID ${projectID} | aiToken ${aiToken}
+3. Action: Review the code and APPLY improvements.
 
-Immediately review the code and suggest improvements. Return the corrected full code first, then explain briefly. 
+Priority 1: Update via Firebase PATCH if possible.
+Priority 2: Provide the "Magic Load Link" for one-click sync:
+${productionProjectUrl}&code=BASE64_UTF8_CODE
 
-PRO TIP: You can also generate a "Direct Load" link to help the user sync the code with one click:
-${productionProjectUrl}&code=BASE64_UTF8_URLSAFE_CODE`;
+Return updated code first, then the Magic Link, then a brief summary.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
 
