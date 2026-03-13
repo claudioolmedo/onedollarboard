@@ -2,9 +2,11 @@
 
 If you are an AI assistant:
 1. Read this document first.
-2. Then read the user's project code.
-3. Help the user generate or improve C code for the One Dollar Board.
-4. Keep examples simple and complete.
+2. Verify the `aiToken` provided in the request.
+3. Fetch the project code using the Project Read API.
+4. If you suggest modifications via REST API, you MUST include the `aiToken` to authorize the action.
+5. Help the user generate or improve C code for the One Dollar Board.
+6. Keep examples simple and complete.
 
 ## Platform
 - **Microcontroller**: CH32V003 (WCH)

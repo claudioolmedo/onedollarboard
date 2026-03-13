@@ -278,6 +278,29 @@
       flex-shrink: 0;
     }
 
+    .ai-session-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+    }
+    .ai-session-active {
+      display: inline-flex;
+      background: rgba(35, 134, 54, 0.2);
+      color: #3fb950;
+      border: 1px solid rgba(63, 185, 80, 0.3);
+    }
+    .ai-session-invalid {
+      display: inline-flex;
+      background: rgba(248, 81, 73, 0.2);
+      color: #f85149;
+      border: 1px solid rgba(248, 81, 73, 0.3);
+    }
+
     /* AI Help Button */
     .ai-help-btn {
       position: fixed;
@@ -436,6 +459,7 @@
         <span class="tooltip" id="connectionTooltip">Offline</span>
       </span>
       <span id="syncIndicator" style="font-size: 0.75rem; color: #9fbad1;">⏳</span>
+      <span id="aiSessionBadge" class="ai-session-badge"></span>
     </div>
   </div>
 
@@ -1357,6 +1381,9 @@
           timestamp: Date.now(),
           size: content.length,
           aiHelpUsed: currentData.aiHelpUsed || false,
+          aiSessionToken: currentData.aiSessionToken || null,
+          aiSessionActive: currentData.aiSessionActive || false,
+          aiSessionStartedAt: currentData.aiSessionStartedAt || null,
           
           ...(shouldPreserveCompilation && {
             compilationStatus: currentData.compilationStatus,
@@ -1752,6 +1779,30 @@
             console.log('   - binarySize:', data.binarySize);
             console.log('   - isSyncing:', isSyncing);
             console.log('   - firebaseContent === lastSavedContent:', firebaseContent === lastSavedContent);
+
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenInUrl = urlParams.get('aiToken');
+            const aiSessionBadge = document.getElementById('aiSessionBadge');
+            
+            if (aiSessionBadge) {
+              if (data.aiSessionActive && data.aiSessionToken) {
+                if (tokenInUrl === data.aiSessionToken) {
+                  aiSessionBadge.innerHTML = '<span>🔒</span> AI Secure';
+                  aiSessionBadge.className = 'ai-session-badge ai-session-active';
+                  aiSessionBadge.title = 'Current AI session is authorized';
+                } else if (tokenInUrl) {
+                  aiSessionBadge.innerHTML = '<span>⚠️</span> AI Expired';
+                  aiSessionBadge.className = 'ai-session-badge ai-session-invalid';
+                  aiSessionBadge.title = 'This AI link is old or invalid. Generate a new one.';
+                } else {
+                  
+                  aiSessionBadge.style.display = 'none';
+                }
+              } else {
+                aiSessionBadge.style.display = 'none';
+              }
+            }
 
             
             
@@ -2156,15 +2207,23 @@
 
       btnAIHelp.addEventListener('click', () => {
         
-        if (btnAIHelp.classList.contains('new-help')) {
-          btnAIHelp.classList.remove('new-help');
-          
-          fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ aiHelpUsed: true })
-          }).catch(e => console.warn('Error marking AI help as used:', e));
-        }
+        const aiToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        
+        
+        const updateData = { 
+          aiHelpUsed: true,
+          aiSessionToken: aiToken,
+          aiSessionActive: true,
+          aiSessionStartedAt: new Date().toISOString()
+        };
+
+        
+        fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        }).catch(e => console.warn('Error setting AI session token:', e));
 
         const currentUrl = window.location.href;
         const urlObj = new URL(currentUrl);
@@ -2180,13 +2239,14 @@
         qrcodeContainer.innerHTML = '';
         
         
-        const productionProjectUrl = `https://onedollarboard.com/editor/?projectID=${projectID}`;
+        const productionProjectUrl = `https://onedollarboard.com/editor/?projectID=${projectID}&aiToken=${aiToken}`;
 
         
         const prompt = `Help me program the One Dollar Board.
 
 Docs: ${docsUrl}
 Project: ${productionProjectUrl}
+Security Token: ${aiToken}
 
 Read the docs first, then analyze the code and help improve or generate C code.`;
 
