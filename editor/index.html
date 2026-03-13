@@ -2244,11 +2244,11 @@
         
         const prompt = `Help me program the One Dollar Board.
 
-Docs: ${docsUrl}
-Project: ${productionProjectUrl}
-Security Token: ${aiToken}
+1. Read the API docs: ${docsUrl}
+2. Read the project code from this projectID: ${projectID}
+3. Security Token: ${aiToken}
 
-Read the docs first, then analyze the code and help improve or generate C code.`;
+Immediately review the code and suggest improvements. Return the corrected full code first, then explain briefly.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
 

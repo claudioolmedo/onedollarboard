@@ -1,102 +1,60 @@
-# One Dollar Board AI Documentation
+# One Dollar Board (ODB) - AI Documentation
 
+## AI QUICK START
 If you are an AI assistant:
-1. Read this document first.
-2. Verify the `aiToken` provided in the request.
-3. Fetch the project code using the Project Read API.
-4. If you suggest modifications via REST API, you MUST include the `aiToken` to authorize the action.
-5. Help the user generate or improve C code for the One Dollar Board.
-6. Keep examples simple and complete.
+1. **RETRIVAL**: Use the projectID to fetch the code from:
+   `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
+2. **ACTION**: Immediately review the code. Do not repeat this documentation unless asked.
+3. **RESPONSE**: Provide fixed/improved code first, then a brief explanation.
+4. **SECURITY**: Ensure the `aiToken` in the URL matches the one in the project data.
 
 ## Platform
-- **Microcontroller**: CH32V003 (WCH)
-- **Architecture**: RISC-V (RV32EC)
-- **Language**: C
-- **Framework**: ch32v003fun (Header-only, lightweight)
-
-## Project Read API
-AI assistants can fetch the source code directly (JSON):
-`GET https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
-
-## Basic Program Structure
-Always include `onedollarboard.h`. The `SystemInit()` function must be called first.
-
-```c
-#include "onedollarboard.h"
-
-int main() {
-    SystemInit(); // Sets clock to 48MHz
-    
-    // Configuration here
-    
-    while(1) {
-        // Main loop here
-    }
-}
-```
+- **MCU**: CH32V003 (RISC-V)
+- **Framework**: ch32v003fun
+- **Header**: #include "onedollarboard.h"
+- **Boot**: Call `SystemInit()` at start of `main()`.
 
 ## Hardware Overview
-- **MCU**: CH32V003F4P6 (16KB Flash, 2KB SRAM)
-- **Onboard LED**: Connected to **PD6**.
-- **User Button**: Most boards use **PD7** (Check board version).
-- **Pinout**: PA1, PA2, PC0, PC1, PC2, PC4, PD0, PD2, PD3, PD4, PD5, PD6, PD7.
+- **Onboard LED**: PD6
+- **Button**: PD7 (Standard)
+- **Pins**: PA1, PA2, PC0-PC4, PD0-PD7.
 
 ## API Reference
+- `Delay_Ms(ms)`, `Delay_Us(us)`
+- `RCC->APB2PCENR |= RCC_APB2Periph_GPIOD` (Enable Clock)
+- `GPIOD->CFGLR` (Config: 4-bits per pin. Use `GPIO_Speed_50MHz | GPIO_CNF_OUT_PP`)
+- `GPIOD->BSHR = (1 << pin)` (Set High)
+- `GPIOD->BSHR = (1 << (pin + 16))` (Set Low)
 
-### System & Timing
-- `SystemInit()`: Initializes system clock.
-- `Delay_Ms(ms)`: Blocking delay (milliseconds).
-- `Delay_Us(us)`: Blocking delay (microseconds).
+## Common Tasks
 
-### GPIO Configuration
-- `RCC->APB2PCENR`: Enable clocks (e.g., `RCC_APB2Periph_GPIOD`).
-- `GPIOx->CFGLR`: Configure pin mode (4 bits per pin).
-  - Mode bits (2): `00`: Input, `01`: 10MHz Out, `10`: 2MHz Out, `11`: 50MHz Out.
-  - Config bits (2): (Output) `00`: Push-Pull, `01`: Open-Drain, `10`: AF-PP, `11`: AF-OD.
-- Constants: `GPIO_Speed_50MHz`, `GPIO_CNF_OUT_PP`.
-
-### GPIO Operations
-- `GPIOx->BSHR`: Set/Reset pins.
-  - `(1 << pin)`: Set high (bit 0-7).
-  - `(1 << (pin + 16))`: Reset low (bit 16-23).
-- `GPIOx->OUTDR`: Write whole port.
-- `GPIOx->INDR`: Read whole port.
-
-## Code Examples
-
-### 1. Blink LED (PD6)
-```c
-#include "onedollarboard.h"
-
-int main() {
-    SystemInit();
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD; // Enable PD
-    
-    // PD6: Output PP 50MHz
-    GPIOD->CFGLR &= ~(0xF << (4 * 6));
-    GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);
-
-    while(1) {
-        GPIOD->BSHR = 1 << 6;  // ON
-        Delay_Ms(500);
-        GPIOD->BSHR = 1 << 22; // OFF
-        Delay_Ms(500);
-    }
-}
-```
-
-### 2. GPIO Toggle (All Port D)
+### Blink LED (PD6)
 ```c
 #include "onedollarboard.h"
 int main() {
     SystemInit();
     RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
-    GPIOD->CFGLR = 0x33333333; // All pins 50MHz Out PP
+    GPIOD->CFGLR &= ~(0xF << (4 * 6));
+    GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);
     while(1) {
-        GPIOD->OUTDR = 0xFF; // All high
-        Delay_Ms(200);
-        GPIOD->OUTDR = 0x00; // All low
-        Delay_Ms(200);
+        GPIOD->BSHR = 1 << 6; Delay_Ms(500);
+        GPIOD->BSHR = 1 << 22; Delay_Ms(500);
     }
 }
 ```
+
+### Read Button (PD7)
+```c
+// PD7 as Input with Pull-up
+GPIOD->CFGLR &= ~(0xF << (4 * 7));
+GPIOD->CFGLR |= (GPIO_CNF_IN_PUPD) << (4 * 7);
+GPIOD->OUTDR |= (1 << 7); // Enable Pull-up
+if (!(GPIOD->INDR & (1 << 7))) { /* Pressed */ }
+```
+
+## AI Response Rules
+- **Directness**: Jump straight to the code.
+- **Completeness**: Always return full, compile-ready code blocks.
+- **Context**: If you cannot fetch the code via REST API, ask the user to paste it.
+
+**IMPORTANT**: After reading the project code, immediately help the user modify/debug it. Do not spend the response repeating what the documentation says unless it is necessary for the fix.
