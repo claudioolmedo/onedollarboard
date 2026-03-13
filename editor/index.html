@@ -1536,7 +1536,39 @@
     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
     require(['vs/editor/editor.main'], async function () {
       
-      let initialCode = '#include "onedollarboard.h"\n\nint main()\n{\n\tSystemInit(); \n\n\tDelay_Ms(100);\n\n\t// Enable clocks for all GPIOs\n\tRCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA;\n\n\t// Configure PD6 as output (main LED)\n\tGPIOD->CFGLR &= ~(0xF << (4 * 6));\n\tGPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);\n\n\t// Configure PC0 as output as well (test)\n\tGPIOC->CFGLR &= ~(0xF << (4 * 0));\n\tGPIOC->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 0);\n\n\t// Main loop - test both pins\n\twhile(1) {\n\t\t// Turn ON PD6 and PC0\n\t\tGPIOD->BSHR = 1 << 6;\n\t\tGPIOC->BSHR = 1 << 0;\n\t\tDelay_Ms(1000);\n\n\t\t// Turn OFF PD6 and PC0\n\t\tGPIOD->BSHR = 1 << (6 + 16);\n\t\tGPIOC->BSHR = (1 << (0 + 16));\n\t\tDelay_Ms(1000);\n\t}\n}\n';
+      let initialCode = `#include "onedollarboard.h"
+
+int main()
+{
+	SystemInit(); 
+
+	Delay_Ms(100);
+
+	// Enable clocks for all GPIOs
+	RCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA;
+
+	// Configure PD6 as output (main LED)
+	GPIOD->CFGLR &= ~(0xF << (4 * 6));
+	GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);
+
+	// Configure PC0 as output as well (test)
+	GPIOC->CFGLR &= ~(0xF << (4 * 0));
+	GPIOC->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 0);
+
+	// Main loop - test both pins
+	while(1) {
+		// Turn ON PD6 and PC0
+		GPIOD->BSHR = 1 << 6;
+		GPIOC->BSHR = 1 << 0;
+		Delay_Ms(1000);
+
+		// Turn OFF PD6 and PC0
+		GPIOD->BSHR = 1 << (6 + 16);
+		GPIOC->BSHR = (1 << (0 + 16));
+		Delay_Ms(1000);
+	}
+}
+`;
       let initialData = null;
 
       
