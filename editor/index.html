@@ -1,88 +1,35 @@
 <!doctype html>
+
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="any" />
-  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <title>One Dollar Board — Web Compiler</title>
-  <meta name="description" content="Browser-based RISC-V compiler and WebHID flasher for the One Dollar Board. Program your board from Chromebooks and modern browsers." />
-  <link rel="canonical" href="https://onedollarboard.com/editor/" />
-  <meta name="theme-color" content="#07090F" />
-  <meta name="robots" content="index, follow" />
-  <meta name="author" content="One Dollar Board" />
+  <title>One Dollar Board - Editor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Open Graph / Twitter -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://onedollarboard.com/editor/" />
-  <meta property="og:title" content="One Dollar Board — Web Compiler" />
-  <meta property="og:description" content="Browser-based RISC-V compiler and WebHID flasher for the One Dollar Board." />
-  <meta property="og:image" content="https://onedollarboard.com/odb.png" />
-  <meta property="og:site_name" content="One Dollar Board" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="One Dollar Board — Web Compiler" />
-  <meta name="twitter:description" content="Browser-based RISC-V compiler and WebHID flasher for the One Dollar Board." />
-  <meta name="twitter:image" content="https://onedollarboard.com/odb.png" />
-
-  <!-- Structured Data (Schema.org) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "@id": "https://onedollarboard.com/editor/#webapp",
-    "name": "One Dollar Board Web Compiler",
-    "description": "Browser-based RISC-V firmware compilation and WebHID flashing for the One Dollar Board. Works on Chromebooks and modern browsers.",
-    "url": "https://onedollarboard.com/editor/",
-    "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "Web Browser",
-    "isAccessibleForFree": true,
-    "browserRequirements": "Requires WebHID and WebAssembly support (Chrome, Edge, etc.)"
-  }
-  </script>
-
+  
   <script>
     
     function generateProjectID() {
       
       function randomHex(len) {
-        return Array.from({length: len}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        return Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
       }
-      
+
       
       return `${randomHex(8)}-${randomHex(4)}-${randomHex(4)}-${randomHex(4)}-${randomHex(9)}`;
     }
-    
-    
-    function getProjectIDFromURL() {
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const projectIDFromQuery = urlParams.get('projectID');
-      if (projectIDFromQuery) {
-        return projectIDFromQuery;
-      }
-      
-      
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        
-        if (hash.includes('projectID=')) {
-          const hashParams = new URLSearchParams(hash);
-          return hashParams.get('projectID');
-        }
-        
-        return hash;
-      }
-      
-      return null;
-    }
-    
+
     
     let projectID = getProjectIDFromURL();
     if (!projectID) {
       const newID = generateProjectID();
-      const newURL = `${window.location.pathname}?projectID=${newID}`;
+      
+      
+      const params = new URLSearchParams(window.location.search);
+      params.set('projectID', newID);
+      const newURL = `${window.location.pathname}?${params.toString()}`;
+
       
       window.location.replace(newURL);
       
@@ -91,20 +38,22 @@
       window.PROJECT_CODE = projectID;
     }
   </script>
-  
+
   <style>
-    :root { 
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif; 
+    :root {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
     }
-    body { 
-      margin: 0; 
-      background: #0b0d10; 
-      color: #e6edf3; 
+
+    body {
+      margin: 0;
+      background: #0b0d10;
+      color: #e6edf3;
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
     }
+
     .header {
       background: #11161b;
       border-bottom: 1px solid #202830;
@@ -113,124 +62,20 @@
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
-      position: relative;
     }
-    /* Mobile: header responsivo */
-    @media (max-width: 767px) {
-      .header {
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-      }
-      .project-name-container {
-        width: 100%;
-        justify-content: center;
-      }
-      .controls {
-        width: 100%;
-        justify-content: space-between;
-      }
-      #btnHome {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 10;
-      }
-    }
-    .project-name-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-      min-width: 0;
-    }
-    #projectNameDisplay {
+
+    h1 {
       font-size: 1.2rem;
-      font-weight: 600;
-      color: #e6edf3;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: text;
-      user-select: none;
-      transition: background-color 0.2s, border-color 0.2s;
-      border: 1px solid transparent;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      position: relative;
-    }
-    /* Mobile: permitir quebra de linha no nome do projeto */
-    @media (max-width: 767px) {
-      #projectNameDisplay {
-        font-size: 1rem;
-        white-space: normal;
-        line-height: 1.4;
-        max-width: calc(100vw - 32px);
-        justify-content: center;
-      }
-      #projectNameText {
-        white-space: normal;
-        word-break: break-word;
-        line-height: 1.4;
-        text-align: center;
-      }
-    }
-    #projectNameDisplay:hover {
-      background: #161b22;
-      border-color: #30363d;
-    }
-    #projectNameDisplay:active {
-      background: #0d1117;
-    }
-    #projectNameDisplay .edit-icon {
-      opacity: 0;
-      transition: opacity 0.2s;
-      font-size: 0.85rem;
-      color: #6e7681;
-      flex-shrink: 0;
-    }
-    #projectNameDisplay:hover .edit-icon {
-      opacity: 0.6;
-    }
-    #projectNameText {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      flex: 1;
-      min-width: 0;
-    }
-    #projectNameInput {
-      background: #0d1117;
-      border: 1px solid #1f6feb;
-      border-radius: 6px;
-      padding: 8px 12px;
-      color: #e6edf3;
-      font-size: 1.2rem;
-      font-weight: 600;
-      font-family: inherit;
-      min-width: 200px;
-      max-width: 400px;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1);
-    }
-    #projectNameInput::placeholder {
-      color: #6e7681;
-      font-weight: normal;
-    }
-    h1 { 
-      font-size: 1.2rem; 
       margin: 0;
       color: #e6edf3;
     }
+
     .controls {
       display: flex;
       gap: 12px;
       align-items: center;
     }
+
     button {
       background: #1f6feb;
       color: #fff;
@@ -241,59 +86,45 @@
       font-weight: 600;
       font-size: 0.9rem;
     }
+
     button:hover {
       background: #2a7de8;
     }
+
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
+
     button.secondary {
       background: #30363d;
     }
+
     button.secondary:hover {
       background: #40464d;
     }
+
     button.compile {
       background: #238636;
     }
+
     button.compile:hover {
       background: #2ea043;
     }
+
     button.compile:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
+
     button.download {
       background: #238636;
     }
+
     button.download:hover {
       background: #2ea043;
     }
-    button.run-on-board {
-      background: #238636;
-    }
-    button.run-on-board:hover {
-      background: #2ea043;
-    }
-    button.run-on-board:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .controls button.hidden {
-      display: none !important;
-    }
-    button.home {
-      background: #30363d;
-      padding: 8px 12px;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    button.home:hover {
-      background: #40464d;
-    }
+
     #status {
       font-size: 0.85rem;
       color: #9fbad1;
@@ -301,25 +132,23 @@
       background: #0d1117;
       border-radius: 6px;
       border: 1px solid #1f242e;
-      min-width: 200px;
-      text-align: left;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      transition: opacity 0.2s ease;
     }
+
     .status-connected {
       color: #3fb950;
       border-color: #238636;
     }
+
     .status-error {
       color: #ff7b72;
       border-color: #da3633;
     }
+
     .status-syncing {
       color: #d29922;
       border-color: #bb8009;
     }
+
     #syncIndicator {
       font-size: 0.75rem;
       padding: 6px 10px;
@@ -329,17 +158,28 @@
       min-width: 20px;
       text-align: center;
     }
+
     .sync-indicator-syncing {
       color: #d29922;
       animation: pulse 1.5s ease-in-out infinite;
     }
+
     .sync-indicator-synced {
       color: #3fb950;
     }
+
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
     }
+
     #connectionIcon {
       position: relative;
       width: 24px;
@@ -350,12 +190,15 @@
       cursor: pointer;
       font-size: 16px;
     }
+
     #connectionIcon.connected {
       color: #3fb950;
     }
+
     #connectionIcon.disconnected {
       color: #ff7b72;
     }
+
     #connectionIcon .tooltip {
       visibility: hidden;
       opacity: 0;
@@ -375,6 +218,7 @@
       transition: opacity 0.2s, visibility 0.2s;
       pointer-events: none;
     }
+
     #connectionIcon .tooltip::after {
       content: "";
       position: absolute;
@@ -384,303 +228,23 @@
       border: 5px solid transparent;
       border-top-color: #161b22;
     }
+
     #connectionIcon:hover .tooltip {
       visibility: visible;
       opacity: 1;
     }
+
     #editor-container {
       flex: 1;
       position: relative;
       overflow: hidden;
     }
+
     #editor {
       width: 100%;
       height: 100%;
     }
-    
-    /* Drag and Drop Overlay */
-    .drag-drop-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(31, 111, 235, 0.15);
-      border: 3px dashed #1f6feb;
-      border-radius: 8px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      pointer-events: none;
-      backdrop-filter: blur(2px);
-    }
-    .drag-drop-overlay.active {
-      display: flex;
-    }
-    .drag-drop-content {
-      text-align: center;
-      color: #e6edf3;
-    }
-    .drag-drop-icon {
-      font-size: 4rem;
-      margin-bottom: 16px;
-      animation: bounce 1s ease-in-out infinite;
-    }
-    .drag-drop-text {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .drag-drop-hint {
-      font-size: 0.9rem;
-      color: #9fbad1;
-    }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-    
-    /* Files Sidebar - Barra fina quando fechada */
-    .files-sidebar {
-      position: fixed;
-      top: 60px; /* Começar abaixo do header */
-      right: 0;
-      bottom: 60px; /* Acima do footer */
-      width: 48px;
-      height: auto; /* Altura será calc(100vh - header - footer) */
-      background: #11161b;
-      border-left: 1px solid #202830;
-      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      transition: width 0.3s ease;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    .files-sidebar.open {
-      width: 400px;
-      cursor: default;
-    }
-    
-    /* Ajustar editor quando sidebar está aberta - margem será controlada via JavaScript */
-    #editor-container {
-      margin-right: 48px;
-      transition: margin-right 0.3s ease;
-    }
-    .files-sidebar:not(.open):hover {
-      background: #161b22;
-    }
-    /* Barra fina quando fechada - mostra ícone */
-    .files-sidebar:not(.open) .sidebar-content {
-      display: none;
-    }
-    .files-sidebar:not(.open) .sidebar-header {
-      padding: 16px 8px;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-    }
-    .files-sidebar:not(.open) .sidebar-header h3 {
-      display: none;
-    }
-    .files-sidebar:not(.open) .sidebar-close {
-      display: none;
-    }
-    .files-sidebar:not(.open) .sidebar-header::before {
-      content: '📁';
-      font-size: 1.5rem;
-      display: block;
-    }
-    .files-sidebar:not(.open) .sidebar-header:hover {
-      background: #161b22;
-    }
-    .sidebar-header {
-      padding: 16px;
-      border-bottom: 1px solid #202830;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #11161b;
-    }
-    .sidebar-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      color: #e6edf3;
-    }
-    .sidebar-close {
-      background: transparent;
-      border: none;
-      color: #9fbad1;
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-    .sidebar-close:hover {
-      background: #202830;
-      color: #e6edf3;
-    }
-    .sidebar-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 16px;
-    }
-    .sidebar-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
-      flex-shrink: 0;
-    }
-    .btn-create-file,
-    .btn-add-file {
-      width: 100%;
-      background: #238636;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 10px 16px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.2s;
-    }
-    .btn-add-file {
-      background: #1f6feb;
-    }
-    .btn-add-file:hover {
-      background: #2a7de8;
-    }
-    .btn-create-file:hover {
-      background: #2ea043;
-    }
-    .btn-create-file span,
-    .btn-add-file span {
-      font-size: 1.2rem;
-    }
-    .files-list {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow-y: auto;
-      min-height: 0;
-    }
-    .files-empty {
-      text-align: center;
-      color: #6e7681;
-      padding: 32px 16px;
-      font-size: 0.9rem;
-    }
-    .file-item {
-      background: #161b22;
-      border: 1px solid #202830;
-      border-radius: 6px;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-    .file-item:hover {
-      background: #202830;
-      border-color: #30363d;
-    }
-    .file-item.active {
-      background: #1f6feb;
-      border-color: #1f6feb;
-    }
-    .file-item.active .file-item-name {
-      color: #fff;
-      font-weight: 700;
-    }
-    .file-item-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .file-item-name {
-      font-weight: 600;
-      color: #e6edf3;
-      font-size: 0.9rem;
-      margin-bottom: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      cursor: text;
-      user-select: text;
-    }
-    .file-item-name.editing {
-      cursor: text;
-    }
-    .file-item-name-input {
-      background: #0d1117;
-      border: 1px solid #1f6feb;
-      border-radius: 4px;
-      padding: 4px 8px;
-      color: #e6edf3;
-      font-size: 0.9rem;
-      font-weight: 600;
-      font-family: inherit;
-      width: 100%;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.2);
-    }
-    .file-item-size {
-      font-size: 0.75rem;
-      color: #6e7681;
-    }
-    .file-item-actions {
-      display: flex;
-      gap: 4px;
-    }
-    .file-item-btn {
-      background: transparent;
-      border: none;
-      color: #9fbad1;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-    .file-item-btn:hover {
-      background: #202830;
-      color: #e6edf3;
-    }
-    .file-item-btn.delete:hover {
-      color: #ff7b72;
-    }
-    
-    /* Mobile: sidebar full width */
-    @media (max-width: 767px) {
-      .files-sidebar {
-        width: 100vw;
-        right: -100vw;
-      }
-      .sidebar-toggle {
-        top: 50%;
-        right: 20px;
-        transform: translateY(-50%);
-      }
-      .sidebar-toggle:hover {
-        transform: translateY(-50%) scale(1.1);
-      }
-    }
+
     .footer {
       background: #11161b;
       border-top: 1px solid #202830;
@@ -688,140 +252,261 @@
       font-size: 0.85rem;
       color: #8093a7;
       flex-shrink: 0;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      position: relative;
     }
-    .footer-text {
-      flex: 1;
-      min-width: 0;
+
+    /* AI Help Button */
+    .ai-help-btn {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #30363d;
+      color: #8b949e;
+      border: 1px solid #444c56;
+      border-radius: 50px;
+      padding: 12px 24px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.2s, background 0.2s;
+      font-size: 1rem;
+    }
+
+    .ai-help-btn:hover {
+      background: #444c56;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .ai-help-btn.new-help {
+      background: #8e44ad;
+      color: white;
+      border: none;
+      animation: pulse-purple 2s infinite;
+    }
+
+    .ai-help-btn.new-help:hover {
+      background: #9b59b6;
+    }
+
+    @keyframes pulse-purple {
+      0% { box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(142, 68, 173, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(142, 68, 173, 0); }
+    }
+
+    .ai-help-btn:active {
+      transform: scale(0.95);
+      background: #21262d;
+    }
+
+    /* AI Modal */
+    .ai-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      backdrop-filter: blur(5px);
+    }
+
+    .ai-modal-content {
+      background: #1c2128;
+      border: 1px solid #444c56;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 420px;
+      width: 90%;
       text-align: center;
-      order: 2;
+      color: white;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     }
-    .footer-status {
+
+    .ai-modal-content h2 {
+      margin-top: 0;
+      color: #e6edf3;
+      font-size: 1.5rem;
+    }
+
+    .ai-modal-content p {
+      color: #8b949e;
+      font-size: 0.95rem;
+      margin-bottom: 25px;
+    }
+
+    #qrcode-container {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin: 0 auto 25px;
+      display: inline-block;
+      width: 200px;
+      height: 200px;
+    }
+
+    #qrcode-container img {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .ai-links-container {
       display: flex;
-      gap: 8px;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .ai-link-btn {
+      color: white;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      display: flex;
       align-items: center;
-      flex-shrink: 0;
-      order: 3;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 600;
+      transition: opacity 0.2s, transform 0.1s;
     }
-    /* Desktop: texto centralizado, indicadores à direita */
-    @media (min-width: 768px) {
-      .footer {
-        flex-wrap: nowrap;
-      }
-      .footer-text {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        text-align: center;
-        white-space: nowrap;
-        pointer-events: none;
-      }
-      .footer-status {
-        margin-left: auto;
-      }
+
+    .ai-link-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
-    /* Mobile: quebra em duas linhas elegante */
-    @media (max-width: 767px) {
-      .footer {
-        justify-content: center;
-        flex-direction: column;
-      }
-      .footer-text {
-        width: 100%;
-        order: 1;
-        text-align: center;
-        margin-bottom: 4px;
-      }
-      .footer-status {
-        order: 2;
-        justify-content: center;
-      }
+
+    .ai-link-btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-chatgpt { background: #10a37f; }
+    .btn-copy-prompt { background: #34495e; }
+
+    .close-ai-modal {
+      background: transparent;
+      color: #8b949e;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: underline;
     }
   </style>
 </head>
+
 <body>
   <div class="header">
-    <button id="btnHome" class="home" title="Go to home" onclick="window.location.href='../'">🏠</button>
-    <div class="project-name-container">
-      <div id="projectNameDisplay" title="Double-click to edit">
-        <span id="projectNameText"></span>
-        <span class="edit-icon">✏️</span>
-      </div>
-      <input 
-        type="text" 
-        id="projectNameInput" 
-        placeholder="Project Name" 
-        maxlength="50"
-        style="display: none;"
-      />
-    </div>
+    <h1>One Dollar Board - Editor</h1>
     <div class="controls">
+      <button id="btnCompile" class="compile" disabled>🔨 Compile</button>
+      <button id="btnFlash" class="download" style="display: none;">💾 Flash</button>
       <span id="status">Disconnected</span>
-      <button id="btnRunOnBoard" class="run-on-board" disabled>▶ Run on Board</button>
-      <button id="btnCompile" class="compile hidden" disabled>🔨 Compile</button>
-      <button id="btnFlash" class="download hidden" style="display: none;">💾 Flash</button>
-    </div>
-  </div>
-  
-  <div id="editor-container">
-    <div id="editor"></div>
-    
-    <div id="dragDropOverlay" class="drag-drop-overlay">
-      <div class="drag-drop-content">
-        <div class="drag-drop-icon">📁</div>
-        <div class="drag-drop-text">Drop files here to add them to your project</div>
-        <div class="drag-drop-hint">Supported: .h, .c files</div>
-      </div>
-    </div>
-  </div>
-
-  
-  <div id="filesSidebar" class="files-sidebar">
-    <div class="sidebar-header">
-      <h3>Project Files</h3>
-      <button id="sidebarClose" class="sidebar-close" title="Close">×</button>
-    </div>
-    <div class="sidebar-content">
-      <div class="sidebar-actions">
-        <button id="btnCreateFile" class="btn-create-file" title="Create new file">
-          <span>+</span> Create File
-        </button>
-        <button id="btnAddFile" class="btn-add-file" title="Add file">
-          <span>📁</span> Add File
-        </button>
-        <input type="file" id="fileInput" multiple accept=".h,.c,.txt" style="display: none;">
-      </div>
-      <div id="filesList" class="files-list">
-        <div class="files-empty">No files yet. Create a new file or add existing files.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <div class="footer-text">
-      <b>Design in Austin/TX</b>  $1 computer—lower to waken inventors on the world.
-    </div>
-    <div class="footer-status">
-      <span id="syncIndicator" style="font-size: 0.75rem; color: #9fbad1;"></span>
       <span id="connectionIcon" class="disconnected" title="">
         <span id="connectionIconSymbol">🔴</span>
         <span class="tooltip" id="connectionTooltip">Offline</span>
       </span>
+      <span id="syncIndicator" style="font-size: 0.75rem; color: #9fbad1;">⏳</span>
+    </div>
+  </div>
+
+  <div id="editor-container">
+    <div id="editor"></div>
+  </div>
+
+  <div class="footer">
+    <b>One Dollar Board</b> - A low-cost mini computer main board for learning and prototyping.
+  </div>
+
+  
+  <button id="btnAIHelp" class="ai-help-btn">
+    <span>🤖</span> Help
+  </button>
+
+  
+  <div id="aiModal" class="ai-modal-overlay">
+    <div class="ai-modal-content">
+      <h2>AI Coding Assistant</h2>
+      <p>Scan the code or choose an AI to continue your development.</p>
+      <div id="qrcode-container"></div>
+      
+      <div class="ai-links-container">
+        <a id="linkChatGPT" href="#" target="_blank" class="ai-link-btn btn-chatgpt">
+          <span>💬</span> Open in ChatGPT
+        </a>
+        <button id="btnCopyPrompt" class="ai-link-btn btn-copy-prompt">
+          <span>📋</span> Copy Prompt for other AIs
+        </button>
+      </div>
+      
+      <button id="btnCloseAI" class="close-ai-modal">Close</button>
     </div>
   </div>
 
   
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+  <div id="ai-instructions" aria-hidden="true" style="display:none" role="note">
+    ONE DOLLAR BOARD EDITOR — AI ASSISTANT INSTRUCTIONS
+
+    This editor runs C/C++ code on the CH32V003 RISC-V microcontroller (One Dollar Board).
+
+    TO SEND CODE TO THIS EDITOR VIA LINK:
+    1. Write C/C++ code for the CH32V003 using the onedollarboard.h API.
+    2. Encode the source code as Base64.
+    3. Build the URL: https://EDITOR_HOST/index.html?code=BASE64_CODE
+    4. Share that URL with the user — opening it will load the code directly into the editor.
+
+    JAVASCRIPT ENCODING (recommended approach for AI):
+      const encoded = btoa(unescape(encodeURIComponent(sourceCode)));
+      const url = `https://EDITOR_HOST/index.html?code=${encoded}`;
+
+    PYTHON ENCODING:
+      import base64
+      encoded = base64.b64encode(source_code.encode("utf-8")).decode()
+      url = f"https://EDITOR_HOST/index.html?code={encoded}"
+
+    AVAILABLE API (from onedollarboard.h):
+      SystemInit()         — initialize system clock
+      Delay_Ms(ms)         — millisecond delay
+      GPIOA, GPIOB, GPIOC, GPIOD — GPIO ports
+      GPIOD->BSHR          — set/reset bits (bit 0-7 = set, bit 16-23 = reset)
+      GPIOD->CFGLR         — configure GPIO direction and speed
+      RCC->APB2PCENR       — enable peripheral clocks
+      GPIO_Speed_50MHz, GPIO_CNF_OUT_PP — config constants
+
+    BLINK EXAMPLE:
+      #include "onedollarboard.h"
+      int main() {
+        SystemInit();
+        RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
+        GPIOD->CFGLR &= ~(0xF << (4*6));
+        GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4*6);
+        while(1) {
+          GPIOD->BSHR = 1 << 6;    // LED ON  (PD6)
+          Delay_Ms(500);
+          GPIOD->BSHR = 1 << 22;   // LED OFF (PD6 reset = bit 16+6)
+          Delay_Ms(500);
+        }
+      }
+  </div>
+
   
+  <script src="decode.js"></script>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+
   
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
-    import { getDatabase, ref, set, get, onValue } 
+    import { getDatabase, ref, set, get, onValue }
       from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
 
     
@@ -836,12 +521,12 @@
     };
 
     let app, database, codeRef;
-    
+
     
     try {
       app = initializeApp(firebaseConfig);
       database = getDatabase(app);
-      
+
       
       
     } catch (error) {
@@ -852,21 +537,11 @@
     
     const status = document.getElementById('status');
     const syncIndicator = document.getElementById('syncIndicator');
-    const btnRunOnBoard = document.getElementById('btnRunOnBoard');
     const btnCompile = document.getElementById('btnCompile');
     const btnFlash = document.getElementById('btnFlash');
     const connectionIcon = document.getElementById('connectionIcon');
     const connectionIconSymbol = document.getElementById('connectionIconSymbol');
     const connectionTooltip = document.getElementById('connectionTooltip');
-    
-    
-    const sidebarClose = document.getElementById('sidebarClose');
-    const filesSidebar = document.getElementById('filesSidebar');
-    const filesList = document.getElementById('filesList');
-    const btnAddFile = document.getElementById('btnAddFile');
-    const fileInput = document.getElementById('fileInput');
-    const dragDropOverlay = document.getElementById('dragDropOverlay');
-    const editorContainer = document.getElementById('editor-container');
 
     let editor = null;
     let isSyncing = false;
@@ -879,244 +554,11 @@
     const DEBOUNCE_DELAY = 1000; 
 
     
-    function showFlashButton(binary, size) {
-      if (!btnFlash) {
-        console.error('❌ btnFlash element not found!');
-        return;
-      }
-      
-      if (!binary) {
-        console.error('❌ showFlashButton called without binary!');
-        return;
-      }
-      
-      btnFlash.style.display = 'block';
-      btnFlash.style.visibility = 'visible';
-      btnFlash.onclick = () => flashBinary(binary, size);
-      
-      btnFlash.offsetHeight;
-      
-      
-      const computedStyle = window.getComputedStyle(btnFlash);
-      const isVisible = computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
-      
-      console.log('✅ showFlashButton function called');
-      console.log('   - display:', btnFlash.style.display);
-      console.log('   - visibility:', btnFlash.style.visibility);
-      console.log('   - computed display:', computedStyle.display);
-      console.log('   - computed visibility:', computedStyle.visibility);
-      console.log('   - isVisible:', isVisible);
-      console.log('   - binary size:', size, 'bytes');
-      console.log('   - binary length:', binary ? binary.length : 0, 'chars');
-      
-      if (!isVisible) {
-        console.error('⚠️ Button should be visible but computed style says otherwise!');
-      }
-    }
-
-    
-    function hideFlashButton() {
-      btnFlash.style.display = 'none';
-      btnFlash.onclick = null;
-    }
-
-    
-    async function isBinaryValidForCode(data, currentContent, firebaseContent) {
-      
-      if (!data.binaryHash) {
-        return false;
-      }
-
-      
-      const currentHash = await getCodeHash(currentContent);
-      
-      
-      if (currentHash !== data.binaryHash) {
-        console.log('⚠️ Binary hash mismatch:');
-        console.log(`   - Current code hash: ${currentHash}`);
-        console.log(`   - Binary hash: ${data.binaryHash}`);
-        return false;
-      }
-
-      
-      const codeTimestamp = data.timestamp || (data.lastModified ? new Date(data.lastModified).getTime() : 0);
-      const binaryTimestamp = data.binarySavedAt ? new Date(data.binarySavedAt).getTime() : 
-                             (data.compilationUpdatedAt ? new Date(data.compilationUpdatedAt).getTime() : 0);
-
-      
-      if (!codeTimestamp || !binaryTimestamp) {
-        console.warn('⚠️ Timestamps not available, using hash comparison only');
-        return true; 
-      }
-
-      
-      
-      const isValid = binaryTimestamp >= (codeTimestamp - 1000);
-      
-      if (!isValid) {
-        console.log('⚠️ Binary is not valid: compiled before last code modification');
-        console.log(`   - Code modified: ${new Date(codeTimestamp).toISOString()}`);
-        console.log(`   - Binary compiled: ${new Date(binaryTimestamp).toISOString()}`);
-      }
-      
-      return isValid;
-    }
-
-    
-    const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
-    
-    
-    const currentProjectCode = window.PROJECT_CODE;
-    
-    
-    const DATABASE_PATH = `/projects/${currentProjectCode}`;
-    
-    
-    let projectNameTimeout = null;
-    async function saveProjectName(name) {
-      if (!name || !name.trim()) {
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/name.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: name.trim(),
-            updatedAt: new Date().toISOString(),
-            timestamp: Date.now()
-          })
-        });
-        
-        if (response.ok) {
-          console.log('✅ Project name saved:', name.trim());
-        } else {
-          console.warn('⚠️ Failed to save project name');
-        }
-      } catch (error) {
-        console.error('❌ Error saving project name:', error);
-      }
-    }
-    
-    
-    function formatProjectNameDisplay(projectName) {
-      if (projectName && projectName.trim()) {
-        return `One Dollar Board/${projectName.trim()}`;
-      }
-      return 'One Dollar Board';
-    }
-    
-    
-    function extractProjectName(displayText) {
-      if (displayText && displayText.includes('/')) {
-        return displayText.split('/')[1] || '';
-      }
-      return displayText || '';
-    }
-    
-    
-    function updatePageTitle(projectName) {
-      if (projectName && projectName.trim()) {
-        document.title = `One Dollar Board/${projectName.trim()}`;
-      } else {
-        document.title = 'One Dollar Board';
-      }
-    }
-    
-    
-    function updateProjectNameDisplay(projectName) {
-      const projectNameText = document.getElementById('projectNameText');
-      if (projectNameText) {
-        projectNameText.textContent = formatProjectNameDisplay(projectName);
-      }
-      updatePageTitle(projectName);
-    }
-    
-    
-    async function loadProjectName() {
-      try {
-        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/name.json`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.name) {
-            updateProjectNameDisplay(data.name);
-            return data.name;
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ Error loading project name:', error);
-      }
-      
-      updateProjectNameDisplay(null);
-      return null;
-    }
-    
-    
-    function enterEditMode() {
-      const display = document.getElementById('projectNameDisplay');
-      const input = document.getElementById('projectNameInput');
-      const text = document.getElementById('projectNameText');
-      
-      if (!display || !input || !text) return;
-      
-      
-      const displayWidth = display.offsetWidth;
-      
-      
-      display.style.display = 'none';
-      input.style.display = 'block';
-      input.style.width = displayWidth + 'px';
-      
-      
-      const currentDisplay = text.textContent || '';
-      const currentProjectName = extractProjectName(currentDisplay);
-      input.value = currentProjectName === 'One Dollar Board' || !currentProjectName ? '' : currentProjectName;
-      
-      
-      setTimeout(() => {
-        input.focus();
-        input.select();
-      }, 10);
-    }
-    
-    
-    function exitEditMode(save = true) {
-      const display = document.getElementById('projectNameDisplay');
-      const input = document.getElementById('projectNameInput');
-      const text = document.getElementById('projectNameText');
-      
-      if (!display || !input || !text) return;
-      
-      const newName = input.value.trim();
-      
-      if (save && newName) {
-        
-        updateProjectNameDisplay(newName);
-        
-        saveProjectName(newName);
-      } else if (!newName) {
-        
-        const currentDisplay = text.textContent || '';
-        const currentProjectName = extractProjectName(currentDisplay);
-        if (currentProjectName === 'One Dollar Board' || !currentProjectName) {
-          input.value = '';
-        } else {
-          input.value = currentProjectName;
-        }
-      }
-      
-      
-      input.style.display = 'none';
-      input.style.width = ''; 
-      display.style.display = 'flex';
-    }
-    
     async function fetchBinaryFromCache(binaryHash) {
       if (!binaryHash) {
         return null;
       }
-      
+
       try {
         const cacheResponse = await fetch(`${DATABASE_URL}/cache/${binaryHash}.json`);
         if (cacheResponse.ok) {
@@ -1131,21 +573,21 @@
       } catch (error) {
         console.warn('⚠️ Error fetching binary from cache:', error);
       }
-      
+
       return null;
     }
 
     
     const VENDOR_ID = 0x1209;     
     const REPORT_ID = 0x00;       
-    const CMD = { PING:0x01, INFO:0x02, ERASE64:0x10, LOAD64:0x11, PROG64:0x12, BOOT:0x20 };
+    const CMD = { PING: 0x01, INFO: 0x02, ERASE64: 0x10, LOAD64: 0x11, PROG64: 0x12, BOOT: 0x20 };
     const DEFAULT_REPORT_LEN = 64;   
     let OUT_REPORT_LEN = DEFAULT_REPORT_LEN; 
 
     const PID_B003FUN = 0xB003;  
     const PID_MIN = 0xB000, PID_MAX = 0xB00F; 
-    function isB003Fun(pid){ return pid === PID_B003FUN; }
-    function isExpectedPid(pid){ return (pid >= PID_MIN && pid <= PID_MAX) || isB003Fun(pid); }
+    function isB003Fun(pid) { return pid === PID_B003FUN; }
+    function isExpectedPid(pid) { return (pid >= PID_MIN && pid <= PID_MAX) || isB003Fun(pid); }
 
     let flashDevice = null;
     let inputReportDevice = null;
@@ -1153,11 +595,11 @@
     let waiters = [];
 
     function hex(u8) {
-      return Array.from(u8, b => b.toString(16).padStart(2,'0')).join(' ');
+      return Array.from(u8, b => b.toString(16).padStart(2, '0')).join(' ');
     }
 
     function addrBytes(addr) {
-      return [(addr>>>16)&0xFF, (addr>>>8)&0xFF, addr&0xFF];
+      return [(addr >>> 16) & 0xFF, (addr >>> 8) & 0xFF, addr & 0xFF];
     }
 
     function isBoardDevice(hidDevice) {
@@ -1171,7 +613,7 @@
       return devices.find(isBoardDevice) || null;
     }
 
-    async function waitForBoardPresence({shouldBePresent, timeoutMs = 20000} = {}) {
+    async function waitForBoardPresence({ shouldBePresent, timeoutMs = 20000 } = {}) {
       const current = await findKnownBoardDevice();
       if (shouldBePresent) {
         if (current) return current;
@@ -1217,7 +659,7 @@
         console.log('Detected report size: IN=' + u8.length + 'B → OUT=' + OUT_REPORT_LEN + 'B');
       }
       if (waiters.length) {
-        const {resolve} = waiters.shift();
+        const { resolve } = waiters.shift();
         resolve(u8);
       } else {
         inQueue.push(u8);
@@ -1235,7 +677,7 @@
       }
     }
 
-    function recv(timeoutMs=300) {
+    function recv(timeoutMs = 300) {
       return new Promise((resolve, reject) => {
         if (inQueue.length) {
           return resolve(inQueue.shift());
@@ -1246,13 +688,13 @@
           reject(new Error('timeout'));
         }, timeoutMs);
         waiters.push({
-          resolve: (val)=>{ clearTimeout(timer); resolve(val); },
+          resolve: (val) => { clearTimeout(timer); resolve(val); },
           reject
         });
       });
     }
 
-    async function send(bytes, {expect=true, timeout=300}={}) {
+    async function send(bytes, { expect = true, timeout = 300 } = {}) {
       const raw = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes);
       const buf = new Uint8Array(OUT_REPORT_LEN);
       buf.fill(0);
@@ -1270,22 +712,22 @@
       return await recv(timeout);
     }
 
-    async function txrx(bytes, tries=3, timeout=300) {
+    async function txrx(bytes, tries = 3, timeout = 300) {
       let lastErr = null;
-      for (let i=0;i<tries;i++) {
+      for (let i = 0; i < tries; i++) {
         try {
-          const resp = await send(bytes, {expect:true, timeout});
+          const resp = await send(bytes, { expect: true, timeout });
           return resp;
         } catch (e) {
           lastErr = e;
-          await new Promise(r=>setTimeout(r, 50));
-          try { await send([CMD.PING, 0x01,0,0,0,0,0,0], {expect:false}); } catch {}
+          await new Promise(r => setTimeout(r, 50));
+          try { await send([CMD.PING, 0x01, 0, 0, 0, 0, 0, 0], { expect: false }); } catch { }
         }
       }
       throw lastErr || new Error('txrx failure');
     }
 
-    async function setupOpenedDevice(foundDevice, {showIntro=true}={}) {
+    async function setupOpenedDevice(foundDevice, { showIntro = true } = {}) {
       if (!foundDevice) return;
 
       detachInputReportListener();
@@ -1321,10 +763,10 @@
 
       console.log('Using initial OUT report len = ' + OUT_REPORT_LEN + 'B (auto-adjusts on first input).');
 
-      const pong = await txrx([CMD.PING, 0x01,0,0,0,0,0,0]).catch(()=>null);
+      const pong = await txrx([CMD.PING, 0x01, 0, 0, 0, 0, 0, 0]).catch(() => null);
       if (pong) console.log('PING ok (' + hex(pong) + ')');
 
-      const info = await txrx([CMD.INFO, 0,0,0,0,0,0,0]).catch(()=>null);
+      const info = await txrx([CMD.INFO, 0, 0, 0, 0, 0, 0, 0]).catch(() => null);
       if (info) console.log('INFO: ' + hex(info));
     }
 
@@ -1347,18 +789,18 @@
       updateStatus('Disconnect the One Dollar Board now to enter bootloader mode.', '');
       console.log('🔌 Disconnect the One Dollar Board now to enter bootloader mode.');
 
-      await waitForBoardPresence({shouldBePresent:false, timeoutMs:20000}).catch(() => {
+      await waitForBoardPresence({ shouldBePresent: false, timeoutMs: 20000 }).catch(() => {
         throw new Error('Timeout waiting for you to disconnect the One Dollar Board.');
       });
 
       updateStatus('Connect the One Dollar Board in bootloader mode...', '');
       console.log('⚡ Now connect the One Dollar Board in bootloader mode...');
 
-      const board = await waitForBoardPresence({shouldBePresent:true, timeoutMs:20000}).catch(() => {
+      const board = await waitForBoardPresence({ shouldBePresent: true, timeoutMs: 20000 }).catch(() => {
         throw new Error('Timeout waiting for the One Dollar Board to reconnect.');
       });
 
-      await setupOpenedDevice(board, {showIntro:true});
+      await setupOpenedDevice(board, { showIntro: true });
       console.log('✅ Bootloader detected. Starting flash...');
     }
 
@@ -1371,33 +813,33 @@
 
     
     const word_wise_write_blob = new Uint8Array([
-      0x23,0xa0,0x05,0x00,0x13,0x07,0x45,0x03,0x0c,0x43,0x50,0x43,0x2e,0x96,0x21,0x07,
-      0x14,0x43,0x94,0xc1,0x91,0x05,0x11,0x07,0xe3,0xcc,0xc5,0xfe,0x93,0x06,0xf0,0xff,
-      0x14,0xc1,0x82,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+      0x23, 0xa0, 0x05, 0x00, 0x13, 0x07, 0x45, 0x03, 0x0c, 0x43, 0x50, 0x43, 0x2e, 0x96, 0x21, 0x07,
+      0x14, 0x43, 0x94, 0xc1, 0x91, 0x05, 0x11, 0x07, 0xe3, 0xcc, 0xc5, 0xfe, 0x93, 0x06, 0xf0, 0xff,
+      0x14, 0xc1, 0x82, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
     const word_wise_read_blob = new Uint8Array([
-      0x23,0xa0,0x05,0x00,0x13,0x07,0x45,0x03,0x0c,0x43,0x50,0x43,0x2e,0x96,0x21,0x07,
-      0x94,0x41,0x14,0xc3,0x91,0x05,0x11,0x07,0xe3,0xcc,0xc5,0xfe,0x93,0x06,0xf0,0xff,
-      0x14,0xc1,0x82,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+      0x23, 0xa0, 0x05, 0x00, 0x13, 0x07, 0x45, 0x03, 0x0c, 0x43, 0x50, 0x43, 0x2e, 0x96, 0x21, 0x07,
+      0x94, 0x41, 0x14, 0xc3, 0x91, 0x05, 0x11, 0x07, 0xe3, 0xcc, 0xc5, 0xfe, 0x93, 0x06, 0xf0, 0xff,
+      0x14, 0xc1, 0x82, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
     const write64_flash = new Uint8Array([
-      0x13,0x07,0x45,0x03,0x0c,0x43,0x13,0x86,0x05,0x04,0x5c,0x43,0x8c,0xc7,0x14,0x47,
-      0x94,0xc1,0xb7,0x06,0x05,0x00,0xd4,0xc3,0x94,0x41,0x91,0x05,0x11,0x07,0xe3,0xc8,
-      0xc5,0xfe,0xc1,0x66,0x93,0x86,0x06,0x04,0xd4,0xc3,0xfd,0x56,0x14,0xc1,0x82,0x80
+      0x13, 0x07, 0x45, 0x03, 0x0c, 0x43, 0x13, 0x86, 0x05, 0x04, 0x5c, 0x43, 0x8c, 0xc7, 0x14, 0x47,
+      0x94, 0xc1, 0xb7, 0x06, 0x05, 0x00, 0xd4, 0xc3, 0x94, 0x41, 0x91, 0x05, 0x11, 0x07, 0xe3, 0xc8,
+      0xc5, 0xfe, 0xc1, 0x66, 0x93, 0x86, 0x06, 0x04, 0xd4, 0xc3, 0xfd, 0x56, 0x14, 0xc1, 0x82, 0x80
     ]);
 
-    function resetOp(){ const buffer=new Uint8Array(128); buffer.fill(0); buffer[0]=0xaa; return { buffer, commandplace:4 }; }
-    function writeOp4(op, v){ const dv=new DataView(op.buffer.buffer); dv.setUint32(op.commandplace, v, true); op.commandplace+=4; }
-    function writeOpArb(op, data){ op.buffer.set(data, op.commandplace); op.commandplace+=data.length; }
+    function resetOp() { const buffer = new Uint8Array(128); buffer.fill(0); buffer[0] = 0xaa; return { buffer, commandplace: 4 }; }
+    function writeOp4(op, v) { const dv = new DataView(op.buffer.buffer); dv.setUint32(op.commandplace, v, true); op.commandplace += 4; }
+    function writeOpArb(op, data) { op.buffer.set(data, op.commandplace); op.commandplace += data.length; }
 
-    async function commitOpFeature(op, {noGetReport=false}={}){
-      const dv=new DataView(op.buffer.buffer);
+    async function commitOpFeature(op, { noGetReport = false } = {}) {
+      const dv = new DataView(op.buffer.buffer);
       dv.setUint32(124, 0x1234abcd, true);
-      op.buffer[0]=0xaa;
+      op.buffer[0] = 0xaa;
       await flashDevice.sendFeatureReport(0xaa, op.buffer.subarray(1));
       if (noGetReport) return null;
-      for (let t=0;t<60;t++){
-        await new Promise(r=>setTimeout(r, t?10:20));
+      for (let t = 0; t < 60; t++) {
+        await new Promise(r => setTimeout(r, t ? 10 : 20));
         try {
           const view = await flashDevice.receiveFeatureReport(0xaa);
           const raw = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
@@ -1410,31 +852,31 @@
             if (copyLen > 0) normalized.set(raw.subarray(0, copyLen), 1);
             return normalized;
           }
-        } catch (err){
-          if (t === 0) console.log('Failed to read feature report: '+(err?.message||err));
+        } catch (err) {
+          if (t === 0) console.log('Failed to read feature report: ' + (err?.message || err));
         }
       }
       throw new Error('Timeout waiting for bootloader response (feature report)');
     }
 
-    async function readWordFeature(addr){
-      const op=resetOp(); writeOpArb(op, word_wise_read_blob); writeOp4(op, addr); writeOp4(op, 4);
+    async function readWordFeature(addr) {
+      const op = resetOp(); writeOpArb(op, word_wise_read_blob); writeOp4(op, addr); writeOp4(op, 4);
       const resp = await commitOpFeature(op);
-      if (!resp || resp.length<64) return 0;
-      const dv=new DataView(resp.buffer, (resp.byteOffset||0)+60, 4);
+      if (!resp || resp.length < 64) return 0;
+      const dv = new DataView(resp.buffer, (resp.byteOffset || 0) + 60, 4);
       return dv.getUint32(0, true);
     }
-    async function writeWordFeature(addr, val){
-      const op=resetOp(); writeOpArb(op, word_wise_write_blob); writeOp4(op, addr); writeOp4(op, 4);
+    async function writeWordFeature(addr, val) {
+      const op = resetOp(); writeOpArb(op, word_wise_write_blob); writeOp4(op, addr); writeOp4(op, 4);
       new DataView(op.buffer.buffer).setUint32(60, val, true);
       await commitOpFeature(op);
     }
 
-    let flashUnlocked=false;
-    async function unlockFlashFeature(){
+    let flashUnlocked = false;
+    async function unlockFlashFeature() {
       if (flashUnlocked) return true;
       const ctlr = await readWordFeature(0x40022010);
-      if (ctlr & 0x8080){
+      if (ctlr & 0x8080) {
         await writeWordFeature(0x40022004, 0x45670123);
         await writeWordFeature(0x40022004, 0xCDEF89AB);
         await writeWordFeature(0x40022008, 0x45670123);
@@ -1444,57 +886,57 @@
         const ctlrAfter = await readWordFeature(0x40022010);
         if (ctlrAfter & 0x8080) throw new Error('Flash locked');
       }
-      flashUnlocked=true; return true;
+      flashUnlocked = true; return true;
     }
-    async function isSectorErasedFeature(address){
+    async function isSectorErasedFeature(address) {
       const first = await readWordFeature(address & (~0x3f));
       return first === 0xFFFFFFFF;
     }
-    async function eraseSectorFeature(address){
+    async function eraseSectorFeature(address) {
       await unlockFlashFeature();
-      const CR_PAGE_ER=0x00020000, CR_STRT_Set=0x00000040;
+      const CR_PAGE_ER = 0x00020000, CR_STRT_Set = 0x00000040;
       await writeWordFeature(0x40022010, CR_PAGE_ER);
       await writeWordFeature(0x40022014, address);
       await writeWordFeature(0x40022010, CR_STRT_Set | CR_PAGE_ER);
-      await new Promise(r=>setTimeout(r,50));
+      await new Promise(r => setTimeout(r, 50));
       await writeWordFeature(0x40022010, 0);
     }
-    async function blockWrite64Feature(address, data){
-      if (data.length!==64) throw new Error('block must be 64 bytes');
+    async function blockWrite64Feature(address, data) {
+      if (data.length !== 64) throw new Error('block must be 64 bytes');
       await unlockFlashFeature();
       if (!await isSectorErasedFeature(address)) await eraseSectorFeature(address);
-      const CR_PAGE_PG=0x00010000, CR_BUF_RST=0x00080000;
+      const CR_PAGE_PG = 0x00010000, CR_BUF_RST = 0x00080000;
       await writeWordFeature(0x40022010, CR_PAGE_PG);
-      await writeWordFeature(0x40022010, CR_PAGE_PG|CR_BUF_RST);
-      const op=resetOp();
+      await writeWordFeature(0x40022010, CR_PAGE_PG | CR_BUF_RST);
+      const op = resetOp();
       writeOpArb(op, write64_flash);
       writeOp4(op, address);
       writeOp4(op, 0x4002200c);
       op.buffer.set(data, 60);
       await commitOpFeature(op);
-      await new Promise(r=>setTimeout(r,10));
+      await new Promise(r => setTimeout(r, 10));
     }
-    function isAddressFlash(a){ return (a & 0xff000000) === 0x08000000; }
-    async function writeBinaryBlobFeature(startAddress, dataU8){
-      let address=startAddress; let offset=0; const data = dataU8;
-      if (isAddressFlash(address)){
+    function isAddressFlash(a) { return (a & 0xff000000) === 0x08000000; }
+    async function writeBinaryBlobFeature(startAddress, dataU8) {
+      let address = startAddress; let offset = 0; const data = dataU8;
+      if (isAddressFlash(address)) {
         let currentAddress = address & (~0x3f);
-        if (currentAddress < address){
+        if (currentAddress < address) {
           const pre = address - currentAddress;
           const temp = new Uint8Array(64).fill(0xFF);
-          temp.set(data.slice(0, Math.min(64-pre, data.length)), pre);
+          temp.set(data.slice(0, Math.min(64 - pre, data.length)), pre);
           await blockWrite64Feature(currentAddress, temp);
           offset = 64 - pre; currentAddress += 64;
-          updateStatus('Flashing… ' + Math.min(100, Math.round((offset/data.length)*100)) + '%', '');
+          updateStatus('Flashing… ' + Math.min(100, Math.round((offset / data.length) * 100)) + '%', '');
         }
-        while ((data.length - offset) >= 64){
-          const blk = data.slice(offset, offset+64);
+        while ((data.length - offset) >= 64) {
+          const blk = data.slice(offset, offset + 64);
           await blockWrite64Feature(currentAddress, blk);
           offset += 64; currentAddress += 64;
-          const pct = Math.round((offset/data.length)*100);
+          const pct = Math.round((offset / data.length) * 100);
           updateStatus('Flashing… ' + pct + '%', '');
         }
-        if (offset < data.length){
+        if (offset < data.length) {
           const temp = new Uint8Array(64).fill(0xFF);
           temp.set(data.slice(offset), 0);
           await blockWrite64Feature(currentAddress, temp);
@@ -1504,11 +946,11 @@
         return;
       }
     }
-    async function flashBinB003Fun(binU8){
+    async function flashBinB003Fun(binU8) {
       try {
         console.log('B003Fun compatible mode: using Feature Reports (0xaa, 128B).');
         flashUnlocked = false;
-        const FLASH_BASE=0x08000000;
+        const FLASH_BASE = 0x08000000;
         await writeBinaryBlobFeature(FLASH_BASE, binU8);
         console.log('Flash completed successfully (B003Fun).');
         updateStatus('Flash completed successfully! Disconnect and reconnect to run the code.', 'connected');
@@ -1520,31 +962,32 @@
     }
 
     async function flashBinWebHID(binU8) {
-      const totalPages = Math.ceil(binU8.length / 64);      let addr = 0, pageIdx = 0;
+      const totalPages = Math.ceil(binU8.length / 64);
+      let addr = 0, pageIdx = 0;
 
       for (pageIdx = 0; pageIdx < totalPages; pageIdx++, addr += 64) {
         const page = pagePad64(binU8, addr);
-        const [a2,a1,a0] = addrBytes(addr);
+        const [a2, a1, a0] = addrBytes(addr);
 
-        await txrx([CMD.ERASE64, 0, a2,a1,a0, 0,0,0]).catch(e=>{
-          throw new Error('ERASE64 failed at 0x'+addr.toString(16)+': '+e.message);
+        await txrx([CMD.ERASE64, 0, a2, a1, a0, 0, 0, 0]).catch(e => {
+          throw new Error('ERASE64 failed at 0x' + addr.toString(16) + ': ' + e.message);
         });
 
-        for (let i=0;i<16;i++){
-          const b0 = page[i*4+0], b1 = page[i*4+1], b2 = page[i*4+2], b3 = page[i*4+3];
-          await txrx([CMD.LOAD64,  i & 0x7F, a2,a1,a0, i & 0x7F, b0, b1]).catch(e=>{
-            throw new Error('LOAD64/lo failed idx '+i+' @0x'+addr.toString(16)+': '+e.message);
+        for (let i = 0; i < 16; i++) {
+          const b0 = page[i * 4 + 0], b1 = page[i * 4 + 1], b2 = page[i * 4 + 2], b3 = page[i * 4 + 3];
+          await txrx([CMD.LOAD64, i & 0x7F, a2, a1, a0, i & 0x7F, b0, b1]).catch(e => {
+            throw new Error('LOAD64/lo failed idx ' + i + ' @0x' + addr.toString(16) + ': ' + e.message);
           });
-          await txrx([CMD.LOAD64, (i | 0x80) & 0xFF, a2,a1,a0, i & 0x7F, b2, b3]).catch(e=>{
-            throw new Error('LOAD64/hi failed idx '+i+' @0x'+addr.toString(16)+': '+e.message);
+          await txrx([CMD.LOAD64, (i | 0x80) & 0xFF, a2, a1, a0, i & 0x7F, b2, b3]).catch(e => {
+            throw new Error('LOAD64/hi failed idx ' + i + ' @0x' + addr.toString(16) + ': ' + e.message);
           });
         }
 
-        await txrx([CMD.PROG64, 0, a2,a1,a0, 0,0,0], 3, 600).catch(e=>{
-          throw new Error('PROG64 failed at 0x'+addr.toString(16)+': '+e.message);
+        await txrx([CMD.PROG64, 0, a2, a1, a0, 0, 0, 0], 3, 600).catch(e => {
+          throw new Error('PROG64 failed at 0x' + addr.toString(16) + ': ' + e.message);
         });
 
-        const pct = Math.round(((pageIdx+1)/totalPages)*100);
+        const pct = Math.round(((pageIdx + 1) / totalPages) * 100);
         updateStatus('Flashing… ' + pct + '%', '');
       }
 
@@ -1568,10 +1011,10 @@
         if (!permitted) {
           updateStatus('Pairing device...', '');
           console.log('No device paired. Requesting pairing...');
-          
+
           
           await connectWebHID();
-          
+
           console.log('✅ Device paired successfully!');
         }
 
@@ -1613,7 +1056,7 @@
         if (!devices || !devices.length) {
           throw new Error('No device selected. Please select the One Dollar Board.');
         }
-        await setupOpenedDevice(devices[0], {showIntro:true});
+        await setupOpenedDevice(devices[0], { showIntro: true });
         updateStatus('Device connected. Ready to flash.', 'connected');
         console.log('✅ Device paired successfully');
       } catch (error) {
@@ -1632,17 +1075,17 @@
       isReconnecting = true;
       updateStatus('Connecting...', '');
       console.log('🔄 Trying to reconnect automatically...');
-      
+
       const connected = await checkConnection();
       isConnected = connected;
-      
+
       if (connected) {
         console.log('✅ Reconnected successfully');
         updateStatus('', 'connected'); 
       } else {
         console.log('❌ Reconnection failed, will try again...');
       }
-      
+
       isReconnecting = false;
       return connected;
     }
@@ -1654,18 +1097,15 @@
       const showMessages = ['Connecting...', 'Compiling...', 'Compilation', 'Connect to Internet', 'OFFLINE'];
       const shouldShow = showMessages.some(msg => text.includes(msg));
       const shouldHide = className === 'connected' && hideMessages.some(msg => text.includes(msg)) && !shouldShow;
-      
+
       if (shouldHide) {
-        // Usar zero-width space para manter o espaço reservado e evitar movimento do botão
-        status.textContent = '\u200B';
+        status.textContent = '';
         status.className = '';
-        status.style.opacity = '0';
       } else {
         status.textContent = text;
         status.className = className ? `status-${className}` : '';
-        status.style.opacity = '1';
       }
-      
+
       
       if (text.includes('Connecting...')) {
         connectionIcon.className = 'disconnected';
@@ -1695,16 +1135,25 @@
         syncIndicator.textContent = '✓ Synced';
         syncIndicator.classList.add('sync-indicator-synced');
         setTimeout(() => {
-          syncIndicator.textContent = '';
+          syncIndicator.textContent = '●';
           syncIndicator.className = '';
         }, 2000);
       } else {
-        syncIndicator.textContent = '';
+        syncIndicator.textContent = '●';
       }
     }
 
     
-    if (database && currentProjectCode && !codeRef) {
+    const DATABASE_URL = 'https://onedollarboard-1b26a-default-rtdb.firebaseio.com';
+
+    
+    const currentProjectCode = window.PROJECT_CODE;
+
+    
+    const DATABASE_PATH = `/projects/${currentProjectCode}`;
+
+    
+    if (database && currentProjectCode) {
       codeRef = ref(database, `${DATABASE_PATH}/code`);
     }
 
@@ -1712,31 +1161,31 @@
     async function checkConnection() {
       try {
         
-        const testData = { 
-          timestamp: Date.now(), 
+        const testData = {
+          timestamp: Date.now(),
           test: true,
           message: 'Connection test'
         };
-        
+
         
         const writeResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/test.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(testData)
         });
-        
+
         if (!writeResponse.ok) {
           throw new Error(`HTTP ${writeResponse.status}: ${writeResponse.statusText}`);
         }
-        
+
         
         const readResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/test.json`);
         if (!readResponse.ok) {
           throw new Error(`HTTP ${readResponse.status}: ${readResponse.statusText}`);
         }
-        
+
         const data = await readResponse.json();
-        
+
         if (data && data.test === true) {
           updateStatus('✅ Connected to Firebase', 'connected');
           console.log('✅ Connection test successful (Fetch API)');
@@ -1747,7 +1196,7 @@
         }
       } catch (error) {
         console.error('❌ Connection error:', error);
-        
+
         
         updateStatus('OFFLINE', 'error');
         isConnected = false;
@@ -1764,10 +1213,10 @@
       try {
         isSyncing = true;
         updateSyncIndicator('syncing');
-        
+
         
         lastSavedContent = content;
-        
+
         
         let currentData = {};
         try {
@@ -1779,21 +1228,22 @@
           
           console.warn('⚠️ Could not read current data from Firebase:', e);
         }
-        
+
         
         
         const contentMatchesCompiled = currentData.content === content;
-        const shouldPreserveCompilation = contentMatchesCompiled && 
-                                         currentData.compilationStatus === 'success' && 
-                                         currentData.binaryHash;
-        
+        const shouldPreserveCompilation = contentMatchesCompiled &&
+          currentData.compilationStatus === 'success' &&
+          currentData.binaryHash;
+
         
         const data = {
           content: content,
-          language: 'c',
+          language: 'cpp',
           lastModified: new Date().toISOString(),
           timestamp: Date.now(),
           size: content.length,
+          aiHelpUsed: currentData.aiHelpUsed || false,
           
           ...(shouldPreserveCompilation && {
             compilationStatus: currentData.compilationStatus,
@@ -1805,19 +1255,19 @@
           })
           
         };
-        
+
         const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         const result = await response.json();
-        
+
         updateSyncIndicator('synced');
         updateStatus('Synced', 'connected');
         console.log('✅ Code saved to Firebase (Fetch API)');
@@ -1829,10 +1279,10 @@
         }
         
         const errorMsgLower = (error.message || '').toLowerCase();
-        if (errorMsgLower.includes('failed to fetch') || 
-            errorMsgLower.includes('networkerror') ||
-            errorMsgLower.includes('network request failed') ||
-            errorMsgLower.includes('fetch')) {
+        if (errorMsgLower.includes('failed to fetch') ||
+          errorMsgLower.includes('networkerror') ||
+          errorMsgLower.includes('network request failed') ||
+          errorMsgLower.includes('fetch')) {
           updateStatus('Connect to Internet', 'error');
           isConnected = false;
           
@@ -1847,6 +1297,17 @@
         updateSyncIndicator('error');
       } finally {
         
+        try {
+          const encoded = btoa(unescape(encodeURIComponent(content)));
+          const url = new URL(window.location.href);
+          url.searchParams.set('code', encoded);
+          window.history.replaceState({}, '', url.toString());
+          console.log('🔗 URL updated with current code');
+        } catch (e) {
+          console.warn('⚠️ Could not update URL:', e);
+        }
+
+        
         setTimeout(() => {
           isSyncing = false;
         }, 100);
@@ -1857,7 +1318,7 @@
     function cleanCodeForHash(code) {
       return code
         .replace(/\/\/.*$/gm, "")
-        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\*[\s\S]*?\*\
         .replace(/\s+/g, " ")
         .trim();
     }
@@ -1894,7 +1355,7 @@
         const data = {
           content: content,
           binaryHash: binaryHash,
-          language: 'c',
+          language: 'javascript',
           lastModified: new Date().toISOString(),
           timestamp: Date.now(),
           size: content.length,
@@ -1932,210 +1393,48 @@
     }
 
     
-    async function runOnBoard() {
-      if (!editor) {
-        updateStatus('❌ Editor not ready', 'error');
-        return;
-      }
-
-      const content = editor.getValue();
-      if (!content.trim()) {
-        updateStatus('⚠️ No code to run', 'error');
-        return;
-      }
-
-      try {
-        btnRunOnBoard.disabled = true;
-        updateStatus('Compiling…', '');
-
-        
-        const hash = await getCodeHash(content);
-        console.log('🔍 Calculated hash:', hash);
-
-        
-        const cacheData = await fetchBinaryFromCache(hash);
-        let binaryBase64 = null;
-        let binarySize = 0;
-
-        if (cacheData && cacheData.binary) {
-          
-          binaryBase64 = cacheData.binary;
-          binarySize = cacheData.binarySize || 0;
-          updateStatus('⚡ Loaded from cache', 'connected');
-          console.log('⚡ Cache hit, skipping compilation');
-        } else {
-          
-          console.log('📦 Cache miss, requesting compilation');
-          
-          
-          const compileData = {
-            content: content,
-            binaryHash: hash,
-            language: 'c',
-            lastModified: new Date().toISOString(),
-            timestamp: Date.now(),
-            size: content.length,
-            compilationStatus: 'pending',
-            compilationRequested: true,
-            compilationRequestedAt: new Date().toISOString()
-          };
-
-          const compileResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(compileData)
-          });
-
-          if (!compileResponse.ok) {
-            throw new Error(`HTTP ${compileResponse.status}: ${compileResponse.statusText}`);
-          }
-
-          
-          const startTime = Date.now();
-          const timeoutMs = 60000; 
-          const pollInterval = 1000; 
-
-          while (Date.now() - startTime < timeoutMs) {
-            await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-            const statusResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
-            if (!statusResponse.ok) {
-              continue; 
-            }
-
-            const statusData = await statusResponse.json();
-            
-            if (statusData.compilationStatus === 'error') {
-              const errorMsg = statusData.compilationError || 'Unknown error';
-              updateStatus('❌ Compilation failed', 'error');
-              throw new Error(`Compilation failed: ${errorMsg}`);
-            }
-
-            if (statusData.compilationStatus === 'success' && statusData.binaryHash === hash) {
-              
-              const finalCacheData = await fetchBinaryFromCache(hash);
-              if (finalCacheData && finalCacheData.binary) {
-                binaryBase64 = finalCacheData.binary;
-                binarySize = finalCacheData.binarySize || 0;
-                updateStatus(`✅ Compilation successful! (${binarySize} bytes)`, 'connected');
-                console.log('✅ Compilation completed, binary fetched from cache');
-                break;
-              } else {
-                throw new Error('Binary not found in cache after successful compilation');
-              }
-            }
-
-            
-            if (statusData.compilationStatus === 'pending' || statusData.compilationStatus === 'processing') {
-              continue;
-            }
-          }
-
-          
-          if (!binaryBase64) {
-            updateStatus('❌ Compilation timeout', 'error');
-            throw new Error('Compilation timeout after 60 seconds');
-          }
-        }
-
-        
-        updateStatus('Checking device...', '');
-        const permitted = await findKnownBoardDevice();
-        if (!permitted) {
-          updateStatus('Pairing device...', '');
-          await connectWebHID();
-        }
-
-        
-        updateStatus('Flashing…', '');
-        await flashBinary(binaryBase64, binarySize);
-
-        
-        updateStatus(`✅ Done (${binarySize} bytes)`, 'connected');
-        console.log('✅ Run on Board completed successfully');
-
-      } catch (error) {
-        console.error('❌ Error in runOnBoard:', error);
-        const errorMsg = error.message || 'Unknown error';
-        
-        if (errorMsg.includes('timeout')) {
-          updateStatus('❌ Compilation timeout', 'error');
-        } else if (errorMsg.includes('Compilation failed')) {
-          updateStatus('❌ Compilation failed', 'error');
-        } else if (errorMsg.includes('Device not paired') || errorMsg.includes('WebHID')) {
-          updateStatus('❌ Device not paired', 'error');
-        } else if (errorMsg.includes('Connect to Internet') || errorMsg.includes('fetch')) {
-          updateStatus('❌ Connect to Internet', 'error');
-        } else {
-          updateStatus(`❌ ${errorMsg}`, 'error');
-        }
-      } finally {
-        btnRunOnBoard.disabled = false;
-      }
-    }
-
     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
     require(['vs/editor/editor.main'], async function () {
       
-      let initialCode = 
-`int main()
-{
-	SystemInit(); // 
-	
-	Delay_Ms(100);
-	
-	// Enable clocks for all GPIOs
-	RCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA;
-	
-	// Configure PD6 as output (main LED)
-	GPIOD->CFGLR &= ~(0xF << (4 * 6));
-	GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);
-	
-	// Configure PC0 as output as well (test)
-	GPIOC->CFGLR &= ~(0xF << (4 * 0));
-	GPIOC->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 0);
-	
-	// Main loop - test both pins
-	while(1) {
-		// Turn ON PD6 and PC0
-		GPIOD->BSHR = 1 << 6;
-		GPIOC->BSHR = 1 << 0;
-		Delay_Ms(1000);
-		
-		// Turn OFF PD6 and PC0
-		GPIOD->BSHR = 1 << (6 + 16);
-		GPIOC->BSHR = 1 << (0 + 16);
-		Delay_Ms(1000);
-	}
-}
-`;
+      let initialCode = '#include "onedollarboard.h"\n\nint main()\n{\n\tSystemInit(); \n\n\tDelay_Ms(100);\n\n\t// Enable clocks for all GPIOs\n\tRCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOA;\n\n\t// Configure PD6 as output (main LED)\n\tGPIOD->CFGLR &= ~(0xF << (4 * 6));\n\tGPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);\n\n\t// Configure PC0 as output as well (test)\n\tGPIOC->CFGLR &= ~(0xF << (4 * 0));\n\tGPIOC->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 0);\n\n\t// Main loop - test both pins\n\twhile(1) {\n\t\t// Turn ON PD6 and PC0\n\t\tGPIOD->BSHR = 1 << 6;\n\t\tGPIOC->BSHR = 1 << 0;\n\t\tDelay_Ms(1000);\n\n\t\t// Turn OFF PD6 and PC0\n\t\tGPIOD->BSHR = 1 << (6 + 16);\n\t\tGPIOC->BSHR = (1 << (0 + 16));\n\t\tDelay_Ms(1000);\n\t}\n}\n';
       let initialData = null;
-      try {
-        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
-        if (response.ok) {
-          const data = await response.json();
-          initialData = data;
-          if (data && data.content) {
-            initialCode = data.content;
-            lastSavedContent = initialCode;
-            console.log('✅ Code loaded from Firebase (Fetch API)');
-            
-            
-            if (data.compilationStatus === 'success' && data.binaryHash) {
-              console.log('🔍 Compiled binaryHash found on page load');
-              console.log('   - binaryHash:', data.binaryHash);
-              console.log('   - binarySize:', data.binarySize);
+
+      
+      
+      const urlCode = window.DECODED_CODE_FROM_URL || null;
+      if (urlCode) {
+        initialCode = urlCode;
+        lastSavedContent = urlCode;
+        console.log('🔗 Code loaded from URL parameter (?code=BASE64)');
+      } else {
+        
+        try {
+          const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
+          if (response.ok) {
+            const data = await response.json();
+            initialData = data;
+            if (data && data.content) {
+              initialCode = data.content;
+              lastSavedContent = initialCode;
+              console.log('✅ Code loaded from Firebase (Fetch API)');
+
+              
+              if (data.compilationStatus === 'success' && data.binaryHash) {
+                console.log('🔍 Compiled binaryHash found on page load');
+                console.log('   - binaryHash:', data.binaryHash);
+                console.log('   - binarySize:', data.binarySize);
+              }
             }
           }
+        } catch (error) {
+          console.warn('⚠️ Error loading initial code:', error);
+          
         }
-      } catch (error) {
-        console.warn('⚠️ Error loading initial code:', error);
-        
       }
 
       editor = monaco.editor.create(document.getElementById('editor'), {
         value: initialCode,
-        language: 'c',
+        language: 'cpp',
         theme: 'vs-dark',
         automaticLayout: true,
         fontSize: 14,
@@ -2145,36 +1444,30 @@
       });
 
       
-      await loadProjectName();
       
       
-      const projectNameDisplay = document.getElementById('projectNameDisplay');
-      const projectNameInput = document.getElementById('projectNameInput');
-      
-      if (projectNameDisplay) {
-        
-        projectNameDisplay.addEventListener('dblclick', (e) => {
-          e.preventDefault();
-          enterEditMode();
-        });
-      }
-      
-      if (projectNameInput) {
-        
-        projectNameInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            exitEditMode(true);
-          } else if (e.key === 'Escape') {
-            e.preventDefault();
-            exitEditMode(false);
-          }
-        });
-        
-        
-        projectNameInput.addEventListener('blur', () => {
-          exitEditMode(true);
-        });
+      if (urlCode) {
+        isSyncing = true; 
+        console.log('🔗 Saving URL code to Firebase to prevent listener overwrite...');
+        try {
+          await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: urlCode,
+              language: 'cpp',
+              lastModified: new Date().toISOString(),
+              timestamp: Date.now(),
+              size: urlCode.length
+              
+            })
+          });
+          console.log('✅ URL code saved to Firebase');
+        } catch (e) {
+          console.warn('⚠️ Could not save URL code to Firebase:', e.message);
+        } finally {
+          isSyncing = false; 
+        }
       }
 
       
@@ -2183,20 +1476,27 @@
         updateStatus('Editor ready - Sync active', 'connected');
         updateSyncIndicator('synced');
         btnCompile.disabled = false;
-        btnRunOnBoard.disabled = false;
+
         
+        if (!initialData || !initialData.aiHelpUsed) {
+          btnAIHelp.classList.add('new-help');
+          console.log('✨ Project is new for AI help');
+        } else {
+          console.log('🤖 AI help already used for this project');
+        }
+
         
         if (initialData && initialData.compilationStatus === 'success' && initialData.binaryHash) {
           const currentContent = editor.getValue();
           const firebaseContent = initialData.content || '';
-          
+
           
           const isValidBinary = await isBinaryValidForCode(initialData, currentContent, firebaseContent);
-          
+
           if (isValidBinary) {
             
             const cacheData = await fetchBinaryFromCache(initialData.binaryHash);
-            
+
             if (cacheData && cacheData.binary) {
               const size = cacheData.binarySize || initialData.binarySize || 0;
               showFlashButton(cacheData.binary, size);
@@ -2219,17 +1519,13 @@
 
       
       editor.onDidChangeModelContent(() => {
-        
-        if (currentOpenFile === 'main.c') {
-          updateMainCInFiles();
-        }
         const currentContent = editor.getValue();
-        
+
         
         if (!isLocalChange && currentContent !== lastSavedContent) {
           hideFlashButton();
         }
-        
+
         
         if (!isLocalChange) {
           
@@ -2256,12 +1552,12 @@
               if (cached && cached.binary) {
                 console.log('⚡ Binary loaded from cache:', hash);
                 updateStatus('⚡ Loaded from cache', 'connected');
-                
+
                 
                 try {
                   const currentDataResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
                   const currentData = currentDataResponse.ok ? await currentDataResponse.json() : {};
-                  
+
                   const updateData = {
                     ...currentData,
                     content: code,
@@ -2273,18 +1569,18 @@
                     timestamp: Date.now(),
                     lastModified: new Date().toISOString()
                   };
-                  
+
                   const updateResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updateData)
                   });
-                  
+
                   if (updateResponse.ok) {
                     console.log('✅ Firebase updated with success status from cache');
                     console.log('   - binaryHash:', hash);
                     console.log('   - binarySize:', cached.binarySize || 0);
-                    
+
                     
                     
                     setTimeout(() => {
@@ -2301,7 +1597,7 @@
                   
                   showFlashButton(cached.binary, cached.binarySize || 0);
                 }
-                
+
                 return;
               }
             }
@@ -2313,14 +1609,8 @@
       });
 
       
-      btnRunOnBoard.addEventListener('click', () => {
-        runOnBoard();
-      });
-
-      
-      
       if (codeRef) {
-        console.log('✅ Configuring Firebase listener');
+        console.log('✅ Setting up Firebase listener');
         console.log('   - codeRef exists:', !!codeRef);
         console.log('   - database exists:', !!database);
         
@@ -2330,7 +1620,7 @@
             console.log('🔥🔥🔥 [LISTENER TRIGGERED] Event received from Firebase!');
             console.log('   - snapshot.exists():', snapshot.exists());
             if (!snapshot.exists()) {
-              console.log('   - Snapshot does not exist, returning');
+              console.log('   - Snapshot doesn\'t exist, returning');
               return;
             }
 
@@ -2354,18 +1644,18 @@
             
             if (data.compilationStatus === 'success') {
               
-              
+
               
               if (!data.binaryHash) {
                 hideFlashButton();
                 updateStatus('✅ Compilation completed (no binaryHash)', 'connected');
                 btnCompile.disabled = false;
-                console.log('⚠️ Status is success but binaryHash does not exist - button hidden');
+                console.log('⚠️ Status is success but binaryHash doesn\'t exist - button hidden');
                 
               } else {
                 
                 const cacheData = await fetchBinaryFromCache(data.binaryHash);
-                
+
                 if (!cacheData || !cacheData.binary) {
                   hideFlashButton();
                   updateStatus('✅ Compilation completed (binary not found in cache)', 'connected');
@@ -2373,10 +1663,10 @@
                   console.log('⚠️ binaryHash exists but binary not found in cache');
                   return;
                 }
-                
+
                 
                 const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
-                
+
                 
                 console.log('🔍 [SUCCESS] Data received from Firebase:');
                 console.log('   - compilationStatus:', data.compilationStatus);
@@ -2385,20 +1675,20 @@
                 console.log('   - binarySavedAt:', data.binarySavedAt);
                 console.log('   - code timestamp:', data.timestamp || data.lastModified);
                 console.log('   - isValidBinary:', isValidBinary);
-                
+
                 if (isValidBinary) {
                   
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
                   updateStatus(`✅ Compilation successful! (${size} bytes)`, 'connected');
                   btnCompile.disabled = false;
-                  console.log('✅✅✅ Flash button SHOWN!');
+                  console.log('✅✅✅ Recording button SHOWN!');
                   console.log('   - Binary valid for current code');
                 } else {
                   hideFlashButton();
                   console.log('⚠️ Button hidden: binary is not valid for current code');
                   if (currentContent !== firebaseContent) {
-                    console.log('   - Reason: editor code does not match compiled code');
+                    console.log('   - Reason: editor code doesn\'t match compiled code');
                     console.log('   - Difference:', Math.abs(currentContent.length - firebaseContent.length), 'chars');
                   } else {
                     console.log('   - Reason: binary was compiled before last code modification');
@@ -2429,7 +1719,7 @@
             
             if (!data.binaryHash) {
               hideFlashButton();
-              console.log('⚠️ Final check: binaryHash does not exist - button hidden');
+              console.log('⚠️ Final check: binaryHash doesn\'t exist - button hidden');
             } else if (data.compilationStatus === 'success') {
               
               const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
@@ -2438,7 +1728,7 @@
                 if (cacheData && cacheData.binary) {
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
-                  console.log('✅✅✅ Flash button SHOWN in final check!');
+                  console.log('✅✅✅ Recording button SHOWN in final check!');
                 }
               }
             }
@@ -2455,44 +1745,44 @@
             
             if (currentContent !== firebaseContent) {
               isLocalChange = true; 
-              
+
               
               if (saveTimeout) {
                 clearTimeout(saveTimeout);
                 saveTimeout = null;
               }
-              
+
               
               editor.setValue(firebaseContent);
               lastSavedContent = firebaseContent;
-              
+
               
               
               const updatedContent = editor.getValue();
-              const isValidBinary = data.compilationStatus === 'success' && 
-                                   await isBinaryValidForCode(data, updatedContent, firebaseContent);
-              
+              const isValidBinary = data.compilationStatus === 'success' &&
+                await isBinaryValidForCode(data, updatedContent, firebaseContent);
+
               if (isValidBinary && data.binaryHash) {
                 
                 const cacheData = await fetchBinaryFromCache(data.binaryHash);
                 if (cacheData && cacheData.binary) {
                   const size = cacheData.binarySize || data.binarySize || 0;
                   showFlashButton(cacheData.binary, size);
-                  console.log('✅ Flash button kept after Firebase update (valid binary from cache)');
+                  console.log('✅ Recording button kept after Firebase update (valid binary from cache)');
                 } else {
                   hideFlashButton();
-                  console.log('⚠️ binaryHash valid but binary not found in cache');
+                  console.log('⚠️ valid binaryHash but binary not found in cache');
                 }
               } else {
                 
                 hideFlashButton();
                 console.log('⚠️ Button hidden: code was updated from Firebase and binary is not valid');
               }
-              
+
               updateStatus('🔄 Updated from Firebase', 'connected');
               updateSyncIndicator('synced');
               console.log('🔄 Code updated from Firebase');
-              
+
               
               setTimeout(() => {
                 isLocalChange = false;
@@ -2500,39 +1790,39 @@
               }, 200);
             }
           }, (error) => {
-            console.error('❌ Erro no listener do Firebase:', error);
+            console.error('❌ Error in Firebase listener:', error);
             console.warn('⚠️ Error in Firebase SDK listener, using polling:', error);
             
             startPolling();
           });
-          console.log('✅ Listener do Firebase configurado com sucesso! Aguardando mudanças...');
+          console.log('✅ Firebase listener configured successfully! Waiting for changes...');
+
           
           
-          
-          console.log('🔄 Iniciando verificação periódica de fallback (a cada 2 segundos)...');
+          console.log('🔄 Starting periodic fallback check (every 2 seconds)...');
           setInterval(async () => {
             if (isSyncing) return;
-            
+
             try {
               const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
               if (response.ok) {
                 const data = await response.json();
                 if (!data || !data.content) return;
-                
+
                 const currentContent = editor.getValue();
                 const firebaseContent = data.content;
-                
+
                 
                 if (data.compilationStatus === 'success' && data.binaryHash) {
                   
                   const cacheData = await fetchBinaryFromCache(data.binaryHash);
-                  
+
                   if (cacheData && cacheData.binary) {
                     const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
                     if (isValidBinary && btnFlash.style.display === 'none') {
                       const size = cacheData.binarySize || data.binarySize || 0;
                       showFlashButton(cacheData.binary, size);
-                      console.log('✅✅✅ [FALLBACK] Flash button SHOWN by periodic check!');
+                      console.log('✅✅✅ [FALLBACK] Recording button SHOWN by periodic check!');
                     } else if (!isValidBinary && btnFlash.style.display !== 'none') {
                       hideFlashButton();
                       console.log('⚠️ [FALLBACK] Button hidden by periodic check (invalid binary)');
@@ -2552,7 +1842,7 @@
               
             }
           }, 2000); 
-          
+
         } catch (error) {
           console.error('❌ Error configuring listener:', error);
           console.warn('⚠️ SDK not available, using polling:', error);
@@ -2560,7 +1850,7 @@
         }
       } else {
         
-        console.log('⚠️ codeRef does not exist, using polling');
+        console.log('⚠️ codeRef doesn\'t exist, using polling');
         startPolling();
       }
 
@@ -2569,16 +1859,16 @@
         let lastTimestamp = Date.now();
         setInterval(async () => {
           if (isSyncing) return; 
-          
+
           try {
             const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`);
             if (response.ok) {
               const data = await response.json();
               if (!data) return;
-              
+
               const currentContent = editor.getValue();
               const firebaseContent = data.content;
-              
+
               
               if (data.compilationStatus) {
                 if (data.compilationStatus === 'success') {
@@ -2587,11 +1877,11 @@
                     hideFlashButton();
                     updateStatus('✅ Compilation completed (no binaryHash)', 'connected');
                     btnCompile.disabled = false;
-                    console.log('⚠️ [POLLING] Status is success but binaryHash does not exist - button hidden');
+                    console.log('⚠️ [POLLING] Status is success but binaryHash doesn\'t exist - button hidden');
                   } else {
                     
                     const cacheData = await fetchBinaryFromCache(data.binaryHash);
-                    
+
                     if (!cacheData || !cacheData.binary) {
                       hideFlashButton();
                       updateStatus('✅ Compilation completed (binary not found in cache)', 'connected');
@@ -2602,20 +1892,20 @@
                       const size = cacheData.binarySize || data.binarySize || 0;
                       updateStatus(`✅ Compilation successful! (${size} bytes)`, 'connected');
                       btnCompile.disabled = false;
-                      
+
                       
                       const isValidBinary = await isBinaryValidForCode(data, currentContent, firebaseContent);
-                      
+
                       
                       console.log('🔍 [POLLING SUCCESS] Data received from Firebase:');
                       console.log('   - compilationStatus:', data.compilationStatus);
                       console.log('   - binaryHash:', data.binaryHash);
                       console.log('   - binarySize:', cacheData.binarySize || data.binarySize);
                       console.log('   - isValidBinary:', isValidBinary);
-                      
+
                       if (isValidBinary) {
                         showFlashButton(cacheData.binary, size);
-                        console.log('✅✅✅ [POLLING] Flash button SHOWN!');
+                        console.log('✅✅✅ [POLLING] Recording button SHOWN!');
                         console.log('   - Binary valid for current code');
                       } else {
                         hideFlashButton();
@@ -2624,8 +1914,8 @@
                     }
                   }
                 } else if (data.compilationStatus === 'error') {
-                  const errorMsg = data.compilationError || 'Erro desconhecido';
-                  updateStatus(`❌ Erro na compilação: ${errorMsg}`, 'error');
+                  const errorMsg = data.compilationError || 'Unknown error';
+                  updateStatus(`❌ Compilation error: ${errorMsg}`, 'error');
                   btnCompile.disabled = false;
                   hideFlashButton();
                 } else if (data.compilationStatus === 'pending') {
@@ -2638,14 +1928,14 @@
                     hideFlashButton();
                   }
                 }
-                
+
                 
                 if (!data.binaryHash) {
                   hideFlashButton();
-                  console.log('⚠️ [POLLING] Final check: binaryHash does not exist - button hidden');
+                  console.log('⚠️ [POLLING] Final check: binaryHash doesn\'t exist - button hidden');
                 }
               }
-              
+
               
               if (data.content && data.timestamp > lastTimestamp) {
                 if (currentContent !== firebaseContent && firebaseContent !== lastSavedContent) {
@@ -2653,12 +1943,12 @@
                   editor.setValue(firebaseContent);
                   lastSavedContent = firebaseContent;
                   lastTimestamp = data.timestamp;
-                  
+
                   
                   const updatedContent = editor.getValue();
-                  const isValidBinary = data.compilationStatus === 'success' && 
-                                       await isBinaryValidForCode(data, updatedContent, firebaseContent);
-                  
+                  const isValidBinary = data.compilationStatus === 'success' &&
+                    await isBinaryValidForCode(data, updatedContent, firebaseContent);
+
                   if (isValidBinary && data.binaryHash) {
                     
                     const cacheData = await fetchBinaryFromCache(data.binaryHash);
@@ -2671,7 +1961,7 @@
                   } else {
                     hideFlashButton();
                   }
-                  
+
                   updateStatus('🔄 Updated from Firebase', 'connected');
                   setTimeout(() => {
                     isLocalChange = false;
@@ -2698,7 +1988,7 @@
         }
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-        
+
         
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -2708,15 +1998,15 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
-        console.log(`✅ Download iniciado: code.bin (${size || byteArray.length} bytes)`);
-        updateStatus(`📥 Download iniciado (${size || byteArray.length} bytes)`, 'connected');
+
+        console.log(`✅ Download started: code.bin (${size || byteArray.length} bytes)`);
+        updateStatus(`📥 Download started (${size || byteArray.length} bytes)`, 'connected');
         setTimeout(() => {
           updateStatus('Synced', 'connected');
         }, 2000);
       } catch (error) {
-        console.error('❌ Erro ao fazer download:', error);
-        updateStatus('❌ Erro ao fazer download', 'error');
+        console.error('❌ Error downloading:', error);
+        updateStatus('❌ Error downloading', 'error');
       }
     }
 
@@ -2728,610 +2018,115 @@
     }
 
     
-    
-    let projectFiles = {};
-    let currentOpenFile = 'main.c'; 
-    
-    
-    function updateEditorMargin() {
-      const isOpen = filesSidebar.classList.contains('open');
-      editorContainer.style.marginRight = isOpen ? '400px' : '48px';
-    }
-    
-    
-    function toggleSidebar(e) {
-      if (e) {
-        e.stopPropagation();
-      }
-      filesSidebar.classList.toggle('open');
-      updateEditorMargin();
-    }
-    
-    
-    const sidebarHeader = document.querySelector('.sidebar-header');
-    sidebarHeader.addEventListener('click', (e) => {
-      if (!filesSidebar.classList.contains('open')) {
-        toggleSidebar(e);
-      }
-    });
-    
-    
-    filesSidebar.addEventListener('click', (e) => {
-      if (!filesSidebar.classList.contains('open') && e.target === filesSidebar) {
-        toggleSidebar(e);
-      }
-    });
-    
-    
-    sidebarClose.addEventListener('click', toggleSidebar);
-    
-    
-    updateEditorMargin();
-    
-    
-    btnCreateFile.addEventListener('click', () => {
-      createNewFile();
-    });
-    
-    
-    btnAddFile.addEventListener('click', () => {
-      fileInput.click();
-    });
-    
-    
-    fileInput.addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files);
-      await handleFiles(files);
-      fileInput.value = ''; 
-    });
-    
-    
-    let dragCounter = 0;
-    
-    editorContainer.addEventListener('dragenter', (e) => {
-      e.preventDefault();
-      dragCounter++;
-      if (dragCounter === 1) {
-        dragDropOverlay.classList.add('active');
-      }
-    });
-    
-    editorContainer.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      dragCounter--;
-      if (dragCounter === 0) {
-        dragDropOverlay.classList.remove('active');
-      }
-    });
-    
-    editorContainer.addEventListener('dragover', (e) => {
-      e.preventDefault();
-    });
-    
-    editorContainer.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      dragCounter = 0;
-      dragDropOverlay.classList.remove('active');
-      
-      const files = Array.from(e.dataTransfer.files);
-      const validFiles = files.filter(file => 
-        file.name.endsWith('.h') || 
-        file.name.endsWith('.c') || 
-        file.name.endsWith('.txt')
-      );
-      
-      if (validFiles.length > 0) {
-        await handleFiles(validFiles);
-      } else {
-        updateStatus('⚠️ Only .h, .c, and .txt files are supported', 'error');
-      }
-    });
-    
-    
-    async function handleFiles(files) {
-      for (const file of files) {
-        try {
-          const content = await file.text();
-          const fileData = {
-            name: file.name,
-            content: content,
-            size: file.size,
-            type: file.type || 'text/plain',
-            uploadedAt: new Date().toISOString(),
-            timestamp: Date.now()
-          };
-          
-          
-          projectFiles[file.name] = fileData;
-          
-          
-          await saveFileToFirebase(file.name, fileData);
-          
-          console.log(`✅ File added: ${file.name}`);
-        } catch (error) {
-          console.error(`❌ Error processing file ${file.name}:`, error);
-          updateStatus(`❌ Error adding ${file.name}`, 'error');
-        }
-      }
-      
-      
-      renderFilesList();
-      updateStatus(`✅ Added ${files.length} file(s)`, 'connected');
-    }
-    
-    
-    function encodeFileNameForFirebase(fileName) {
-      return btoa(fileName).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    }
-    
-    
-    function decodeFileNameFromFirebase(encodedKey) {
-      try {
-        
-        let padded = encodedKey.replace(/-/g, '+').replace(/_/g, '/');
-        while (padded.length % 4) {
-          padded += '=';
-        }
-        return atob(padded);
-      } catch (e) {
-        console.error('Error decoding file name:', e);
-        return encodedKey; 
-      }
-    }
-    
-    
-    async function saveFileToFirebase(fileName, fileData) {
-      try {
-        
-        const safeKey = encodeFileNameForFirebase(fileName);
-        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/files/${safeKey}.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(fileData)
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Firebase error response:', errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-      } catch (error) {
-        console.error('❌ Error saving file to Firebase:', error);
-        throw error;
-      }
-    }
-    
-    
-    async function loadFilesFromFirebase() {
-      try {
-        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/files.json`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data) {
-            
-            projectFiles = {};
-            for (const [key, fileData] of Object.entries(data)) {
-              const originalFileName = decodeFileNameFromFirebase(key);
-              projectFiles[originalFileName] = fileData;
-            }
-          }
-        }
-        
-        
-        
-        if (editor) {
-          const mainContent = editor.getValue();
-          projectFiles['main.c'] = {
-            name: 'main.c',
-            content: mainContent,
-            size: new Blob([mainContent]).size,
-            type: 'text/x-csrc',
-            uploadedAt: new Date().toISOString(),
-            timestamp: Date.now()
-          };
-          
-          currentOpenFile = 'main.c';
-        }
-        
-        renderFilesList();
-      } catch (error) {
-        console.warn('⚠️ Error loading files from Firebase:', error);
-      }
-    }
-    
-    
-    function updateMainCInFiles() {
-      if (editor && currentOpenFile === 'main.c') {
-        const mainContent = editor.getValue();
-        projectFiles['main.c'] = {
-          name: 'main.c',
-          content: mainContent,
-          size: new Blob([mainContent]).size,
-          type: 'text/x-csrc',
-          uploadedAt: new Date().toISOString(),
-          timestamp: Date.now()
-        };
-      }
-    }
-    
-    
-    function renderFilesList() {
-      const files = Object.values(projectFiles);
-      
-      
-      files.sort((a, b) => {
-        if (a.name === 'main.c') return -1;
-        if (b.name === 'main.c') return 1;
-        return a.name.localeCompare(b.name);
-      });
-      
-      if (files.length === 0) {
-        filesList.innerHTML = '<div class="files-empty">No files yet. Drop files here or click "Add File".</div>';
-        return;
-      }
-      
-      filesList.innerHTML = files.map(file => {
-        const sizeKB = (file.size / 1024).toFixed(2);
-        const isActive = currentOpenFile === file.name;
-        return `
-          <div class="file-item ${isActive ? 'active' : ''}" data-file-name="${file.name}">
-            <div class="file-item-info">
-              <div class="file-item-name" data-file-name="${file.name}">${file.name}</div>
-              <div class="file-item-size">${sizeKB} KB</div>
-            </div>
-            <div class="file-item-actions">
-              <button class="file-item-btn view" data-file-name="${file.name}" title="Open in editor">👁</button>
-              ${file.name !== 'main.c' ? `<button class="file-item-btn delete" data-file-name="${file.name}" title="Delete">🗑</button>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      // Add event listeners - use event delegation for better reliability
-      filesList.addEventListener('click', (e) => {
-        // Handle view button click
-        if (e.target.classList.contains('view') || e.target.closest('.file-item-btn.view')) {
-          e.stopPropagation();
-          const btn = e.target.classList.contains('view') ? e.target : e.target.closest('.file-item-btn.view');
-          const fileName = btn?.getAttribute('data-file-name');
-          console.log('🔍 View button clicked for:', fileName);
-          if (fileName) {
-            viewFile(fileName);
-          }
-          return;
-        }
-        
-        // Handle delete button click
-        if (e.target.classList.contains('delete') || e.target.closest('.file-item-btn.delete')) {
-          e.stopPropagation();
-          const btn = e.target.classList.contains('delete') ? e.target : e.target.closest('.file-item-btn.delete');
-          const fileName = btn?.getAttribute('data-file-name');
-          if (fileName) {
-            deleteFile(fileName);
-          }
-          return;
-        }
-        
-        // Handle file item click (clicking on the item itself, not buttons)
-        const fileItem = e.target.closest('.file-item');
-        if (fileItem && !e.target.closest('.file-item-btn') && !e.target.classList.contains('file-item-name')) {
-          const fileName = fileItem.getAttribute('data-file-name');
-          console.log('🔍 File item clicked:', fileName);
-          if (fileName) {
-            viewFile(fileName);
-          }
-          return;
-        }
-      });
-      
-      // Double click on file name to rename
-      filesList.querySelectorAll('.file-item-name').forEach(nameEl => {
-        nameEl.addEventListener('dblclick', (e) => {
-          e.stopPropagation();
-          const oldFileName = nameEl.getAttribute('data-file-name');
-          renameFile(oldFileName, nameEl);
-        });
-      });
-    }
-    
-    // Create new file
-    async function createNewFile() {
-      const fileName = prompt('Enter file name (e.g., keypad.h):');
-      if (!fileName || !fileName.trim()) return;
-      
-      const trimmedName = fileName.trim();
-      
-      // Check if file already exists
-      if (projectFiles[trimmedName]) {
-        updateStatus(`⚠️ File ${trimmedName} already exists`, 'error');
-        return;
-      }
-      
-      // Validate file extension
-      if (!trimmedName.includes('.')) {
-        updateStatus('⚠️ Please include file extension (e.g., .h, .c)', 'error');
-        return;
-      }
-      
-      try {
-        const fileData = {
-          name: trimmedName,
-          content: '',
-          size: 0,
-          type: 'text/plain',
-          uploadedAt: new Date().toISOString(),
-          timestamp: Date.now()
-        };
-        
-        // Store in local state
-        projectFiles[trimmedName] = fileData;
-        
-        // Save to Firebase
-        await saveFileToFirebase(trimmedName, fileData);
-        
-        renderFilesList();
-        updateStatus(`✅ Created ${trimmedName}`, 'connected');
-      } catch (error) {
-        console.error('❌ Error creating file:', error);
-        updateStatus(`❌ Error creating ${trimmedName}`, 'error');
-      }
-    }
-    
-    // Rename file
-    async function renameFile(oldFileName, nameElement) {
-      const file = projectFiles[oldFileName];
-      if (!file) return;
-      
-      // Create input element
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.value = oldFileName;
-      input.className = 'file-item-name-input';
-      input.style.width = '100%';
-      
-      // Replace name element with input
-      nameElement.replaceWith(input);
-      input.focus();
-      input.select();
-      
-      // Handle rename
-      const handleRename = async () => {
-        const newFileName = input.value.trim();
-        
-        if (!newFileName || newFileName === oldFileName) {
-          // Cancel rename - restore original
-          renderFilesList();
-          return;
-        }
-        
-        // Check if new name already exists
-        if (projectFiles[newFileName]) {
-          updateStatus(`⚠️ File ${newFileName} already exists`, 'error');
-          renderFilesList();
-          return;
-        }
-        
-        try {
-          // Update file data
-          const updatedFile = { ...file, name: newFileName };
-          
-          // Save new file to Firebase
-          await saveFileToFirebase(newFileName, updatedFile);
-          
-          // Delete old file from Firebase
-          const oldSafeKey = encodeFileNameForFirebase(oldFileName);
-          await fetch(`${DATABASE_URL}${DATABASE_PATH}/files/${oldSafeKey}.json`, {
-            method: 'DELETE'
-          });
-          
-          // Update local state
-          delete projectFiles[oldFileName];
-          projectFiles[newFileName] = updatedFile;
-          
-          renderFilesList();
-          updateStatus(`✅ Renamed ${oldFileName} to ${newFileName}`, 'connected');
-        } catch (error) {
-          console.error('❌ Error renaming file:', error);
-          updateStatus(`❌ Error renaming ${oldFileName}`, 'error');
-          renderFilesList();
-        }
-      };
-      
-      // Save on Enter or blur
-      input.addEventListener('blur', handleRename);
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          input.blur();
-        } else if (e.key === 'Escape') {
-          renderFilesList();
-        }
-      });
-    }
-    
-    // View file content - opens in editor
-    async function viewFile(fileName) {
-      console.log('📂 viewFile called with:', fileName);
-      
-      if (!editor) {
-        updateStatus('⚠️ Editor not ready yet', 'error');
-        console.error('❌ Editor not ready');
-        return;
-      }
-      
-      // If main.c, load the main code from Firebase (the primary editor content)
-      if (fileName === 'main.c') {
-        console.log('📝 Loading main.c from Firebase...');
-        
-        // If we're switching from another file, save it first
-        if (currentOpenFile !== 'main.c' && currentOpenFile) {
-          console.log('💾 Saving current file before switching:', currentOpenFile);
-          
-          const currentContent = editor.getValue();
-          if (projectFiles[currentOpenFile]) {
-            projectFiles[currentOpenFile].content = currentContent;
-            projectFiles[currentOpenFile].size = new Blob([currentContent]).size;
-          }
-        }
-        
-        try {
-          
-          const firebaseUrl = `${DATABASE_URL}${DATABASE_PATH}/code.json`;
-          console.log('🌐 Fetching main.c from:', firebaseUrl);
-          
-          const response = await fetch(firebaseUrl);
-          console.log('📡 Response status:', response.status);
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log('📦 Data received:', data ? 'yes' : 'no');
-            
-            const mainContent = (data && data.content !== undefined) ? data.content : '';
-            console.log('📝 Content length:', mainContent.length);
-            
-            
-            console.log('✅ Loading main.c content into editor');
-            isLocalChange = true; 
-            editor.setValue(mainContent);
-            isLocalChange = false;
-            
-            
-            currentOpenFile = 'main.c';
-            updateStatus(`✅ Opened ${fileName}`, 'connected');
-            
-            
-            projectFiles['main.c'] = {
-              name: 'main.c',
-              content: mainContent,
-              size: new Blob([mainContent]).size,
-              type: 'text/x-csrc',
-              uploadedAt: new Date().toISOString(),
-              timestamp: Date.now()
-            };
-            
-            
-            monaco.editor.setModelLanguage(editor.getModel(), 'c');
-            
-            
-            renderFilesList();
-            console.log('✅ main.c loaded successfully, content length:', mainContent.length);
-          } else {
-            console.error('❌ Firebase response not OK:', response.status);
-            
-            const currentContent = editor.getValue();
-            console.log('🔄 Using current editor content as fallback');
-            isLocalChange = true;
-            editor.setValue(currentContent);
-            isLocalChange = false;
-            currentOpenFile = 'main.c';
-            updateStatus(`✅ Opened ${fileName}`, 'connected');
-            projectFiles['main.c'] = {
-              name: 'main.c',
-              content: currentContent,
-              size: new Blob([currentContent]).size,
-              type: 'text/x-csrc',
-              uploadedAt: new Date().toISOString(),
-              timestamp: Date.now()
-            };
-            renderFilesList();
-          }
-        } catch (error) {
-          console.error('❌ Error loading main.c:', error);
-          
-          const currentContent = editor.getValue();
-          console.log('🔄 Using current editor content as fallback (error)');
-          isLocalChange = true;
-          editor.setValue(currentContent);
-          isLocalChange = false;
-          currentOpenFile = 'main.c';
-          updateStatus(`✅ Opened ${fileName}`, 'connected');
-          projectFiles['main.c'] = {
-            name: 'main.c',
-            content: currentContent,
-            size: new Blob([currentContent]).size,
-            type: 'text/x-csrc',
-            uploadedAt: new Date().toISOString(),
-            timestamp: Date.now()
-          };
-          renderFilesList();
-        }
-        return;
-      }
-      
-      const file = projectFiles[fileName];
-      if (!file) {
-        updateStatus(`⚠️ File ${fileName} not found`, 'error');
-        return;
-      }
-      
-      
-      if (currentOpenFile === 'main.c') {
-        updateMainCInFiles();
-      }
-      
-      
-      editor.setValue(file.content || '');
-      currentOpenFile = fileName;
-      updateStatus(`✅ Opened ${fileName}`, 'connected');
-      
-      
-      const extension = fileName.split('.').pop().toLowerCase();
-      let language = 'c';
-      if (extension === 'h') {
-        language = 'c';
-      } else if (extension === 'c') {
-        language = 'c';
-      } else if (extension === 'txt') {
-        language = 'plaintext';
-      }
-      
-      
-      monaco.editor.setModelLanguage(editor.getModel(), language);
-      
-      
-      renderFilesList();
-    }
-    
-    
-    async function deleteFile(fileName) {
-      if (!confirm(`Delete ${fileName}?`)) return;
-      
-      try {
-        
-        const safeKey = encodeFileNameForFirebase(fileName);
-        const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/files/${safeKey}.json`, {
-          method: 'DELETE'
-        });
-        
-        if (response.ok) {
-          
-          delete projectFiles[fileName];
-          renderFilesList();
-          updateStatus(`✅ Deleted ${fileName}`, 'connected');
-        }
-      } catch (error) {
-        console.error('❌ Error deleting file:', error);
-        updateStatus(`❌ Error deleting ${fileName}`, 'error');
-      }
-    }
-
     window.addEventListener('load', () => {
       
       setTimeout(async () => {
         await checkConnectionWithFlag();
-        
-        await loadFilesFromFirebase();
       }, 1000);
-      
+
       
       reconnectInterval = setInterval(async () => {
         if (!isConnected) {
           await tryReconnect();
         }
       }, 3000);
+
+      
+      const aiModal = document.getElementById('aiModal');
+      const btnAIHelp = document.getElementById('btnAIHelp');
+      const btnCloseAI = document.getElementById('btnCloseAI');
+      const qrcodeContainer = document.getElementById('qrcode-container');
+      const linkChatGPT = document.getElementById('linkChatGPT');
+      const btnCopyPrompt = document.getElementById('btnCopyPrompt');
+
+      let qrcode = null;
+
+      btnAIHelp.addEventListener('click', () => {
+        
+        if (btnAIHelp.classList.contains('new-help')) {
+          btnAIHelp.classList.remove('new-help');
+          
+          fetch(`${DATABASE_URL}${DATABASE_PATH}/code.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aiHelpUsed: true })
+          }).catch(e => console.warn('Error marking AI help as used:', e));
+        }
+
+        const currentUrl = window.location.href;
+        const urlObj = new URL(currentUrl);
+        const projectID = urlObj.searchParams.get('projectID');
+        
+        
+        const docsUrl = `https://onedollarboard.com/editor/AI_DOCS.txt`;
+        
+        
+        const shortUrl = `${window.location.origin}${window.location.pathname}?projectID=${projectID}`;
+        
+        
+        qrcodeContainer.innerHTML = '';
+        
+        
+        const productionProjectUrl = `https://onedollarboard.com/editor/?projectID=${projectID}`;
+
+        
+        const prompt = `Help me with my C/C++ project for the One Dollar Board. 
+1. Technical Documentation: ${docsUrl}
+2. Current Project Code: ${productionProjectUrl}
+
+Please read the documentation for API details and review my code.`;
+
+        const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+
+        
+        qrcodeContainer.innerHTML = '';
+        
+        
+        
+        
+        qrcode = new QRCode(qrcodeContainer, {
+          text: chatGPTUrl,
+          width: 200,
+          height: 200,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        
+        linkChatGPT.href = chatGPTUrl;
+
+        
+        btnCopyPrompt.onclick = () => {
+          navigator.clipboard.writeText(prompt).then(() => {
+            const originalText = btnCopyPrompt.innerHTML;
+            btnCopyPrompt.innerHTML = '<span>✅</span> Copied!';
+            setTimeout(() => {
+              btnCopyPrompt.innerHTML = originalText;
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Failed to copy prompt to clipboard');
+          });
+        };
+
+        
+        aiModal.style.display = 'flex';
+      });
+
+      btnCloseAI.addEventListener('click', () => {
+        aiModal.style.display = 'none';
+      });
+
+      
+      aiModal.addEventListener('click', (e) => {
+        if (e.target === aiModal) {
+          aiModal.style.display = 'none';
+        }
+      });
     });
 
   </script>
 </body>
-</html>
 
+</html>
