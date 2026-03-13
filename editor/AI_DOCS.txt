@@ -1,84 +1,100 @@
-# One Dollar Board (ODB) - AI Technical Documentation
+# One Dollar Board AI Documentation
 
-The One Dollar Board is a low-cost development board based on the **WCH CH32V003** RISC-V microcontroller.
+If you are an AI assistant:
+1. Read this document first.
+2. Then read the user's project code.
+3. Help the user generate or improve C code for the One Dollar Board.
+4. Keep examples simple and complete.
 
-## Hardware Specifications
-- **MCU**: CH32V003F4P6 (RISC-V2A core)
-- **Clock**: Up to 48MHz (Internal HSI)
-- **Flash**: 16 KB
-- **SRAM**: 2 KB
-- **Peripherals**: 1x DMA, 1x ADC, 1x I2C, 1x SPI, 1x UART, 1x SysTick.
+## Platform
+- **Microcontroller**: CH32V003 (WCH)
+- **Architecture**: RISC-V (RV32EC)
+- **Language**: C
+- **Framework**: ch32v003fun (Header-only, lightweight)
 
-## Programming Environment
-The editor uses the `ch32v003fun` ecosystem, a lightweight, header-only framework for coding without the heavy official HAL.
+## Project Read API
+AI assistants can fetch the source code directly (JSON):
+`GET https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
 
-### Standard Header
-Always include:
+## Basic Program Structure
+Always include `onedollarboard.h`. The `SystemInit()` function must be called first.
+
 ```c
 #include "onedollarboard.h"
+
+int main() {
+    SystemInit(); // Sets clock to 48MHz
+    
+    // Configuration here
+    
+    while(1) {
+        // Main loop here
+    }
+}
 ```
 
-## Core Functions & Macros
+## Hardware Overview
+- **MCU**: CH32V003F4P6 (16KB Flash, 2KB SRAM)
+- **Onboard LED**: Connected to **PD6**.
+- **User Button**: Most boards use **PD7** (Check board version).
+- **Pinout**: PA1, PA2, PC0, PC1, PC2, PC4, PD0, PD2, PD3, PD4, PD5, PD6, PD7.
 
-### System
-- `SystemInit()`: Initializes the clock to 48MHz. Must be called at the start of `main()`.
+## API Reference
 
-### Timing
-- `Delay_Ms(uint32_t ms)`: Blocking delay in milliseconds.
-- `Delay_Us(uint32_t us)`: Blocking delay in microseconds.
+### System & Timing
+- `SystemInit()`: Initializes system clock.
+- `Delay_Ms(ms)`: Blocking delay (milliseconds).
+- `Delay_Us(us)`: Blocking delay (microseconds).
 
-### GPIO Control
-Registers are accessed via `GPIOx->REG`.
-- `RCC->APB2PCENR`: Enable peripheral clocks (e.g., `RCC_APB2Periph_GPIOD`).
-- `GPIOx->CFGLR`: Port configuration register (direction and speed).
-  - Use `GPIO_Speed_50MHz | GPIO_CNF_OUT_PP` for Push-Pull Output.
-- `GPIOx->BSHR`: Bit Set/Reset Register.
-  - Bits 0-7: Set pin (High).
-  - Bits 16-23: Reset pin (Low).
-- `GPIOx->OUTDR`: Output Data Register.
-- `GPIOx->INDR`: Input Data Register.
+### GPIO Configuration
+- `RCC->APB2PCENR`: Enable clocks (e.g., `RCC_APB2Periph_GPIOD`).
+- `GPIOx->CFGLR`: Configure pin mode (4 bits per pin).
+  - Mode bits (2): `00`: Input, `01`: 10MHz Out, `10`: 2MHz Out, `11`: 50MHz Out.
+  - Config bits (2): (Output) `00`: Push-Pull, `01`: Open-Drain, `10`: AF-PP, `11`: AF-OD.
+- Constants: `GPIO_Speed_50MHz`, `GPIO_CNF_OUT_PP`.
 
-### Onboard LED
-The One Dollar Board has an onboard LED connected to **PD6**.
+### GPIO Operations
+- `GPIOx->BSHR`: Set/Reset pins.
+  - `(1 << pin)`: Set high (bit 0-7).
+  - `(1 << (pin + 16))`: Reset low (bit 16-23).
+- `GPIOx->OUTDR`: Write whole port.
+- `GPIOx->INDR`: Read whole port.
 
-## Example: LED Blink (PD6)
+## Code Examples
+
+### 1. Blink LED (PD6)
 ```c
 #include "onedollarboard.h"
 
 int main() {
     SystemInit();
-
-    // Enable clock for GPIOD
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
-
-    // Configure PD6 as Output Push-Pull (50MHz)
-    // Clear the 4 bits for pin 6, then set them
+    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD; // Enable PD
+    
+    // PD6: Output PP 50MHz
     GPIOD->CFGLR &= ~(0xF << (4 * 6));
     GPIOD->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP) << (4 * 6);
 
     while(1) {
-        GPIOD->BSHR = 1 << 6;     // LED ON
+        GPIOD->BSHR = 1 << 6;  // ON
         Delay_Ms(500);
-        GPIOD->BSHR = 1 << 22;    // LED OFF (1 << (6 + 16))
+        GPIOD->BSHR = 1 << 22; // OFF
         Delay_Ms(500);
     }
 }
 ```
 
-## AI Instructions for URL-based Collaboration
-Users can share their projects via projectID.
-- **Link Format**: `https://onedollarboard.com/editor/?projectID=UUID`
-
-### Project Read API
-AI assistants can fetch the source code directly from the Firebase REST API (No server required):
-`GET https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/UUID/code.json`
-
-This returns a JSON with the following fields:
-- `code`: The source code.
-- `projectID`: The unique project identifier.
-- `name`: Project name.
-- `language`: 'c'
-- `updated`: Last modification timestamp.
-
-### Goal
-Help the user debug, optimize, or implement new features. Fetch the code using the Firebase link above, analyze it, and provide improvements using the `onedollarboard.h` API patterns.
+### 2. GPIO Toggle (All Port D)
+```c
+#include "onedollarboard.h"
+int main() {
+    SystemInit();
+    RCC->APB2PCENR |= RCC_APB2Periph_GPIOD;
+    GPIOD->CFGLR = 0x33333333; // All pins 50MHz Out PP
+    while(1) {
+        GPIOD->OUTDR = 0xFF; // All high
+        Delay_Ms(200);
+        GPIOD->OUTDR = 0x00; // All low
+        Delay_Ms(200);
+    }
+}
+```

@@ -2183,11 +2183,12 @@
         const productionProjectUrl = `https://onedollarboard.com/editor/?projectID=${projectID}`;
 
         
-        const prompt = `Help me with my C/C++ project for the One Dollar Board. 
-1. Technical Documentation: ${docsUrl}
-2. Current Project Code: ${productionProjectUrl}
+        const prompt = `Help me program the One Dollar Board.
 
-Please read the documentation for API details and review my code.`;
+Docs: ${docsUrl}
+Project: ${productionProjectUrl}
+
+Read the docs first, then analyze the code and help improve or generate C code.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
 
