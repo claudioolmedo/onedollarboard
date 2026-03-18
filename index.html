@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full" style="scroll-behavior:smooth">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,15 +10,17 @@
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>One Dollar Board — Awakening New Inventors</title>
-  <meta name="description" content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds. Designed in Austin, TX — to change the WORLD." />
+  <meta name="description"
+    content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds. Designed in Austin, TX — to change the WORLD." />
   <link rel="canonical" href="https://onedollarboard.com/" />
   <meta name="theme-color" content="#07090F" />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="One Dollar Board" />
-  <meta name="keywords" content="one dollar board, $1 computer, RISC-V, education, STEM, programming, electronics, Austin, inventors, students, teachers, affordable technology" />
+  <meta name="keywords"
+    content="one dollar board, $1 computer, RISC-V, education, STEM, programming, electronics, Austin, inventors, students, teachers, affordable technology" />
   <meta name="language" content="en" />
   <meta name="revisit-after" content="7 days" />
-  
+
   <!-- Additional SEO -->
   <meta name="format-detection" content="telephone=no" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -29,15 +32,17 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://onedollarboard.com/" />
   <meta property="og:title" content="One Dollar Board — Awakening New Inventors" />
-  <meta property="og:description" content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds." />
+  <meta property="og:description"
+    content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds." />
   <meta property="og:image" content="https://onedollarboard.com/odb.png" />
   <meta property="og:image:alt" content="One Dollar Board - Green PCB with friendly face" />
   <meta property="og:site_name" content="One Dollar Board" />
   <meta property="og:locale" content="en_US" />
-  
+
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="One Dollar Board — Awakening New Inventors" />
-  <meta name="twitter:description" content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds." />
+  <meta name="twitter:description"
+    content="A $1 computer to awaken new inventors. Simple, friendly, and made for classrooms, clubs, and curious minds." />
   <meta name="twitter:image" content="https://onedollarboard.com/odb.png" />
   <meta name="twitter:image:alt" content="One Dollar Board - Green PCB with friendly face" />
   <meta name="twitter:creator" content="@onedollarboard" />
@@ -46,7 +51,8 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
 
   <!-- Structured Data (Schema.org) -->
   <script type="application/ld+json">
@@ -156,43 +162,305 @@
     }
   </script>
   <style>
-    .grid-radial { background: radial-gradient(1200px 800px at 80% -10%, rgba(72,225,167,.20), transparent 60%), radial-gradient(900px 600px at 10% 0%, rgba(138,180,255,.18), transparent 60%); }
-    .prose-max { max-width: 65ch; }
+    .grid-radial {
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(72, 225, 167, .18), transparent 60%), radial-gradient(900px 600px at 10% 0%, rgba(138, 180, 255, .15), transparent 60%)
+    }
 
-    /* Project status timeline — minimal, full-width, responsive (site dark theme) */
+    .prose-max {
+      max-width: 65ch
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity .7s cubic-bezier(.16, 1, .3, 1), transform .7s cubic-bezier(.16, 1, .3, 1)
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .reveal-delay-1 {
+      transition-delay: .1s
+    }
+
+    .reveal-delay-2 {
+      transition-delay: .2s
+    }
+
+    .reveal-delay-3 {
+      transition-delay: .3s
+    }
+
+    .nav-glass {
+      transition: background .3s, backdrop-filter .3s, box-shadow .3s
+    }
+
+    .nav-glass.scrolled {
+      background: rgba(7, 9, 15, .82);
+      backdrop-filter: blur(16px) saturate(1.6);
+      -webkit-backdrop-filter: blur(16px) saturate(1.6);
+      box-shadow: 0 1px 0 rgba(29, 40, 67, .5), 0 4px 24px rgba(0, 0, 0, .25)
+    }
+
+    .nav-link {
+      position: relative;
+      transition: color .25s
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #48E1A7, #8AB4FF);
+      border-radius: 1px;
+      transition: width .3s cubic-bezier(.16, 1, .3, 1)
+    }
+
+    .nav-link:hover::after {
+      width: 100%
+    }
+
+    .hero-overlay {
+      background: linear-gradient(to bottom, rgba(7, 9, 15, 0) 50%, rgba(7, 9, 15, .55) 80%, #07090F 100%)
+    }
+
+    .card-glass {
+      background: rgba(13, 18, 32, .65);
+      backdrop-filter: blur(12px) saturate(1.4);
+      -webkit-backdrop-filter: blur(12px) saturate(1.4);
+      border: 1px solid rgba(29, 40, 67, .6);
+      transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s, border-color .35s
+    }
+
+    .card-glass:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(72, 225, 167, .08), 0 2px 12px rgba(0, 0, 0, .3);
+      border-color: rgba(72, 225, 167, .25)
+    }
+
+    .gradient-border {
+      position: relative;
+      border: none !important
+    }
+
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(72, 225, 167, .35), rgba(138, 180, 255, .25), rgba(72, 225, 167, .1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none
+    }
+
+    .dl-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .25s
+    }
+
+    .dl-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(72, 225, 167, .25)
+    }
+
+    .dl-btn:active {
+      transform: translateY(0) scale(.97)
+    }
+
+    .dl-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .15) 0%, transparent 60%);
+      pointer-events: none
+    }
+
+    .section-accent::before {
+      content: '';
+      display: block;
+      width: 48px;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #48E1A7, #8AB4FF);
+      margin: 0 auto 1.5rem
+    }
+
+    .glow-pulse {
+      animation: glow-pulse 2s ease-in-out infinite
+    }
+
+    @keyframes glow-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(72, 225, 167, .4)
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(72, 225, 167, 0)
+      }
+    }
+
+    details summary {
+      list-style: none;
+      position: relative;
+      padding-right: 1.5rem
+    }
+
+    details summary::-webkit-details-marker {
+      display: none
+    }
+
+    details summary::after {
+      content: '+';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.25rem;
+      font-weight: 300;
+      color: #48E1A7;
+      transition: transform .3s
+    }
+
+    details[open] summary::after {
+      content: '−';
+      transform: translateY(-50%)
+    }
+
+    details[open] summary {
+      color: #48E1A7
+    }
+
+    details p {
+      animation: faq-open .35s ease-out
+    }
+
+    @keyframes faq-open {
+      from {
+        opacity: 0;
+        transform: translateY(-6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(80px);
+      opacity: .12;
+      animation: orb-drift 20s ease-in-out infinite alternate
+    }
+
+    @keyframes orb-drift {
+      0% {
+        transform: translate(0, 0) scale(1)
+      }
+
+      50% {
+        transform: translate(40px, -30px) scale(1.15)
+      }
+
+      100% {
+        transform: translate(-20px, 20px) scale(.9)
+      }
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(72, 225, 167, .15), rgba(138, 180, 255, .1));
+      flex-shrink: 0;
+      margin-bottom: .75rem
+    }
+
+    .quote-highlight {
+      position: relative;
+      padding: 2rem 2.5rem
+    }
+
+    .quote-highlight::before {
+      content: '\201C';
+      position: absolute;
+      top: .25rem;
+      left: .75rem;
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+      color: rgba(72, 225, 167, .15)
+    }
+
+    .footer-glow {
+      background: radial-gradient(600px 200px at 50% 0%, rgba(72, 225, 167, .06), transparent 70%)
+    }
+
     .timeline-bar {
       width: 100%;
-      background: #0D1220;
-      border-bottom: 1px solid rgba(29,40,67,.6);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      animation: timeline-fade-in .5s ease-out;
+      background: rgba(13, 18, 32, .8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(29, 40, 67, .6);
+      animation: tl-in .5s ease-out
     }
-    @keyframes timeline-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+    @keyframes tl-in {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
     .timeline-inner {
       max-width: 72rem;
       margin: 0 auto;
-      padding: 1rem 1.5rem 1.25rem;
+      padding: 1rem 1.5rem 1.25rem
     }
+
     .timeline-label {
       font-size: .6875rem;
       font-weight: 600;
       letter-spacing: .12em;
       text-transform: uppercase;
       color: #A9B4C7;
-      margin-bottom: .25rem;
+      margin-bottom: .25rem
     }
+
     .timeline-phase {
       font-size: 1rem;
       font-weight: 700;
       color: #48E1A7;
-      margin-bottom: 1rem;
+      margin-bottom: 1rem
     }
+
     .timeline-track {
       display: flex;
       align-items: center;
       gap: 0;
-      position: relative;
+      position: relative
     }
+
     .timeline-track-line {
       position: absolute;
       height: 2px;
@@ -201,18 +469,20 @@
       top: 50%;
       transform: translateY(-50%);
       background: #1D2843;
-      border-radius: 1px;
+      border-radius: 1px
     }
+
     .timeline-track-line-progress {
       position: absolute;
       left: 0;
       top: 0;
       height: 100%;
       width: 80%;
-      background: #48E1A7;
+      background: linear-gradient(90deg, #48E1A7, #8AB4FF);
       border-radius: 1px;
-      transition: width .3s ease;
+      transition: width .3s ease
     }
+
     .timeline-item {
       flex: 1;
       display: flex;
@@ -220,50 +490,69 @@
       align-items: center;
       gap: .35rem;
       position: relative;
-      z-index: 1;
+      z-index: 1
     }
+
     .timeline-item-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #1D2843;
       flex-shrink: 0;
+      transition: all .3s
     }
+
     .timeline-item.completed .timeline-item-dot {
-      background: #48E1A7;
+      background: #48E1A7
     }
+
     .timeline-item.current .timeline-item-dot {
       width: 10px;
       height: 10px;
       background: #48E1A7;
-      box-shadow: 0 0 0 2px rgba(72,225,167,.35);
+      box-shadow: 0 0 0 3px rgba(72, 225, 167, .25);
+      animation: glow-pulse 2s ease-in-out infinite
     }
+
     .timeline-item.future .timeline-item-dot {
       background: #1D2843;
-      opacity: .8;
+      opacity: .8
     }
-    .timeline-item.future { opacity: .6; }
+
+    .timeline-item.future {
+      opacity: .5
+    }
+
     .timeline-item-label {
       font-size: .6875rem;
       font-weight: 500;
       color: #A9B4C7;
       text-align: center;
-      white-space: nowrap;
+      white-space: nowrap
     }
-    .timeline-item.completed .timeline-item-label { color: #A9B4C7; }
+
+    .timeline-item.completed .timeline-item-label {
+      color: #A9B4C7
+    }
+
     .timeline-item.current .timeline-item-label {
       font-size: .75rem;
       font-weight: 700;
-      color: #48E1A7;
+      color: #48E1A7
     }
-    .timeline-item.future .timeline-item-label { color: #6B7280; }
-    @media (max-width: 767px) {
+
+    .timeline-item.future .timeline-item-label {
+      color: #6B7280
+    }
+
+    @media(max-width:767px) {
       .timeline-track {
         flex-direction: column;
         align-items: flex-start;
         gap: .5rem;
-        padding-left: 2px;
+        padding-left: 2px
       }
+
       .timeline-track-line {
         width: 2px;
         height: 100%;
@@ -271,45 +560,69 @@
         right: auto;
         top: 0;
         bottom: 0;
-        transform: none;
+        transform: none
       }
-      .timeline-track-line-progress { width: 100%; height: 80%; }
+
+      .timeline-track-line-progress {
+        width: 100%;
+        height: 80%
+      }
+
       .timeline-item {
         flex: none;
         flex-direction: row;
         align-items: center;
         gap: .5rem;
-        width: 100%;
+        width: 100%
       }
-      .timeline-item-label { text-align: left; white-space: normal; }
+
+      .timeline-item-label {
+        text-align: left;
+        white-space: normal
+      }
     }
   </style>
 </head>
-<body class="h-full bg-base-bg text-base-text font-sans selection:bg-base-accent/30">
-  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-base-card border border-base-line/60 rounded-md px-3 py-2">Skip to content</a>
 
-  <header class="relative z-10">
-    <nav class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-      <a class="flex items-center gap-3" href="/">
-        <span class="inline-flex h-9 w-9 rounded-xl bg-base-soft items-center justify-center" aria-hidden="true">
-          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.5"/><path d="M9 9h6v6H9z" stroke-width="1.5"/></svg>
+<body class="h-full bg-base-bg text-base-text font-sans selection:bg-base-accent/30">
+  <a href="#main"
+    class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-base-card border border-base-line/60 rounded-md px-3 py-2">Skip
+    to content</a>
+
+  <header id="site-nav" class="fixed top-0 left-0 right-0 z-50 nav-glass">
+    <nav class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a class="flex items-center gap-3 group" href="/">
+        <span
+          class="inline-flex h-9 w-9 rounded-xl bg-base-soft items-center justify-center border border-base-line/40 group-hover:border-base-accent/40 transition-colors"
+          aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-5 w-5 text-base-accent" fill="none" stroke="currentColor"
+            aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.5" />
+            <path d="M9 9h6v6H9z" stroke-width="1.5" />
+          </svg>
         </span>
         <span class="text-lg tracking-tight font-semibold">One Dollar Board</span>
       </a>
-      <div class="hidden md:flex items-center gap-6 text-base-sub">
-        <a href="#philosophy" class="hover:text-base-text">Philosophy</a>
-        <a href="#vision" class="hover:text-base-text">Vision</a>
-        <a href="#hardware" class="hover:text-base-text">Hardware</a>
-        <a href="#talent" class="hover:text-base-text">Awaken Talent</a>
-        <a href="#faq" class="hover:text-base-text">FAQ</a>
-        <a href="/docs/" class="hover:text-base-text">Docs</a>
+      <div class="hidden md:flex items-center gap-7 text-sm text-base-sub font-medium">
+        <a href="#philosophy" class="nav-link hover:text-base-text">Philosophy</a>
+        <a href="#vision" class="nav-link hover:text-base-text">Vision</a>
+        <a href="#hardware" class="nav-link hover:text-base-text">Hardware</a>
+        <a href="#talent" class="nav-link hover:text-base-text">Awaken Talent</a>
+        <a href="#faq" class="nav-link hover:text-base-text">FAQ</a>
+        <a href="/docs/" class="nav-link hover:text-base-text">Docs</a>
       </div>
     </nav>
   </header>
+  <div class="h-16"></div>
 
   <main id="main">
-    <section class="relative w-full bg-black overflow-hidden h-[50vh] md:h-[60vh]" aria-label="One Dollar Board">
-      <img src="/one_dollar_board_top.png" alt="One Dollar Board — green PCB with a friendly face" class="absolute inset-0 w-full h-full object-cover object-center" loading="eager" />
+    <section class="relative w-full bg-black overflow-hidden h-[60vh] md:h-[70vh]" aria-label="One Dollar Board">
+      <img src="/one_dollar_board_top.png" alt="One Dollar Board — green PCB with a friendly face"
+        class="absolute inset-0 w-full h-full object-cover object-left" loading="eager" />
+      <div class="hero-overlay absolute inset-0"></div>
+      <div class="ambient-orb w-[400px] h-[400px] bg-[#48E1A7] top-[10%] right-[10%]"></div>
+      <div class="ambient-orb w-[300px] h-[300px] bg-[#8AB4FF] bottom-[20%] left-[5%]" style="animation-delay:-7s">
+      </div>
     </section>
 
     <!-- Project status timeline -->
@@ -321,58 +634,101 @@
           <span class="timeline-track-line" aria-hidden="true">
             <span class="timeline-track-line-progress"></span>
           </span>
-          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Concept</span></span>
-          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Design</span></span>
-          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Prototype</span></span>
-          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span class="timeline-item-label">Validation</span></span>
-          <span class="timeline-item current"><span class="timeline-item-dot"></span><span class="timeline-item-label">Manufacturing</span></span>
-          <span class="timeline-item future"><span class="timeline-item-dot"></span><span class="timeline-item-label">Distribution</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span
+              class="timeline-item-label">Concept</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span
+              class="timeline-item-label">Design</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span
+              class="timeline-item-label">Prototype</span></span>
+          <span class="timeline-item completed"><span class="timeline-item-dot"></span><span
+              class="timeline-item-label">Validation</span></span>
+          <span class="timeline-item current"><span class="timeline-item-dot"></span><span
+              class="timeline-item-label">Manufacturing</span></span>
+          <span class="timeline-item future"><span class="timeline-item-dot"></span><span
+              class="timeline-item-label">Distribution</span></span>
         </div>
       </div>
     </div>
 
     <section class="relative overflow-hidden grid-radial">
+      <div class="ambient-orb w-[500px] h-[500px] bg-[#48E1A7] top-[0%] right-[-5%]"></div>
       <div class="max-w-7xl mx-auto px-6 pt-10 pb-24 lg:py-28">
-        <div class="text-center mb-12">
-          <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
-            A $1 computer to awaken new inventors
+        <div class="text-center mb-16 reveal">
+          <h1 class="text-4xl md:text-6xl font-extrabold leading-[1.1] tracking-tight">
+            A <span class="text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">$1
+              computer</span> to awaken<br class="hidden md:block"> new inventors
           </h1>
-          <p class="mt-5 text-base-sub text-lg prose-max mx-auto">The One Dollar Board is more than hardware. It's an ultra‑affordable tool designed to unlock creativity and awaken hidden talent. Simple and friendly, it opens doors for classrooms, clubs, and curious minds everywhere. Above all, it exists to inspire a new generation of inventors.</p>
-          <p class="mt-6 text-base-sub text-sm md:text-base">Open source project — you can download the design files here.</p>
-          <div class="mt-4 flex flex-wrap justify-center gap-3">
-            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.sch" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
-              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <p class="mt-6 text-base-sub text-lg md:text-xl prose-max mx-auto font-light leading-relaxed">The One Dollar
+            Board is more than hardware. It's an ultra&#8209;affordable tool designed to unlock creativity and awaken
+            hidden talent. Simple and friendly, it opens doors for classrooms, clubs, and curious minds everywhere.</p>
+          <p class="mt-8 text-base-sub text-sm md:text-base font-medium uppercase tracking-wider">Open source project —
+            download design files</p>
+          <div class="mt-5 flex flex-wrap justify-center gap-3">
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.sch"
+              download
+              class="js-direct-download dl-btn inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-xl text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
               Schematic
             </a>
-            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.brd" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
-              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.brd"
+              download
+              class="js-direct-download dl-btn inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-xl text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
               Board
             </a>
-            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.step" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
-              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              3D
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.r1.step"
+              download
+              class="js-direct-download dl-btn inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-xl text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              3D (STEP)
             </a>
-            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.stl" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
-              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Case (STL)
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.1.004.stl"
+              download
+              class="js-direct-download dl-btn inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-xl text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              3D (STL)
             </a>
-            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.BOM.1.004.r1.csv" download class="js-direct-download inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-lg hover:bg-base-accent/90 transition-colors text-sm">
-              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <a href="https://github.com/claudioolmedo/onedollarboard.com/raw/main/download/OneDollarBoard.com.BOM.1.004.r1.csv"
+              download
+              class="js-direct-download dl-btn inline-flex items-center gap-2 px-5 py-2.5 bg-base-accent text-base-bg font-semibold rounded-xl text-sm">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
               BOM
             </a>
           </div>
         </div>
-        <div class="grid lg:grid-cols-2 gap-10 items-center">
-          <div>
-            <h2 class="text-3xl font-bold mb-4">Start small · Dream big</h2>
-            <p class="text-base-sub text-lg prose-max">With a single dollar, anyone can begin. This board lowers the barrier and lights the path for the inventors of tomorrow.</p>
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+          <div class="reveal">
+            <h2 class="text-3xl md:text-4xl font-bold mb-5 leading-tight">Start small · Dream big</h2>
+            <p class="text-base-sub text-lg prose-max leading-relaxed">With a single dollar, anyone can begin. This
+              board lowers the barrier and lights the path for the inventors of tomorrow.</p>
           </div>
-          <div class="relative">
-            <div class="rounded-2xl border border-base-line/60 bg-gradient-to-br from-base-soft to-base-card p-6">
-              <div class="aspect-[5/3] rounded-xl border border-base-line/40 bg-black/20 grid place-items-center">
-                <div class="text-center">
+          <div class="relative reveal reveal-delay-1">
+            <div class="rounded-2xl gradient-border card-glass p-8">
+              <div class="aspect-[5/3] rounded-xl bg-black/20 grid place-items-center border border-base-line/30">
+                <div class="text-center px-6">
                   <h3 class="text-2xl font-bold">A spark for imagination</h3>
-                  <p class="mt-2 text-base-sub max-w-sm mx-auto">A friendly invitation to the world of invention, made for everyone.</p>
+                  <p class="mt-3 text-base-sub max-w-sm mx-auto leading-relaxed">A friendly invitation to the world of
+                    invention, made for everyone.</p>
                 </div>
               </div>
             </div>
@@ -381,123 +737,178 @@
       </div>
     </section>
 
-    <section id="about" class="relative py-16">
+    <section id="about" class="relative py-20">
       <div class="max-w-7xl mx-auto px-6">
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+          <article class="rounded-2xl card-glass p-6 reveal">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" class="w-5 h-5 text-base-accent" fill="none"
+                stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg></div>
             <h3 class="font-semibold text-lg">Accessible</h3>
-            <p class="mt-2 text-base-sub">A price anyone can reach, so opportunity spreads further than ever.</p>
+            <p class="mt-2 text-base-sub text-sm leading-relaxed">A price anyone can reach, so opportunity spreads
+              further than ever.</p>
           </article>
-          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+          <article class="rounded-2xl card-glass p-6 reveal reveal-delay-1">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" class="w-5 h-5 text-base-accent" fill="none"
+                stroke="currentColor" stroke-width="1.5">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg></div>
             <h3 class="font-semibold text-lg">Easy to begin</h3>
-            <p class="mt-2 text-base-sub">No steep learning curve — plug in and start discovering.</p>
+            <p class="mt-2 text-base-sub text-sm leading-relaxed">No steep learning curve — plug in and start
+              discovering.</p>
           </article>
-          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+          <article class="rounded-2xl card-glass p-6 reveal reveal-delay-2">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" class="w-5 h-5 text-base-accent" fill="none"
+                stroke="currentColor" stroke-width="1.5">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg></div>
             <h3 class="font-semibold text-lg">Learning by doing</h3>
-            <p class="mt-2 text-base-sub">Confidence grows with action. Small projects lead to breakthroughs.</p>
+            <p class="mt-2 text-base-sub text-sm leading-relaxed">Confidence grows with action. Small projects lead to
+              breakthroughs.</p>
           </article>
-          <article class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+          <article class="rounded-2xl card-glass p-6 reveal reveal-delay-3">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" class="w-5 h-5 text-base-accent" fill="none"
+                stroke="currentColor" stroke-width="1.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg></div>
             <h3 class="font-semibold text-lg">Open to everyone</h3>
-            <p class="mt-2 text-base-sub">Resources are shared freely, so knowledge can grow everywhere.</p>
+            <p class="mt-2 text-base-sub text-sm leading-relaxed">Resources are shared freely, so knowledge can grow
+              everywhere.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section id="talent" class="relative py-16 border-t border-base-line/60">
-      <div class="max-w-4xl mx-auto px-6 text-center">
-        <h2 class="text-3xl font-bold">Awakening talent everywhere</h2>
-        <p class="mt-4 text-base-sub text-lg prose-max mx-auto">The One Dollar Board is a symbol of possibility. It gives anyone — students, teachers, or curious dreamers — the chance to invent. Talent is everywhere, but often hidden. This board is the invitation to bring it forward.</p>
-        <p class="mt-6 text-base-sub text-lg prose-max mx-auto">Our mission is simple: lower the barrier, open the door, and light the spark. With every board in someone's hands, a new inventor can rise — carrying ideas that may one day change the world.</p>
+    <section id="talent" class="relative py-24 border-t border-base-line/40">
+      <div class="max-w-4xl mx-auto px-6 text-center reveal">
+        <div class="section-accent"></div>
+        <h2 class="text-3xl md:text-4xl font-bold">Awakening talent everywhere</h2>
+        <p class="mt-5 text-base-sub text-lg leading-relaxed prose-max mx-auto">The One Dollar Board is a symbol of
+          possibility. It gives anyone — students, teachers, or curious dreamers — the chance to invent. Talent is
+          everywhere, but often hidden. This board is the invitation to bring it forward.</p>
+        <p class="mt-6 text-base-sub text-lg leading-relaxed prose-max mx-auto">Our mission is simple: lower the
+          barrier, open the door, and light the spark. With every board in someone's hands, a new inventor can rise —
+          carrying ideas that may one day change the world.</p>
       </div>
     </section>
 
-    <section id="philosophy" class="relative py-16 border-t border-base-line/60">
+    <section id="philosophy" class="relative py-24 border-t border-base-line/40 overflow-hidden">
+      <div class="ambient-orb w-[350px] h-[350px] bg-[#8AB4FF] top-[10%] left-[-5%]" style="animation-delay:-12s"></div>
       <div class="max-w-4xl mx-auto px-6 text-center">
-        <div class="mb-8">
-          <span class="text-4xl">💡</span>
-          <h2 class="text-3xl font-bold mt-4">The Computer of Things</h2>
+        <div class="mb-10 reveal">
+          <span class="text-5xl">💡</span>
+          <h2 class="text-3xl md:text-4xl font-bold mt-5">The Computer of Things</h2>
         </div>
-        <p class="text-base-sub text-lg prose-max mx-auto mb-6">The Computer of Things is the philosophy behind the One Dollar Board. Instead of just connecting objects to the internet, we want to give intelligence to every object — making the physical world programmable, accessible, and creative.</p>
-        <p class="text-base-sub text-lg prose-max mx-auto mb-6">With a computer for just one dollar, anyone can transform anything into something interactive: a toy, a tool, art, or an invention. This is the essence of the Computer of Things: bringing computation into everyone's hands, everywhere.</p>
-        <p class="text-base-sub text-lg prose-max mx-auto mb-8">In the long term, this philosophy changes everything. When the computer stops being a product and becomes part of the physical world, every object becomes an opportunity to learn, create, and innovate. This means children, teachers, inventors, and makers will have the power to build technologies from the inside out — starting with the things that are already part of life.</p>
-        <div class="rounded-2xl border border-base-line/60 bg-gradient-to-br from-base-soft to-base-card p-8">
-          <p class="text-2xl font-bold text-base-accent mb-2">One dollar. One chip. A world of possibilities.</p>
+        <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto mb-6 reveal">The Computer of Things is the
+          philosophy behind the One Dollar Board. Instead of just connecting objects to the internet, we want to give
+          intelligence to every object — making the physical world programmable, accessible, and creative.</p>
+        <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto mb-6 reveal">With a computer for just one
+          dollar, anyone can transform anything into something interactive: a toy, a tool, art, or an invention. This is
+          the essence of the Computer of Things: bringing computation into everyone's hands, everywhere.</p>
+        <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto mb-10 reveal">In the long term, this
+          philosophy changes everything. When the computer stops being a product and becomes part of the physical world,
+          every object becomes an opportunity to learn, create, and innovate.</p>
+        <div class="rounded-2xl gradient-border card-glass quote-highlight reveal">
+          <p
+            class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">
+            One dollar. One chip. A world of possibilities.</p>
         </div>
       </div>
     </section>
 
-    <section id="vision" class="relative py-16 border-t border-base-line/60">
+    <section id="vision" class="relative py-24 border-t border-base-line/40">
       <div class="max-w-4xl mx-auto px-6">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold mb-6">Our Vision</h2>
-          <p class="text-base-sub text-lg prose-max mx-auto">The One Dollar Board is more than a product — it's a movement. A way to bring the power of computing to every person, in every place, through something small, kind, and universal.</p>
+        <div class="text-center mb-14 reveal">
+          <div class="section-accent"></div>
+          <h2 class="text-3xl md:text-4xl font-bold mb-6">Our Vision</h2>
+          <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto">The One Dollar Board is more than a product
+            — it's a movement. A way to bring the power of computing to every person, in every place, through something
+            small, kind, and universal.</p>
         </div>
-        
-        <div class="grid md:grid-cols-2 gap-8 mb-12">
-          <div class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+
+        <div class="grid md:grid-cols-2 gap-8 mb-14">
+          <div class="rounded-2xl card-glass p-7 reveal">
             <h3 class="text-xl font-semibold mb-4">The Future We See</h3>
-            <p class="text-base-sub">Over time, the Computer of Things will quietly live inside everyday objects — toys, art, classrooms, and inventions yet to come. Each one will carry a story, built by human hands and curiosity.</p>
-            <p class="text-base-sub mt-4">That's how we believe technology should evolve: not faster, but closer to people.</p>
+            <p class="text-base-sub leading-relaxed">Over time, the Computer of Things will quietly live inside everyday
+              objects — toys, art, classrooms, and inventions yet to come. Each one will carry a story, built by human
+              hands and curiosity.</p>
+            <p class="text-base-sub mt-4 leading-relaxed">That's how we believe technology should evolve: not faster,
+              but closer to people.</p>
           </div>
-          
-          <div class="rounded-2xl border border-base-line/60 bg-base-card p-6">
+          <div class="rounded-2xl card-glass p-7 reveal reveal-delay-1">
             <h3 class="text-xl font-semibold mb-4">A Future Built by Everyone</h3>
-            <p class="text-base-sub">A future built by everyone — one dollar at a time.</p>
-            <div class="mt-4 text-center">
-              <span class="text-2xl text-base-accent">⸻</span>
+            <p class="text-base-sub leading-relaxed">A future built by everyone — one dollar at a time.</p>
+            <div class="mt-6 text-center">
+              <span class="inline-block w-12 h-[2px] bg-gradient-to-r from-base-accent to-base-sky rounded"></span>
             </div>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-base-line/60 bg-gradient-to-br from-base-soft to-base-card p-8">
-          <h3 class="text-2xl font-bold mb-6 text-center">The Path Forward</h3>
+        <div class="rounded-2xl gradient-border card-glass p-10 reveal">
+          <h3 class="text-2xl font-bold mb-8 text-center">The Path Forward</h3>
           <div class="space-y-6">
-            <p class="text-base-sub text-lg prose-max mx-auto">The journey begins with a single board — but the vision goes far beyond it. We see a world where technology is not limited to experts or companies, but belongs to everyone who wants to create.</p>
-            
-            <p class="text-base-sub text-lg prose-max mx-auto">From classrooms to makerspaces, from communities to entire cities, the One Dollar Board is designed to awaken the next generation of inventors.</p>
-            
-            <p class="text-base-sub text-lg prose-max mx-auto">The Computer of Things represents a post–Internet of Things philosophy. Instead of connecting everything to the web, it empowers people to build intelligence directly into the world around them. It's about creation before connection — imagination before automation.</p>
-            
-            <p class="text-base-sub text-lg prose-max mx-auto">Each new idea, each shared design, and each spark of curiosity adds to something larger: a connected ecosystem where learning, creativity, and invention become part of everyday life.</p>
-            
-            <div class="text-center mt-8">
-              <p class="text-xl font-semibold text-base-accent">This is how the Computer of Things grows — one idea, one connection, one inventor at a time.</p>
+            <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto">The journey begins with a single board —
+              but the vision goes far beyond it. We see a world where technology is not limited to experts or companies,
+              but belongs to everyone who wants to create.</p>
+            <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto">From classrooms to makerspaces, from
+              communities to entire cities, the One Dollar Board is designed to awaken the next generation of inventors.
+            </p>
+            <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto">The Computer of Things represents a
+              post–Internet of Things philosophy. It empowers people to build intelligence directly into the world
+              around them. Creation before connection — imagination before automation.</p>
+            <p class="text-base-sub text-lg leading-relaxed prose-max mx-auto">Each new idea, each shared design, and
+              each spark of curiosity adds to something larger: a connected ecosystem where learning, creativity, and
+              invention become part of everyday life.</p>
+            <div class="text-center mt-10">
+              <p
+                class="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">
+                This is how the Computer of Things grows — one idea, one connection, one inventor at a time.</p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="hardware" class="relative py-16 border-t border-base-line/60">
+    <section id="hardware" class="relative py-24 border-t border-base-line/40">
       <div class="max-w-7xl mx-auto px-6">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold mb-4">Hardware that inspires</h2>
-          <p class="text-base-sub text-lg max-w-3xl mx-auto">Built for learning and designed for access, the One Dollar Board turns curiosity into creation.</p>
+        <div class="text-center mb-14 reveal">
+          <div class="section-accent"></div>
+          <h2 class="text-3xl md:text-4xl font-bold mb-4">Hardware that inspires</h2>
+          <p class="text-base-sub text-lg max-w-3xl mx-auto leading-relaxed">Built for learning and designed for access,
+            the One Dollar Board turns curiosity into creation.</p>
         </div>
-        <div class="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <img src="/odb_front.png" alt="One Dollar Board front view" class="w-full max-w-lg mx-auto rounded-2xl border border-base-line/40" loading="lazy">
+        <div class="grid lg:grid-cols-2 gap-14 items-center">
+          <div class="reveal">
+            <img src="/odb_front.png" alt="One Dollar Board front view"
+              class="w-full max-w-lg mx-auto rounded-2xl border border-base-line/30 shadow-2xl shadow-black/30"
+              loading="lazy">
           </div>
-          <div>
+          <div class="reveal reveal-delay-1">
             <h3 class="text-2xl font-bold mb-6">Simple. Friendly. Powerful enough to start.</h3>
-            <p class="text-base-sub text-lg leading-relaxed mb-4 prose-max">The board is intentionally minimal so the focus stays on learning by making. It’s a gentle first step that leads to big possibilities.</p>
+            <p class="text-base-sub text-lg leading-relaxed mb-6 prose-max">The board is intentionally minimal so the
+              focus stays on learning by making. It's a gentle first step that leads to big possibilities.</p>
             <div class="grid md:grid-cols-2 gap-4">
-              <div class="rounded-xl border border-base-line/60 bg-base-card p-4">
+              <div class="rounded-xl card-glass p-4">
                 <h4 class="font-semibold text-base-accent mb-2">Ultra‑affordable</h4>
-                <p class="text-sm text-base-sub">A $1 starting point for invention.</p>
+                <p class="text-sm text-base-sub leading-relaxed">A $1 starting point for invention.</p>
               </div>
-              <div class="rounded-xl border border-base-line/60 bg-base-card p-4">
+              <div class="rounded-xl card-glass p-4">
                 <h4 class="font-semibold text-base-accent mb-2">Community‑first</h4>
-                <p class="text-sm text-base-sub">Open resources and shared learning.</p>
+                <p class="text-sm text-base-sub leading-relaxed">Open resources and shared learning.</p>
               </div>
-              <div class="rounded-xl border border-base-line/60 bg-base-card p-4">
+              <div class="rounded-xl card-glass p-4">
                 <h4 class="font-semibold text-base-accent mb-2">Classroom‑ready</h4>
-                <p class="text-sm text-base-sub">Made for schools, clubs, and camps.</p>
+                <p class="text-sm text-base-sub leading-relaxed">Made for schools, clubs, and camps.</p>
               </div>
-              <div class="rounded-xl border border-base-line/60 bg-base-card p-4">
+              <div class="rounded-xl card-glass p-4">
                 <h4 class="font-semibold text-base-accent mb-2">Future pathways</h4>
-                <p class="text-sm text-base-sub">A first step toward advanced projects.</p>
+                <p class="text-sm text-base-sub leading-relaxed">A first step toward advanced projects.</p>
               </div>
             </div>
           </div>
@@ -505,48 +916,69 @@
       </div>
     </section>
 
-    <section id="faq" class="relative py-16">
+    <section id="faq" class="relative py-24 border-t border-base-line/40">
       <div class="max-w-5xl mx-auto px-6">
-        <h3 class="text-2xl font-bold">FAQ</h3>
-        <div class="mt-6 grid md:grid-cols-2 gap-5">
-          <details class="rounded-xl border border-base-line/60 bg-base-card p-5">
+        <div class="text-center mb-10 reveal">
+          <div class="section-accent"></div>
+          <h3 class="text-3xl md:text-4xl font-bold">FAQ</h3>
+        </div>
+        <div class="grid md:grid-cols-2 gap-5">
+          <details class="rounded-xl card-glass p-5 reveal">
             <summary class="cursor-pointer font-semibold">What is it?</summary>
-            <p class="mt-2 text-base-sub">A tiny $1 board that awakens creativity and helps people become inventors.</p>
+            <p class="mt-3 text-base-sub leading-relaxed">A tiny $1 board that awakens creativity and helps people
+              become inventors.</p>
           </details>
-          <details class="rounded-xl border border-base-line/60 bg-base-card p-5">
+          <details class="rounded-xl card-glass p-5 reveal reveal-delay-1">
             <summary class="cursor-pointer font-semibold">Who is it for?</summary>
-            <p class="mt-2 text-base-sub">Beginners, students, teachers — anyone ready to turn curiosity into invention.</p>
+            <p class="mt-3 text-base-sub leading-relaxed">Beginners, students, teachers — anyone ready to turn curiosity
+              into invention.</p>
           </details>
-          <details class="rounded-xl border border-base-line/60 bg-base-card p-5">
+          <details class="rounded-xl card-glass p-5 reveal">
             <summary class="cursor-pointer font-semibold">Do I need experience?</summary>
-            <p class="mt-2 text-base-sub">No. Your first step can be small and easy, yet powerful.</p>
+            <p class="mt-3 text-base-sub leading-relaxed">No. Your first step can be small and easy, yet powerful.</p>
           </details>
-          <details class="rounded-xl border border-base-line/60 bg-base-card p-5">
+          <details class="rounded-xl card-glass p-5 reveal reveal-delay-1">
             <summary class="cursor-pointer font-semibold">Is it open?</summary>
-            <p class="mt-2 text-base-sub">Yes. We believe sharing knowledge is the best way to multiply invention. See more at <a href="https://github.com/claudioolmedo/onedollarboard.com/" class="text-base-accent underline hover:text-base-sky" target="_blank" rel="noopener">GitHub</a>.</p>
+            <p class="mt-3 text-base-sub leading-relaxed">Yes. We believe sharing knowledge is the best way to multiply
+              invention. See more at <a href="https://github.com/claudioolmedo/onedollarboard.com/"
+                class="text-base-accent underline hover:text-base-sky transition-colors" target="_blank"
+                rel="noopener">GitHub</a>.</p>
           </details>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="relative border-t border-base-line/60">
-    <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-3">
+  <footer class="relative border-t border-base-line/40 footer-glow">
+    <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-4">
       <p class="text-base-sub text-sm">© <span id="y"></span> One Dollar Board</p>
-      <p class="text-sm font-semibold">Designed in Austin, TX — <span class="text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">to change the WORLD</span></p>
+      <p class="text-sm font-semibold">Designed in Austin, TX — <span
+          class="text-transparent bg-clip-text bg-gradient-to-r from-base-accent to-base-sky">to change the WORLD</span>
+      </p>
     </div>
   </footer>
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Force direct download for GitHub links (cross-origin download attribute is ignored)
+    // Scroll-driven reveal animations
+    var ro = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('visible'); ro.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { ro.observe(el); });
+
+    // Sticky nav glass effect
+    var nav = document.getElementById('site-nav');
+    var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 40); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Force direct download for GitHub links
     document.querySelectorAll('a.js-direct-download').forEach(function (a) {
       a.addEventListener('click', function (e) {
         e.preventDefault();
         var url = this.getAttribute('href');
         var filename = url.split('/').pop();
-        // Use raw URL for fetch (CORS-friendly); convert github.com/.../raw/main/ -> raw.githubusercontent.com/.../main/
         var fetchUrl = url.replace(/github\.com\/([^/]+\/[^/]+)\/raw\/([^/]+)\//, 'raw.githubusercontent.com/$1/$2/');
         fetch(fetchUrl)
           .then(function (r) { return r.blob(); })
@@ -565,6 +997,9 @@
       });
     });
   </script>
-  <noscript><div class="max-w-7xl mx-auto px-6 py-4 text-base-sub">This site works best with JavaScript enabled.</div></noscript>
+  <noscript>
+    <div class="max-w-7xl mx-auto px-6 py-4 text-base-sub">This site works best with JavaScript enabled.</div>
+  </noscript>
 </body>
+
 </html>
