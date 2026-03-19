@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electronics Editor – Online Electronics Design Tool</title>
+  <meta name="description" content="Free online electronics editor for One Dollar Board. Design circuits and PCBs directly in your browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  
+  <script>
+    function generateProjectID() {
+      function randomHex(len) {
+        return Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+      }
+      return `${randomHex(8)}-${randomHex(4)}-${randomHex(4)}-${randomHex(4)}-${randomHex(9)}`;
+    }
+
+    function getProjectIDFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectIDFromQuery = urlParams.get('projectID');
+      if (projectIDFromQuery) return projectIDFromQuery;
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        if (hash.includes('projectID=')) {
+          return new URLSearchParams(hash).get('projectID');
+        }
+        return hash;
+      }
+      return null;
+    }
+
+    let projectID = getProjectIDFromURL();
+    if (!projectID) {
+      const newID = generateProjectID();
+      const params = new URLSearchParams(window.location.search);
+      params.set('projectID', newID);
+      window.location.replace(`${window.location.pathname}?${params.toString()}`);
+    } else {
+      window.PROJECT_ID = projectID;
+    }
+  </script>
+
+  
+  <style>
+    #firebase-status {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: rgba(14,17,23,0.92);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(8px);
+      transition: opacity 0.4s, transform 0.3s;
+      pointer-events: none;
+    }
+    #firebase-status.hidden { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    #firebase-status .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+    #firebase-status .dot.error { background: #ff4d6a; animation: none; }
+    #firebase-status .dot.synced { background: #00d4aa; animation: none; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .nav-link:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Import Modal */
+    .import-modal-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.7); display:none; justify-content:center;
+      align-items:center; z-index:3000; backdrop-filter: blur(4px);
+    }
+    .import-modal-overlay.active { display: flex; }
+    .import-modal {
+      background: var(--bg2, #1a1f2e); border: 1px solid var(--border, #2a3040);
+      border-radius: 16px; width: 95%; max-width: 520px;
+      padding: 28px; color: #e6edf3;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .import-modal h2 { margin:0 0 6px; font-size:1.3rem; color: var(--accent, #00d4aa); }
+    .import-modal .subtitle { color:#8a9ab8; font-size:0.85rem; margin-bottom:20px; }
+    .import-modal label { display:block; font-size:0.8rem; color:#8a9ab8; margin-bottom:6px; }
+    .import-modal input[type=text] {
+      width:100%; padding:12px 14px; border-radius:10px;
+      border:1px solid var(--border, #2a3040); background: var(--bg3, #0e1117);
+      color:#fff; font-size:1rem; font-family:'JetBrains Mono',monospace;
+      outline:none; box-sizing:border-box;
+    }
+    .import-modal input[type=text]:focus { border-color: var(--accent, #00d4aa); }
+    .import-modal input[type=text]::placeholder { color:#555; }
+    .import-modal .btn-row { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+    .import-modal .btn-cancel {
+      padding:10px 20px; border-radius:10px; border:1px solid var(--border, #2a3040);
+      background:transparent; color:#8a9ab8; cursor:pointer; font-size:0.9rem;
+    }
+    .import-modal .btn-cancel:hover { background: rgba(255,255,255,0.05); }
+    .import-modal .btn-import {
+      padding:10px 24px; border-radius:10px; border:none;
+      background: var(--accent, #00d4aa); color:#000; cursor:pointer;
+      font-weight:600; font-size:0.9rem;
+    }
+    .import-modal .btn-import:hover { opacity:0.9; }
+    .import-modal .btn-import:disabled { opacity:0.4; cursor:not-allowed; }
+    .import-progress {
+      margin-top:16px; padding:12px; border-radius:10px;
+      background: var(--bg3, #0e1117); font-size:0.8rem; color:#8a9ab8;
+      display:none;
+    }
+    .import-progress.active { display:block; }
+    .import-progress .log-line { margin:3px 0; }
+    .import-progress .log-ok { color: var(--accent, #00d4aa); }
+    .import-progress .log-err { color: #ff4d6a; }
+    .import-preview {
+      margin-top:14px; padding:14px; border-radius:10px;
+      background: var(--bg3, #0e1117); border:1px solid var(--border, #2a3040);
+      display:none;
+    }
+    .import-preview.active { display:block; }
+    .import-preview .prev-name { font-weight:600; color:#fff; font-size:1rem; }
+    .import-preview .prev-pkg { color: var(--accent, #00d4aa); font-size:0.8rem; }
+    .import-preview .prev-meta { color:#8a9ab8; font-size:0.75rem; margin-top:6px; }
+    .import-preview canvas {
+      display:block; margin:10px auto 0; border-radius:8px;
+      background:#070b12; border:1px solid #1a2030;
+    }
+
+    /* Library panel items */
+    .lib-item {
+      display:flex; align-items:center; gap:8px; padding:7px 8px;
+      border-radius: var(--radius-sm, 6px); cursor:pointer;
+      transition: background 0.15s; font-size:12px;
+    }
+    .lib-item:hover { background: rgba(0,212,170,0.08); }
+    .lib-item.active { background: rgba(0,212,170,0.15); border:1px solid rgba(0,212,170,0.3); }
+    .lib-item .lib-icon { width:28px; height:28px; border-radius:6px;
+      background: var(--bg3, #0e1117); display:flex; align-items:center;
+      justify-content:center; font-size:14px; flex-shrink:0;
+    }
+    .lib-item .lib-info { flex:1; overflow:hidden; }
+    .lib-item .lib-name { color:#e6edf3; font-weight:500; white-space:nowrap;
+      text-overflow:ellipsis; overflow:hidden; }
+    .lib-item .lib-pkg { color:#666; font-size:10px; }
+    .lib-item .lib-del {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+      color: #71717a; cursor: pointer;
+      width: 24px; height: 24px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .lib-item .lib-del:hover {
+      color: #ff4d6a; background: rgba(255,77,106,0.1);
+      border-color: rgba(255,77,106,0.2);
+      transform: scale(1.1);
+    }
+    .no-lib-items { color: #555; font-size: 11px; text-align: center; padding: 12px; }
+    .hdr-btn-import:hover { background: rgba(124,58,237,0.3); color:#c4b5fd; }
+
+    /* Schematic Layer */
+    #schematic-panel {
+      position: fixed; top: 50px; left: 0; width: 100%; height: calc(100% - 50px);
+      background: #0d1117; z-index: 2000; display: none; flex-direction: column;
+    }
+    #sch-canvas { width: 100%; height: 100%; cursor: crosshair; }
+    .sch-toolbar {
+      position: absolute; top: 15px; left: 15px; display: flex; gap: 8px;
+      padding: 6px; border-radius: 8px; background: rgba(22,27,34,0.8);
+      border: 1px solid var(--border); backdrop-filter: blur(8px);
+    }
+    .sch-btn {
+      padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .sch-btn:hover { background: var(--bgHover); color: var(--text1); }
+    .sch-btn.accent { background: var(--accent); color: #000; border-color: var(--accent); }
+    .sch-close { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .sch-close:hover { background: rgba(255,50,50,0.2); border-color: #ff3232; }
+
+    /* Custom Confirm Modal */
+    .confirm-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); z-index: 9999; display: none;
+      align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    }
+    .confirm-box {
+      background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+      padding: 24px; width: 320px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .confirm-title { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 12px; }
+    .confirm-msg { font-size: 0.9rem; color: #8b949e; line-height: 1.5; margin-bottom: 24px; }
+    .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+    .confirm-btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; flex: 1; }
+    .confirm-btn-cancel { background: #21262d; border-color: #30363d; color: #c9d1d9; }
+    .confirm-btn-cancel:hover { background: #30363d; }
+    .confirm-btn-ok { background: #da3633; color: #fff; }
+    .confirm-btn-ok:hover { background: #f85149; }
+
+    /* AI Session Badge */
+    .ai-session-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 10px;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      box-shadow: 0 0 10px rgba(0, 212, 170, 0.1);
+    }
+    .ai-session-active {
+      display: inline-flex;
+      background: rgba(0, 212, 170, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(0, 212, 170, 0.3);
+      animation: session-pulse 2s infinite ease-in-out;
+    }
+    @keyframes session-pulse {
+      0% { opacity: 0.85; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0.85; transform: scale(0.98); }
+    }
+
+    /* AI Help Button */
+    .ai-help-btn {
+      position: fixed;
+      bottom: 40px;
+      right: 245px;
+      background: var(--bg2);
+      color: var(--text2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 10px 22px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 13px;
+      backdrop-filter: blur(10px);
+    }
+
+    .ai-help-btn:hover {
+      background: var(--bg3);
+      color: var(--text);
+      border-color: var(--accent);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(0, 212, 170, 0.2);
+    }
+
+    .ai-help-btn span:first-child { font-size: 1.2rem; }
+
+    /* AI Modal */
+    .ai-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 4000;
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .ai-modal-content {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 40px;
+      border-radius: 24px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      color: var(--text);
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7);
+      transform: translateZ(0);
+      animation: modalSlide 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes modalSlide { from { transform: translateY(30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+    .ai-modal-content h2 { margin-top: 0; color: var(--text); font-size: 1.6rem; letter-spacing: -0.5px; }
+    .ai-modal-content p { color: var(--text2); font-size: 0.95rem; margin-bottom: 30px; line-height: 1.5; }
+
+    #qrcode-container {
+      background: white;
+      padding: 16px;
+      border-radius: 16px;
+      margin: 0 auto 30px;
+      display: inline-block;
+      width: 200px;
+      height: 200px;
+      box-shadow: 0 0 40px rgba(0, 212, 170, 0.15);
+    }
+
+    .ai-links-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .ai-link-btn {
+      color: white;
+      text-decoration: none;
+      padding: 14px 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .ai-link-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+    .ai-link-btn:active { transform: translateY(0); }
+
+    .btn-chatgpt { background: #10a37f; }
+    .btn-copy-prompt { background: #2f3542; border: 1px solid var(--border); color: var(--text); }
+    .btn-copy-prompt:hover { background: var(--bg3); border-color: var(--accent); }
+
+    .close-ai-modal {
+      background: transparent;
+      color: var(--text3);
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: underline;
+      margin-top: 10px;
+      transition: color 0.2s;
+    }
+    .close-ai-modal:hover { color: var(--text2); }
+  </style>
+</head>
+<body>
+  
+  <header id="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect x="2" y="2" width="24" height="24" rx="4" fill="#00d4aa" opacity="0.15"/>
+          <rect x="2" y="2" width="24" height="24" rx="4" stroke="#00d4aa" stroke-width="1.5"/>
+          <circle cx="8" cy="8" r="2.5" fill="#00d4aa"/>
+          <circle cx="20" cy="8" r="2.5" fill="#00d4aa"/>
+          <circle cx="8" cy="20" r="2.5" fill="#00d4aa"/>
+          <circle cx="20" cy="20" r="2.5" fill="#00d4aa"/>
+          <line x1="8" y1="8" x2="20" y2="8" stroke="#00d4aa" stroke-width="1.5"/>
+          <line x1="8" y1="8" x2="8" y2="20" stroke="#00d4aa" stroke-width="1.5"/>
+          <line x1="20" y1="8" x2="20" y2="20" stroke="#00d4aa" stroke-width="1.5"/>
+          <circle cx="14" cy="14" r="3" fill="#00d4aa"/>
+        </svg>
+        <span>Electronics Editor</span>
+        <span id="aiSessionBadge" class="ai-session-badge"></span>
+      </div>
+      <div class="project-name-wrap">
+        <input id="project-name" type="text" value="My Electronics Project" spellcheck="false" title="Click to edit project name"/>
+      </div>
+    </div>
+    <div class="header-center">
+      <button id="btn-schematic" class="hdr-btn-text" title="Open Schematic View">📐 Schematic</button>
+      <div class="sep"></div>
+      <button id="btn-undo" class="hdr-btn" title="Undo (Ctrl+Z)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 2.6-6.4L3 13"/></svg>
+      </button>
+      <button id="btn-redo" class="hdr-btn" title="Redo (Ctrl+Y)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-2.6-6.4L21 13"/></svg>
+      </button>
+      <div class="sep"></div>
+      <button id="btn-zoom-in" class="hdr-btn" title="Zoom In (+)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <span id="zoom-label">100%</span>
+      <button id="btn-zoom-out" class="hdr-btn" title="Zoom Out (-)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button id="btn-fit" class="hdr-btn" title="Fit View (F)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
+    </div>
+    <div class="header-right">
+      <select id="lang-select" class="hdr-select" title="Change Language">
+        <option value="en" selected>🇺🇸 English</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="de">🇩🇪 Deutsch</option>
+      </select>
+      <button id="btn-import" class="hdr-btn-import">📦 Import</button>
+      <button id="btn-new" class="hdr-btn-text" data-i18n="new">New</button>
+      <button id="btn-save" class="hdr-btn-accent" data-i18n="save">💾 Save</button>
+    </div>
+  </header>
+
+  
+  <div id="app-body">
+    
+    <aside id="toolbar">
+      <div class="tool-section-label" data-i18n="tools">Tools</div>
+
+      <button class="tool-btn active" id="tool-select" data-tool="select" title="Select / Move (S)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3l14 9-7 1-4 7z"/></svg>
+        <span data-i18n="tool_select">Select</span>
+      </button>
+
+      <button class="tool-btn" id="tool-trace" data-tool="trace" title="Copper Trace (T)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19h14M5 19V5l7 7 7-7v14"/></svg>
+        <span data-i18n="tool_trace">Trace</span>
+      </button>
+
+      <button class="tool-btn" id="tool-via" data-tool="via" title="Via (V)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg>
+        <span data-i18n="tool_via">Via</span>
+      </button>
+
+      <button class="tool-btn" id="tool-pad" data-tool="pad" title="SMD Pad (P)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="8" width="16" height="8" rx="2"/></svg>
+        <span data-i18n="tool_pad">SMD Pad</span>
+      </button>
+
+      <button class="tool-btn" id="tool-hole" data-tool="hole" title="Through Hole (H)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7" stroke-dasharray="4 2"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span data-i18n="tool_hole">Hole</span>
+      </button>
+
+      <button class="tool-btn" id="tool-rect" data-tool="rect" title="Rectangle (R)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>
+        <span data-i18n="tool_rect">Rectangle</span>
+      </button>
+
+      <button class="tool-btn" id="tool-text" data-tool="text" title="Text (X)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        <span data-i18n="tool_text">Text</span>
+      </button>
+
+      <button class="tool-btn" id="tool-measure" data-tool="measure" title="Measure (M)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/></svg>
+        <span data-i18n="tool_measure">Measure</span>
+      </button>
+
+      <div class="tool-section-label" style="margin-top:16px" data-i18n="components">Components</div>
+
+      <button class="tool-btn" id="tool-comp-r" data-tool="comp-r" title="Resistor">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="1" y1="12" x2="5" y2="12"/><rect x="5" y="9" width="14" height="6" rx="1"/><line x1="19" y1="12" x2="23" y2="12"/></svg>
+        <span data-i18n="comp_resistor">Resistor</span>
+      </button>
+
+      <button class="tool-btn" id="tool-comp-c" data-tool="comp-c" title="Capacitor">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="12" x2="10" y2="12"/><line x1="10" y1="7" x2="10" y2="17"/><line x1="14" y1="7" x2="14" y2="17"/><line x1="14" y1="12" x2="22" y2="12"/></svg>
+        <span data-i18n="comp_capacitor">Capacitor</span>
+      </button>
+
+      <button class="tool-btn" id="tool-comp-led" data-tool="comp-led" title="LED">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5,18 5,6 17,12"/><line x1="17" y1="6" x2="17" y2="18"/><line x1="17" y1="12" x2="22" y2="12"/><line x1="2" y1="12" x2="5" y2="12"/></svg>
+        <span data-i18n="comp_led">LED</span>
+      </button>
+
+      <button class="tool-btn" id="tool-comp-ic" data-tool="comp-ic" title="DIP IC">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="4" width="12" height="16" rx="1"/><line x1="2" y1="8" x2="6" y2="8"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="2" y1="16" x2="6" y2="16"/><line x1="18" y1="8" x2="22" y2="8"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="18" y1="16" x2="22" y2="16"/></svg>
+        <span data-i18n="comp_ic">IC (DIP)</span>
+      </button>
+
+      <button class="tool-btn" id="tool-comp-conn" data-tool="comp-conn" title="Connector">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="5" width="14" height="14" rx="2"/><line x1="9" y1="9" x2="9" y2="15"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="15" y1="9" x2="15" y2="15"/></svg>
+        <span data-i18n="comp_connector">Connector</span>
+      </button>
+    </aside>
+
+    
+    <main id="canvas-wrap">
+      <canvas id="pcb-canvas"></canvas>
+      <div id="coord-display">X: 0.00mm  Y: 0.00mm</div>
+      <div id="grid-info" data-i18n="grid_label">Grid: 1.0mm</div>
+
+      
+      <div id="welcome-overlay">
+        <div class="welcome-card">
+          <h2 data-i18n="welcome_title">🎉 Welcome to PCB Editor!</h2>
+          <p data-i18n="welcome_subtitle">Free online PCB editor, easy to use.</p>
+          <ul>
+            <li>🖱️ <span data-i18n="welcome_step1"><b>Click</b> on the tools on the left to draw</span></li>
+            <li>🔄 <span data-i18n="welcome_step2"><b>Mouse scroll</b> to zoom in/out</span></li>
+            <li>✋ <span data-i18n="welcome_step3"><b>Middle button / Space + drag</b> to pan</span></li>
+            <li>🗑️ <span data-i18n="welcome_step4"><b>Delete/Backspace</b> to delete selected</span></li>
+            <li>💾 <span data-i18n="welcome_step5"><b>Ctrl+S</b> auto-saves to cloud</span></li>
+          </ul>
+          <button id="welcome-close" data-i18n="welcome_start">Start Designing!</button>
+        </div>
+      </div>
+    </main>
+
+    
+    <aside id="right-panel">
+      
+      <div class="panel-section">
+        <div class="panel-title" data-i18n="layers">Layers</div>
+        <div id="layers-list">
+          <label class="layer-row" data-layer="F.Cu">
+            <input type="radio" name="active-layer" value="F.Cu" checked/>
+            <span class="layer-color" style="background:#c83200"></span>
+            <span data-i18n="layer_fcu">Top Copper</span>
+          </label>
+          <label class="layer-row" data-layer="B.Cu">
+            <input type="radio" name="active-layer" value="B.Cu"/>
+            <span class="layer-color" style="background:#0047c8"></span>
+            <span data-i18n="layer_bcu">Bottom Copper</span>
+          </label>
+          <label class="layer-row" data-layer="F.SilkS">
+            <input type="radio" name="active-layer" value="F.SilkS"/>
+            <span class="layer-color" style="background:#e0e0e0"></span>
+            <span data-i18n="layer_silk">Silkscreen</span>
+          </label>
+          <label class="layer-row" data-layer="Edge.Cuts">
+            <input type="radio" name="active-layer" value="Edge.Cuts"/>
+            <span class="layer-color" style="background:#ffcc00"></span>
+            <span data-i18n="layer_edge">Edge Cuts</span>
+          </label>
+          <label class="layer-row" data-layer="F.Mask">
+            <input type="radio" name="active-layer" value="F.Mask"/>
+            <span class="layer-color" style="background:#9455cc"></span>
+            <span data-i18n="layer_mask">Solder Mask</span>
+          </label>
+        </div>
+        <div class="layer-eye-row" id="layer-visibility">
+          <span style="font-size:11px;color:#888" data-i18n="visibility">Visibility:</span>
+          <button class="eye-btn active" data-layer="F.Cu" title="Top Copper">F</button>
+          <button class="eye-btn active" data-layer="B.Cu" title="Bottom Copper">B</button>
+          <button class="eye-btn active" data-layer="F.SilkS" title="Silkscreen">S</button>
+          <button class="eye-btn active" data-layer="Edge.Cuts" title="Edge">E</button>
+          <button class="eye-btn active" data-layer="F.Mask" title="Mask">M</button>
+        </div>
+      </div>
+
+      
+      <div class="panel-section">
+        <div class="panel-title" data-i18n="grid">Grid</div>
+        <select id="grid-select">
+          <option value="0.1">0.1 mm</option>
+          <option value="0.25">0.25 mm</option>
+          <option value="0.5">0.5 mm</option>
+          <option value="1" selected>1.0 mm</option>
+          <option value="1.27">1.27 mm</option>
+          <option value="2.54">2.54 mm (100mil)</option>
+        </select>
+        <label class="checkbox-row"><input type="checkbox" id="grid-visible" checked/> <span data-i18n="show_grid">Show grid</span></label>
+      </div>
+
+      
+      <div class="panel-section" id="props-section">
+        <div class="panel-title" data-i18n="properties">Properties</div>
+        <div id="props-content">
+          <p style="color:#666;font-size:12px;text-align:center;margin-top:12px" data-i18n="select_element">Select an element to see properties</p>
+        </div>
+      </div>
+
+      
+      <div class="panel-section">
+        <div class="panel-title" data-i18n="project_info">Project Info</div>
+        <div class="info-row"><span data-i18n="elements">Elements:</span><span id="el-count">0</span></div>
+        <div class="info-row"><span data-i18n="traces">Traces:</span><span id="trace-count">0</span></div>
+        <div class="info-row"><span data-i18n="comp_count">Components:</span><span id="comp-count">0</span></div>
+        <div class="info-row"><span data-i18n="via_count">Vias:</span><span id="via-count">0</span></div>
+      </div>
+
+      
+      <div class="panel-section">
+        <div class="panel-title" data-i18n="drc">Verification (DRC)</div>
+        <button id="btn-drc" class="full-btn" data-i18n="run_drc">🔍 Run DRC</button>
+        <div id="drc-results" style="margin-top:8px;font-size:11px;"></div>
+      </div>
+
+      
+      <div class="panel-section">
+        <div class="panel-title">📦 Component Library</div>
+        <div id="library-list">
+          <div class="no-lib-items">No components imported yet.<br>Click <b>📦 Import</b> to add.</div>
+        </div>
+      </div>
+
+      
+      <div class="panel-section">
+        <div class="panel-title" data-i18n="saved_projects">Saved Projects</div>
+        <div id="saved-projects-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  
+  <div id="status-bar">
+    <span id="status-msg" data-i18n="ready">Ready. Select a tool and start drawing!</span>
+    <span id="status-tool" data-i18n="tool_status">Tool: Select</span>
+  </div>
+
+  
+  <div id="firebase-status" class="hidden">
+    <span class="dot synced"></span>
+    <span id="firebase-status-text">Connected</span>
+  </div>
+
+  
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-box">
+      <div id="modal-title"></div>
+      <div id="modal-body"></div>
+      <div id="modal-footer">
+        <button id="modal-cancel">Cancel</button>
+        <button id="modal-ok" class="accent">OK</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="ctx-menu" class="hidden">
+    <div class="ctx-item" id="ctx-delete" data-i18n="ctx_delete">🗑️ Delete</div>
+    <div class="ctx-item" id="ctx-duplicate" data-i18n="ctx_duplicate">📋 Duplicate</div>
+    <div class="ctx-item" id="ctx-props" data-i18n="ctx_props">⚙️ Properties</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctx-select-all" data-i18n="ctx_select_all">✅ Select All</div>
+  </div>
+
+  
+  <div id="tooltip" class="hidden"></div>
+
+  
+  <div id="import-overlay" class="import-modal-overlay">
+    <div class="import-modal">
+      <h2>📦 Import Component</h2>
+      <p class="subtitle">Import from LCSC / JLCPCB library. Enter the LCSC part number (e.g. C2286, C3000211).</p>
+      <label for="import-lcsc-input">LCSC Part Number</label>
+      <input type="text" id="import-lcsc-input" placeholder="C2286" autocomplete="off" spellcheck="false" />
+      <div id="import-progress" class="import-progress"></div>
+      <div id="import-preview" class="import-preview">
+        <div class="prev-name" id="import-prev-name"></div>
+        <div class="prev-pkg" id="import-prev-pkg"></div>
+        <div class="prev-meta" id="import-prev-meta"></div>
+        <canvas id="import-prev-canvas" width="260" height="180"></canvas>
+      </div>
+      <div class="btn-row">
+        <button class="btn-cancel" id="import-cancel">Cancel</button>
+        <button class="btn-import" id="import-fetch" disabled>🔍 Fetch</button>
+        <button class="btn-import" id="import-save" style="display:none;background:#7c3aed;">💾 Save to Library</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="schematic-panel">
+    <div class="sch-toolbar">
+      <button id="btn-sch-save" class="sch-btn accent" title="Save Schematic">💾 Save Schematic</button>
+      <button id="btn-sch-clear" class="sch-btn" title="Clear Wires">🧹 Clear Wires</button>
+      <div class="sep"></div>
+      <span style="color:#666; font-size:10px; padding:0 8px;">Drag components to move • Click pins to wire • Dbl-click pin to delete wire</span>
+    </div>
+    <button id="btn-sch-close" class="sch-close" title="Close Schematic">✕</button>
+    <canvas id="sch-canvas"></canvas>
+  </div>
+
+  
+  <button id="btnAIHelp" class="ai-help-btn">
+    <span>🤖</span> <b>AI</b> Help
+  </button>
+
+  
+  <div id="aiModal" class="ai-modal-overlay">
+    <div class="ai-modal-content">
+      <h2>AI Design Assistant</h2>
+      <p>Scan the code or choose an AI to continue designing your PCB.</p>
+      <div id="qrcode-container"></div>
+      
+      <div class="ai-links-container">
+        <a id="linkChatGPT" href="#" target="_blank" class="ai-link-btn btn-chatgpt">
+          <span>💬</span> Open in ChatGPT
+        </a>
+        <button id="btnCopyPrompt" class="ai-link-btn btn-copy-prompt">
+          <span>📋</span> Copy Prompt for other AIs
+        </button>
+      </div>
+      
+      <button id="btnCloseAI" class="close-ai-modal">Close</button>
+    </div>
+  </div>
+
+  
+  <div id="confirm-modal" class="confirm-overlay">
+    <div class="confirm-box">
+      <div id="confirm-title" class="confirm-title">Confirm Action</div>
+      <div id="confirm-msg" class="confirm-msg">Are you sure?</div>
+      <div class="confirm-actions">
+        <button id="confirm-cancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
+        <button id="confirm-ok" class="confirm-btn confirm-btn-ok">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="translations.js"></script>
+  
+  <script src="decode.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <script src="electronics-editor.js"></script>
+  <script src="lib-import.js"></script>
+  <script src="schematic.js"></script>
+
+  
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
+    import { getDatabase, ref, set, get, onValue, update }
+      from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
+
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyBGp8r-Eir4NRnIRfeA6c6rIMZmdJnti4M",
+      authDomain: "onedollarboard-1b26a.firebaseapp.com",
+      databaseURL: "https://onedollarboard-1b26a-default-rtdb.firebaseio.com",
+      projectId: "onedollarboard-1b26a",
+      storageBucket: "onedollarboard-1b26a.firebasestorage.app",
+      messagingSenderId: "448761452728",
+      appId: "1:448761452728:web:f309f53f24cfbac5d8bc4d"
+    };
+
+    const DATABASE_URL = firebaseConfig.databaseURL;
+    window._PCB_DB_URL = DATABASE_URL; 
+    const pcbProjectID = window.PROJECT_ID;
+    const DATABASE_PATH = `/projects/${pcbProjectID}`;
+
+
+
+    let app, database, pcbRef;
+    let isRemoteUpdate = false;
+    let isSyncing = false;
+    let saveTimeout = null;
+    let isConnected = false;
+    let reconnectInterval = null;
+    let lastSavedJSON = '';
+    const DEBOUNCE_DELAY = 1500;
+
+    const fbStatus = document.getElementById('firebase-status');
+    const fbStatusText = document.getElementById('firebase-status-text');
+    const fbDot = fbStatus?.querySelector('.dot');
+
+    function showFbStatus(msg, type = 'synced') {
+      if (!fbStatus) return;
+      fbStatusText.textContent = msg;
+      fbDot.className = 'dot ' + type;
+      fbStatus.classList.remove('hidden');
+      clearTimeout(fbStatus._hideTimer);
+      if (type === 'synced') {
+        fbStatus._hideTimer = setTimeout(() => fbStatus.classList.add('hidden'), 3000);
+      }
+    }
+
+    
+    function getClientId() {
+      if (!window._pcbClientId) {
+        window._pcbClientId = 'pcb-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+      }
+      return window._pcbClientId;
+    }
+
+    
+    function serializeElements(elements) {
+      return JSON.parse(JSON.stringify(elements.map(el => {
+        const clean = { ...el };
+        
+        if (clean.selectedIds) delete clean.selectedIds;
+        return clean;
+      })));
+    }
+
+    
+    async function checkConnection() {
+      try {
+        const testData = { timestamp: Date.now(), test: true, source: 'pcb-editor' };
+        const writeResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/pcb_test.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testData)
+        });
+        if (!writeResponse.ok) throw new Error(`HTTP ${writeResponse.status}`);
+
+        const readResponse = await fetch(`${DATABASE_URL}${DATABASE_PATH}/pcb_test.json`);
+        if (!readResponse.ok) throw new Error(`HTTP ${readResponse.status}`);
+
+        const data = await readResponse.json();
+        if (data && data.test === true) {
+          isConnected = true;
+          showFbStatus('Connected to Firebase ✓', 'synced');
+          console.log('✅ Firebase connection test OK');
+          return true;
+        }
+        throw new Error('Invalid response');
+      } catch (error) {
+        console.error('❌ Firebase connection error:', error);
+        isConnected = false;
+        showFbStatus('Offline – saving locally', 'error');
+        return false;
+      }
+    }
+
+    
+    function tryReconnect() {
+      if (reconnectInterval) return;
+      reconnectInterval = setInterval(async () => {
+        const ok = await checkConnection();
+        if (ok) {
+          clearInterval(reconnectInterval);
+          reconnectInterval = null;
+          
+          savePCBToFirebase(true);
+        }
+      }, 5000);
+    }
+
+    
+    
+    
+    async function savePCBToFirebase(force = false) {
+      if (isRemoteUpdate || typeof state === 'undefined') return;
+
+      const elements = serializeElements(state.elements);
+      const currentJSON = JSON.stringify(elements);
+      if (!force && currentJSON === lastSavedJSON && !isSyncing) return; 
+
+      clearTimeout(saveTimeout);
+      showFbStatus('Saving...', '');
+      isSyncing = true;
+
+      saveTimeout = setTimeout(async () => {
+        try {
+          
+          let existingData = {};
+          try {
+            const resp = await fetch(`${DATABASE_URL}${DATABASE_PATH}/pcb.json`);
+            if (resp.ok) existingData = (await resp.json()) || {};
+          } catch (e) {  }
+
+          const projectName = document.getElementById('project-name')?.value || 'My PCB Project';
+
+          const data = {
+            elements: elements,
+            nextId: state.nextId,
+            projectName: projectName,
+            projectID: pcbProjectID,
+            elementCount: elements.length,
+            traceCount: elements.filter(e => e.type === 'trace').length,
+            componentCount: elements.filter(e => e.type === 'group').length,
+            viaCount: elements.filter(e => e.type === 'via').length,
+            created: existingData.created || new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            updated: new Date().toISOString(),
+            timestamp: Date.now(),
+            lastModifiedBy: getClientId(),
+          };
+
+          const response = await fetch(`${DATABASE_URL}${DATABASE_PATH}/pcb.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          lastSavedJSON = currentJSON;
+          isConnected = true;
+          showFbStatus('Saved to cloud ✓', 'synced');
+          console.log('✅ PCB data saved to Firebase');
+        } catch (error) {
+          console.error('❌ Error saving PCB data:', error);
+          const msg = (error.message || '').toLowerCase();
+          if (msg.includes('failed to fetch') || msg.includes('network')) {
+            showFbStatus('Offline – saved locally', 'error');
+            isConnected = false;
+            tryReconnect();
+          } else {
+            showFbStatus('Save error!', 'error');
+          }
+        } finally {
+          isSyncing = false;
+        }
+      }, force ? 100 : DEBOUNCE_DELAY);
+    }
+
+    
+    
+    
+    async function clearPCBFromFirebase() {
+      if (!pcbProjectID) return;
+      try {
+        await fetch(`${DATABASE_URL}${DATABASE_PATH}/pcb.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(null)
+        });
+        lastSavedJSON = '';
+        console.log('🗑️ PCB data cleared from Firebase');
+        showFbStatus('Project reset', 'synced');
+      } catch (error) {
+        console.error('❌ Error clearing Firebase PCB data:', error);
+      }
+    }
+
+    
+    
+    
+    try {
+      app = initializeApp(firebaseConfig);
+      database = getDatabase(app);
+      pcbRef = ref(database, `projects/${pcbProjectID}/pcb`);
+
+      console.log(`🔥 Firebase initialized. Project: ${pcbProjectID}`);
+      console.log(`📁 PCB path: ${DATABASE_PATH}/pcb`);
+
+      
+      checkConnection();
+
+      
+      get(pcbRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          console.log('📥 Loaded PCB data from Firebase');
+
+          if (data.elements && typeof state !== 'undefined') {
+            isRemoteUpdate = true;
+            
+            
+            
+            if (window.DECODED_ELEMENTS_FROM_URL) {
+              console.log('🤖 AI Pushed elements found! Injecting...');
+              state.elements = window.DECODED_ELEMENTS_FROM_URL;
+              
+              setTimeout(() => savePCBToFirebase(true), 1000);
+            } else {
+              state.elements = data.elements || [];
+            }
+
+            state.nextId = data.nextId || (1 + Math.max(0, ...state.elements.map(e => e.id || 0)));
+            if (data.projectName) {
+              document.getElementById('project-name').value = data.projectName;
+            }
+            lastSavedJSON = JSON.stringify(state.elements);
+
+            if (typeof updateStats === 'function') updateStats();
+            if (typeof updatePropsPanel === 'function') updatePropsPanel();
+            if (typeof render === 'function') render();
+            isRemoteUpdate = false;
+            showFbStatus('Project loaded from cloud', 'synced');
+
+            
+            const aiBadge = document.getElementById('aiSessionBadge');
+            if (aiBadge && data.aiSessionActive) {
+                aiBadge.innerHTML = '<span>✧</span> AI Active';
+                aiBadge.classList.add('ai-session-active');
+                aiBadge.style.display = 'inline-flex';
+            }
+          }
+        } else {
+          console.log('📭 No existing PCB data. Checking for AI push...');
+          if (window.DECODED_ELEMENTS_FROM_URL && typeof state !== 'undefined') {
+            state.elements = window.DECODED_ELEMENTS_FROM_URL;
+            state.nextId = 1 + Math.max(0, ...state.elements.map(e => e.id || 0));
+            if (typeof render === 'function') render();
+            savePCBToFirebase(true);
+            showFbStatus('AI Elements loaded', 'synced');
+          }
+        }
+      }).catch((error) => {
+        console.error('❌ Error loading PCB data:', error);
+        showFbStatus('Error loading data', 'error');
+      });
+
+      
+      onValue(pcbRef, (snapshot) => {
+        if (!snapshot.exists() || isRemoteUpdate || isSyncing) return;
+        const data = snapshot.val();
+
+        
+        if (typeof state !== 'undefined' && data.lastModifiedBy && data.lastModifiedBy !== getClientId()) {
+          const remoteJSON = JSON.stringify(data.elements || []);
+          if (remoteJSON === lastSavedJSON) return; 
+
+          isRemoteUpdate = true;
+          state.elements = data.elements || [];
+          state.nextId = data.nextId || (1 + Math.max(0, ...state.elements.map(e => e.id || 0)));
+          if (data.projectName) {
+            document.getElementById('project-name').value = data.projectName;
+          }
+          lastSavedJSON = remoteJSON;
+
+          if (typeof updateStats === 'function') updateStats();
+          if (typeof updatePropsPanel === 'function') updatePropsPanel();
+          if (typeof render === 'function') render();
+          isRemoteUpdate = false;
+          showFbStatus('Remote update received', 'synced');
+          console.log('📥 Remote PCB update applied');
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error initializing Firebase:', error);
+      showFbStatus('Firebase error', 'error');
+    }
+
+    
+    
+    
+    window.savePCBToFirebase = savePCBToFirebase;
+    window.clearPCBFromFirebase = clearPCBFromFirebase;
+
+    
+    
+    
+    
+    const LIB_PATH = '/library/pcb';
+    window._pcbLibrary = [];
+
+    
+    async function loadLibraryFromFirebase() {
+      try {
+        const resp = await fetch(`${DATABASE_URL}${LIB_PATH}.json`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data) {
+            window._pcbLibrary = Object.values(data);
+            
+            localStorage.setItem('odb_pcb_library', JSON.stringify(window._pcbLibrary));
+            console.log(`📚 Library loaded: ${window._pcbLibrary.length} components`);
+            if (typeof window.renderLibrary === 'function') window.renderLibrary();
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not load library from Firebase:', error);
+        
+        try {
+          window._pcbLibrary = JSON.parse(localStorage.getItem('odb_pcb_library') || '[]');
+          if (typeof window.renderLibrary === 'function') window.renderLibrary();
+        } catch(e) {  }
+      }
+    }
+
+    
+    window.saveComponentToLibrary = async function(componentData) {
+      const key = componentData.lcsc || ('custom-' + Date.now());
+      componentData.importedAt = new Date().toISOString();
+
+      try {
+        const resp = await fetch(`${DATABASE_URL}${LIB_PATH}/${key}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(componentData)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        
+        const idx = window._pcbLibrary.findIndex(c => c.lcsc === key);
+        if (idx >= 0) {
+          window._pcbLibrary[idx] = componentData;
+        } else {
+          window._pcbLibrary.push(componentData);
+        }
+        localStorage.setItem('odb_pcb_library', JSON.stringify(window._pcbLibrary));
+        console.log(`✅ Component ${key} saved to Firebase library`);
+        showFbStatus(`📦 ${componentData.name} saved to library`, 'synced');
+      } catch (error) {
+        console.error('❌ Error saving to library:', error);
+        
+        const idx = window._pcbLibrary.findIndex(c => c.lcsc === key);
+        if (idx >= 0) {
+          window._pcbLibrary[idx] = componentData;
+        } else {
+          window._pcbLibrary.push(componentData);
+        }
+        localStorage.setItem('odb_pcb_library', JSON.stringify(window._pcbLibrary));
+        showFbStatus('Saved locally (offline)', 'error');
+      }
+    };
+
+    
+    window.removeComponentFromLibrary = async function(componentKey) {
+      if (!componentKey) return;
+      console.log('🗑️ Firebase deletion request for:', componentKey);
+
+      
+      if (window._pcbLibrary) {
+        window._pcbLibrary = window._pcbLibrary.filter(c => (c.lcsc || c.name) !== componentKey);
+        localStorage.setItem('odb_pcb_library', JSON.stringify(window._pcbLibrary));
+      }
+
+      
+      if (typeof window.renderLibrary === 'function') window.renderLibrary();
+
+      
+      try {
+        const url = `${DATABASE_URL}${LIB_PATH}/${componentKey}.json`;
+        const resp = await fetch(url, { method: 'DELETE' });
+        if (resp.ok) {
+          console.log(`✅ Component ${componentKey} removed from Firebase library`);
+          showFbStatus('Library updated', 'synced');
+        } else {
+          console.warn(`⚠️ Firebase delete returned ${resp.status}`);
+        }
+      } catch (error) {
+        console.error('⚠️ Could not sync deletion with Firebase (offline or CORS):', error);
+      }
+    };
+
+    
+    loadLibraryFromFirebase();
+
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      const nameInput = document.getElementById('project-name');
+      if (nameInput) {
+        let nameTimer = null;
+        nameInput.addEventListener('input', () => {
+          clearTimeout(nameTimer);
+          nameTimer = setTimeout(() => savePCBToFirebase(), 1000);
+        });
+        nameInput.addEventListener('change', () => savePCBToFirebase());
+      }
+    });
+
+    
+    
+    
+    const btnAIHelp = document.getElementById('btnAIHelp');
+    const aiModal = document.getElementById('aiModal');
+    const btnCloseAI = document.getElementById('btnCloseAI');
+    const qrcodeContainer = document.getElementById('qrcode-container');
+    const linkChatGPT = document.getElementById('linkChatGPT');
+    const btnCopyPrompt = document.getElementById('btnCopyPrompt');
+
+    if (btnAIHelp && aiModal) {
+      btnAIHelp.onclick = () => {
+        
+        const pcbData = JSON.stringify(serializeElements(state.elements));
+        const encodedData = btoa(unescape(encodeURIComponent(pcbData)));
+        
+        
+        const baseUrl = window.location.origin + window.location.pathname;
+        const aiUrl = `${baseUrl}?projectID=${pcbProjectID}&elements=${encodedData}`;
+        
+        
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('elements', encodedData);
+          window.history.replaceState({}, '', url.toString());
+        } catch(e) {}
+
+        
+        qrcodeContainer.innerHTML = '';
+        new QRCode(qrcodeContainer, {
+          text: aiUrl,
+          width: 200,
+          height: 200,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.L
+        });
+
+        
+        const prompt = `I am working on a PCB design for the One Dollar Board.
+Project ID: ${pcbProjectID}
+Current elements: Check the attached URL for my current design.
+Please help me improve this circuit or add new components.
+Link: ${aiUrl}`;
+        
+        linkChatGPT.href = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+        
+        
+        aiModal.style.display = 'flex';
+        
+        
+        update(ref(database, DATABASE_PATH), { aiHelpUsed: true, lastAiHelpAt: new Date().toISOString() });
+      };
+
+      btnCloseAI.onclick = () => { aiModal.style.display = 'none'; };
+      
+      
+      aiModal.onclick = (e) => { if (e.target === aiModal) aiModal.style.display = 'none'; };
+
+      btnCopyPrompt.onclick = () => {
+        const pcbData = JSON.stringify(serializeElements(state.elements));
+        const encodedData = btoa(unescape(encodeURIComponent(pcbData)));
+        const baseUrl = window.location.origin + window.location.pathname;
+        const aiUrl = `${baseUrl}?projectID=${pcbProjectID}&elements=${encodedData}`;
+
+        const fullPrompt = `You are a PCB design assistant. Here is my current project data (Base64 encoded JSON):
+${encodedData}
+
+You can analyze and edit this design. To return an updated version, provide the elements array in same JSON format.
+Direct link to load project: ${aiUrl}`;
+
+        navigator.clipboard.writeText(fullPrompt).then(() => {
+          const originalText = btnCopyPrompt.innerHTML;
+          btnCopyPrompt.innerHTML = '<span>✅</span> Copied!';
+          setTimeout(() => { btnCopyPrompt.innerHTML = originalText; }, 2000);
+        });
+      };
+    }
+
+
+  </script>
+</body>
+</html>
