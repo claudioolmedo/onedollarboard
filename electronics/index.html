@@ -164,8 +164,8 @@
       padding-bottom: 20px;
     }
     .sidebar-lib-item {
-      width: 68px;
-      padding: 8px 4px;
+      width: 95px;
+      padding: 10px 4px;
       background: var(--bg3);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -174,7 +174,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       transition: all 0.2s;
       position: relative;
     }
@@ -190,9 +190,9 @@
       color: var(--accent);
       box-shadow: 0 0 15px rgba(0, 212, 170, 0.15);
     }
-    .sidebar-lib-icon { font-size: 18px; }
+    .sidebar-lib-icon { font-size: 20px; }
     .sidebar-lib-name {
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 600;
       text-align: center;
       width: 100%;
@@ -476,7 +476,6 @@
         <option value="es">🇪🇸 Español</option>
         <option value="de">🇩🇪 Deutsch</option>
       </select>
-      <button id="btn-import" class="hdr-btn-import">📦 Import</button>
       <button id="btn-new" class="hdr-btn-text" data-i18n="new">New</button>
       <button id="btn-save" class="hdr-btn-accent" data-i18n="save">💾 Save</button>
     </div>
@@ -529,6 +528,10 @@
       </button>
 
       <div class="tool-section-label" style="margin-top:16px" data-i18n="library">Library</div>
+      <button id="btn-import" class="tool-btn" style="border:1.5px dashed var(--accent); color:var(--accent); margin-top:5px; margin-bottom:5px;">
+         <span style="font-size:18px">📦</span>
+         <span style="font-weight:700">IMPORT</span>
+      </button>
       <div id="sidebar-library-list"></div>
     </aside>
 
