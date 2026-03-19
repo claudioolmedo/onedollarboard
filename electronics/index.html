@@ -1169,45 +1169,65 @@
     if (btnAIHelp && aiModal) {
       btnAIHelp.onclick = () => {
         
-        const pcbData = JSON.stringify(serializeElements(state.elements));
-        const encodedData = btoa(unescape(encodeURIComponent(pcbData)));
+        const aiToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
         
         
         const baseUrl = window.location.origin + window.location.pathname;
-        const aiUrl = `${baseUrl}?projectID=${pcbProjectID}&elements=${encodedData}`;
+        const projectID = pcbProjectID;
         
         
-        try {
-          const url = new URL(window.location.href);
-          url.searchParams.set('elements', encodedData);
-          window.history.replaceState({}, '', url.toString());
-        } catch(e) {}
+        const docsUrl = `https://onedollarboard.com/electronics/AI_INSTRUCTIONS.md`;
+        
+        
+        const prompt = `Help me design this PCB on the One Dollar Board.
+        
+1. Instructions: Follow ${docsUrl}
+2. Context: projectID ${projectID} | aiToken ${aiToken}
+3. Action: Improve the layout or add components.
+
+Current Design Link: ${baseUrl}?projectID=${projectID}
+
+Please return the updated elements array or provide a Magic Link with the changes.`;
+
+        const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+        
+        
+        if (typeof update === 'function') {
+          update(ref(database, `projects/${projectID}/pcb`), { 
+            aiHelpUsed: true, 
+            aiSessionToken: aiToken,
+            aiSessionActive: true,
+            lastAiHelpAt: new Date().toISOString() 
+          }).catch(e => console.warn('Error updating AI session:', e));
+        }
 
         
         qrcodeContainer.innerHTML = '';
-        new QRCode(qrcodeContainer, {
-          text: aiUrl,
-          width: 200,
-          height: 200,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.L
-        });
+        try {
+          
+          
+          
+          const qrUrl = `${baseUrl}?projectID=${projectID}&aiToken=${aiToken}`;
+          
+          new QRCode(qrcodeContainer, {
+            text: qrUrl,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (e) {
+          console.error('QRCode generation failed:', e);
+          qrcodeContainer.innerHTML = '<div style="color:#000;padding-top:80px">Error generating QR Code<br><small>URL too long</small></div>';
+        }
 
         
-        const prompt = `I am working on a PCB design for the One Dollar Board.
-Project ID: ${pcbProjectID}
-Current elements: Check the attached URL for my current design.
-Please help me improve this circuit or add new components.
-Link: ${aiUrl}`;
-        
-        linkChatGPT.href = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+        linkChatGPT.href = chatGPTUrl;
         
         
         aiModal.style.display = 'flex';
-        
-        
-        update(ref(database, DATABASE_PATH), { aiHelpUsed: true, lastAiHelpAt: new Date().toISOString() });
       };
 
       btnCloseAI.onclick = () => { aiModal.style.display = 'none'; };
