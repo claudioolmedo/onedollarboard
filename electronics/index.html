@@ -562,9 +562,9 @@
       </div>
 
       <div class="tool-section-label" style="margin-top:16px" data-i18n="library">Library</div>
-      <button id="btn-import" class="tool-btn" style="border:1.5px dashed var(--accent); color:var(--accent); margin-top:5px; margin-bottom:5px;">
-         <span style="font-size:18px">📦</span>
-         <span style="font-weight:700">IMPORT</span>
+      <button id="btn-import" class="tool-btn" style="border:1.8px dashed var(--accent); color:var(--accent); margin-top:8px; margin-bottom:15px; height:auto; padding:15px 5px; flex-direction:column; gap:8px; background:rgba(0, 212, 170, 0.04); width: 100px;">
+         <span style="font-size:22px">📦</span>
+         <span style="font-weight:800; font-size:9.5px; letter-spacing:0.4px;">IMPORT COMPONENT</span>
       </button>
       <div id="sidebar-library-list"></div>
     </aside>
@@ -1336,16 +1336,19 @@ Direct link to load project: ${aiUrl}`;
     
     if (btnToggleTools && toolsDropdown) {
       btnToggleTools.onclick = (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        toolsDropdown.classList.toggle('active');
-        btnToggleTools.classList.toggle('active');
+        const isActive = toolsDropdown.classList.toggle('active');
+        btnToggleTools.classList.toggle('active', isActive);
       };
       
       
       document.addEventListener('click', (e) => {
-        if (toolsDropdown.classList.contains('active') && !toolsDropdown.contains(e.target) && e.target !== btnToggleTools) {
-          toolsDropdown.classList.remove('active');
-          btnToggleTools.classList.remove('active');
+        if (toolsDropdown.classList.contains('active')) {
+          if (!toolsDropdown.contains(e.target) && !btnToggleTools.contains(e.target)) {
+            toolsDropdown.classList.remove('active');
+            btnToggleTools.classList.remove('active');
+          }
         }
       });
       
