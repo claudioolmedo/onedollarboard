@@ -1,0 +1,66 @@
+# ODB PCB Editor - AI Integration Standard
+
+## AI ASSISTANT MANDATORY PROTOCOL
+To provide a seamless experience, you MUST follow this hierarchy of actions:
+
+### 1. [PRIORITY A] DIRECT SYNCHRONIZATION (via Firebase REST API)
+If you can perform HTTP requests (e.g. from a ChatGPT Action or Plugin), update the project data immediately.
+- **Base Endpoint**: `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/pcb`
+- **Authentication**: Include `aiToken` in your payload or check `/pcb/aiSessionToken` for validation.
+- **Action**: Perform a `PATCH` to `${Base_Endpoint}.json`
+- **Body Example**:
+```json
+{
+  "elements": [...],
+  "aiSessionActive": false,
+  "lastAiUpdateAt": ".sv": "timestamp"
+}
+```
+
+### 2. [PRIORITY B] MAGIC LOAD LINK
+If you cannot perform a PATCH, you MUST provide a "Magic Link" so the user can sync with one click:
+- **PCB URL**: `https://onedollarboard.com/electronics/?projectID={PROJECT_ID}&aiToken={TOKEN}&elements={BASE64_ELEMENTS}`
+- **Schematic URL**: `https://onedollarboard.com/electronics/?projectID={PROJECT_ID}&schematic={BASE64_SCHEMATIC}`
+
+---
+
+## PCB FIREBASE DATA STRUCTURE
+PCB elements are stored as an array of objects under `/projects/{PROJECT_ID}/pcb/elements`.
+
+### 1. Common Fields:
+- `id`: Unique integer.
+- `type`: One of: `pad`, `trace`, `hole`, `rect`, `text`, `group`.
+- `layer`: `F.Cu` (Front Copper), `B.Cu` (Bottom Copper), `F.SilkS` (Front Silkscreen), `Edge.Cuts` (Board outline).
+
+### 2. Element Specifics:
+- **Pad**: `{ "type": "pad", "x": mm, "y": mm, "w": mm, "h": mm, "shape": "rect"|"circle", "ref": "P1" }`
+- **Trace**: `{ "type": "trace", "points": [{x,y}, ...], "width": 0.25 }`
+- **Hole**: `{ "type": "hole", "x": mm, "y": mm, "drill": mm }`
+- **Rect**: `{ "type": "rect", "x, y, w, h", "filled": bool }`
+- **Text**: `{ "type": "text", "x, y", "text", "size": 1.0 }`
+- **Group (Components)**: `{ "type": "group", "children": [primitive elements...], "lcsc": "CXXXX", "label": "U1" }`
+  - IMPORTANT: Components from the Library are complex, but you can build them using a `group` of primitives.
+
+---
+
+## USING LIBRARY COMPONENTS
+The user imports components from LCSC/EasyEDA. Each component has an `lcsc` number and a `name`.
+- When adding a new part, look for the LCSC number.
+- Assign a clear `label` or `ref` (e.g., U1 for ICs, R1 for resistors, C1 for capacitors).
+- If you don't have the exact footprint, use a standard layout (e.g., SOIC-8, 0805) using multiple `pad` elements.
+
+---
+
+## ZERO DEFECTS REQUIRMENTS
+1. **UNITS**: All PCB dimensions are in **Millimeters (mm)**.
+2. **COORDINATE SYSTEM**: Origin (0,0) is typically the board center or top-left.
+3. **TRACES**: Minimum trace width 0.2mm. Standard power 0.5mm.
+4. **CLEARANCE**: Maintain at least 0.2mm distance between different nets.
+5. **VIAS**: Use `{ "type": "via", "x", "y", "drill": 0.3, "diameter": 0.6 }` for layer changes.
+
+---
+
+## PROJECT CONTEXT
+You will receive a `projectID` and an `aiToken`. 
+The `aiToken` is valid for the current session. 
+You can read the full state at `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{projectID}.json`
