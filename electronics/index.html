@@ -1240,18 +1240,19 @@
         const projectID = pcbProjectID;
         
         
-        const docsUrl = `https://onedollarboard.com/electronics/AI_INSTRUCTIONS.md`;
+        const docsUrl = `https://onedollarboard.com/electronics/AI_DOCS.txt`;
         
         
-        const prompt = `Help me design this PCB on the One Dollar Board.
-        
-1. Instructions: Follow ${docsUrl}
-2. Context: projectID ${projectID} | aiToken ${aiToken}
-3. Action: Improve the layout or add components.
+        const prompt = `You are a PCB Design Assistant for the One Dollar Board editor. 
+1. Instructions: Use ${docsUrl} for data structure.
+2. Direct Action Context: 
+   - projectID: "${projectID}"
+   - aiToken: "${aiToken}" (use for direct Firebase PATCH to update my design at the endpoint below)
+3. Action Goal: Create or improve the PCB design by adding components or clearing shorts.
+4. Project REST Endpoint: https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/pcb.json
+5. Live View: ${baseUrl}?projectID=${projectID}
 
-Current Design Link: ${baseUrl}?projectID=${projectID}
-
-Please return the updated elements array or provide a Magic Link with the changes.`;
+Analyze the project data and return the updated elements array or push it directly via Firebase PATCH.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
         
