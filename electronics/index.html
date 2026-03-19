@@ -770,8 +770,11 @@
           <span>🔗</span> Copy Magic Link
         </button>
         <button id="btnCopyPrompt" class="ai-link-btn btn-copy-prompt">
-          <span>📋</span> Copy Full AI Prompt
+          <span>📋</span> Copy Project Data for AI
         </button>
+        <p style="font-size: 11px; opacity: 0.8; margin-top: 15px; color: var(--text2); line-height: 1.4; text-align: center; border-top: 1px solid var(--border); padding-top: 15px;">
+          💡 <b>Tip</b>: If ChatGPT has trouble accessing the link, click above to <b>Copy Project Data</b> and paste it directly into the chat.
+        </p>
       </div>
       
       <button id="btnCloseAI" class="close-ai-modal">Close</button>
@@ -1243,16 +1246,23 @@
         const docsUrl = `https://onedollarboard.com/electronics/AI_DOCS.txt`;
         
         
+        const elementSummary = state.elements.slice(0, 10).map(e => `${e.type} at ${e.x},${e.y}`).join(', ');
+        const elementsJson = JSON.stringify(serializeElements(state.elements));
+        
+        
         const prompt = `You are a PCB Design Assistant for the One Dollar Board editor. 
-1. Instructions: Use ${docsUrl} for data structure.
+1. Instructions: ${docsUrl}
 2. Direct Action Context: 
    - projectID: "${projectID}"
    - aiToken: "${aiToken}" (use for direct Firebase PATCH to update my design at the endpoint below)
 3. Action Goal: Create or improve the PCB design by adding components or clearing shorts.
-4. Project REST Endpoint: https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/pcb.json
-5. Live View: ${baseUrl}?projectID=${projectID}
+4. Project Data Access: 
+   - Direct JSON: https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/pcb.json
+   - (If you cannot access the link, it is because of CORS/Browsing. Use the elements provided in the chat).
+5. Current elements (summary): ${elementSummary}...
+6. Live View: ${baseUrl}?projectID=${projectID}
 
-Analyze the project data and return the updated elements array or push it directly via Firebase PATCH.`;
+Please analyze the PCB and return the updated elements array.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
         
@@ -1312,20 +1322,15 @@ Analyze the project data and return the updated elements array or push it direct
       aiModal.onclick = (e) => { if (e.target === aiModal) aiModal.style.display = 'none'; };
 
       btnCopyPrompt.onclick = () => {
-        const pcbData = JSON.stringify(serializeElements(state.elements));
-        const encodedData = btoa(unescape(encodeURIComponent(pcbData)));
-        const baseUrl = window.location.origin + window.location.pathname;
-        const aiUrl = `${baseUrl}?projectID=${pcbProjectID}&elements=${encodedData}`;
+        const pcbData = JSON.stringify(serializeElements(state.elements), null, 2);
+        const fullPrompt = `You are a PCB design assistant. Here is my current PCB electronics project data (JSON):
+${pcbData}
 
-        const fullPrompt = `You are a PCB design assistant. Here is my current project data (Base64 encoded JSON):
-${encodedData}
-
-You can analyze and edit this design. To return an updated version, provide the elements array in same JSON format.
-Direct link to load project: ${aiUrl}`;
+Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to improve this design and return only the updated elements array.`;
 
         navigator.clipboard.writeText(fullPrompt).then(() => {
           const originalText = btnCopyPrompt.innerHTML;
-          btnCopyPrompt.innerHTML = '<span>✅</span> Copied!';
+          btnCopyPrompt.innerHTML = '<span>✅</span> Project Copied!';
           setTimeout(() => { btnCopyPrompt.innerHTML = originalText; }, 2000);
         });
       };
