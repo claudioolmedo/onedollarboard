@@ -1083,8 +1083,13 @@ function updateUI() {
 }
 
 
+const welcomeOverlay = document.getElementById('welcome-overlay');
+if (localStorage.getItem('odb_pcb_welcome_seen')) {
+  welcomeOverlay.style.display = 'none';
+}
 document.getElementById('welcome-close').onclick = () => {
-  document.getElementById('welcome-overlay').style.display='none';
+  welcomeOverlay.style.display = 'none';
+  localStorage.setItem('odb_pcb_welcome_seen', 'true');
 };
 
 
