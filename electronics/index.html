@@ -318,13 +318,22 @@
 
     #qrcode-container {
       background: white;
-      padding: 16px;
-      border-radius: 16px;
+      padding: 12px;
+      border-radius: 20px;
       margin: 0 auto 30px;
-      display: inline-block;
-      width: 200px;
-      height: 200px;
-      box-shadow: 0 0 40px rgba(0, 212, 170, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 224px;
+      height: 224px;
+      box-shadow: 0 0 50px rgba(0, 212, 170, 0.2);
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    #qrcode-container img, #qrcode-container canvas {
+      max-width: 100%;
+      height: auto;
     }
 
     .ai-links-container {
@@ -706,8 +715,11 @@
         <a id="linkChatGPT" href="#" target="_blank" class="ai-link-btn btn-chatgpt">
           <span>💬</span> Open in ChatGPT
         </a>
+        <button id="btnCopyMagicLink" class="ai-link-btn btn-copy-prompt" style="border-radius: 12px; background: rgba(0, 212, 170, 0.1); color: var(--accent); border-color: rgba(0, 212, 170, 0.3);">
+          <span>🔗</span> Copy Magic Link
+        </button>
         <button id="btnCopyPrompt" class="ai-link-btn btn-copy-prompt">
-          <span>📋</span> Copy Prompt for other AIs
+          <span>📋</span> Copy Full AI Prompt
         </button>
       </div>
       
@@ -1228,6 +1240,18 @@ Please return the updated elements array or provide a Magic Link with the change
         
         
         aiModal.style.display = 'flex';
+
+        
+        const btnCopyMagicLink = document.getElementById('btnCopyMagicLink');
+        const aiUrl = `${baseUrl}?projectID=${projectID}&aiToken=${aiToken}`;
+        
+        btnCopyMagicLink.onclick = () => {
+          navigator.clipboard.writeText(aiUrl).then(() => {
+            const originalText = btnCopyMagicLink.innerHTML;
+            btnCopyMagicLink.innerHTML = '<span>✅</span> Link Copied!';
+            setTimeout(() => { btnCopyMagicLink.innerHTML = originalText; }, 2000);
+          });
+        };
       };
 
       btnCloseAI.onclick = () => { aiModal.style.display = 'none'; };
