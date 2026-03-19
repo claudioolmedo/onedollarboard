@@ -514,39 +514,39 @@
   
   function renderLibrary() {
     const lib = getLibrary();
+    const sidebarList = document.getElementById('sidebar-library-list');
+    if (!sidebarList) return;
+
     if (!lib.length) {
-      libraryList.innerHTML = '<div class="no-lib-items">No components imported yet.<br>Click <b>📦 Import</b> to add.</div>';
+      sidebarList.innerHTML = '<div class="no-lib-msg">No parts.<br>Click <b>Import</b></div>';
       return;
     }
-    libraryList.innerHTML = lib.map((comp, i) => {
+
+    sidebarList.innerHTML = lib.map((comp, i) => {
       const key = comp.lcsc || comp.name;
       return `
-        <div class="lib-item" data-lib-index="${i}" title="Click to place ${comp.name}" data-key="${key}">
-          <div class="lib-icon">📦</div>
-          <div class="lib-info">
-            <div class="lib-name">${comp.name}</div>
-            <div class="lib-pkg">${comp.lcsc} · ${comp.packageName || comp.package || ''}</div>
-          </div>
-          <button class="lib-del" data-key="${key}" title="Remove">✕</button>
+        <div class="sidebar-lib-item" data-lib-index="${i}" title="Place ${comp.name}" data-key="${key}">
+          <div class="sidebar-lib-icon">📦</div>
+          <div class="sidebar-lib-name">${comp.name}</div>
+          <div class="sidebar-lib-del" data-key="${key}" title="Remove from Library">✕</div>
         </div>
       `;
     }).join('');
 
     
-    libraryList.querySelectorAll('.lib-item').forEach(el => {
+    sidebarList.querySelectorAll('.sidebar-lib-item').forEach(el => {
       el.addEventListener('click', (e) => {
-        if (e.target.classList.contains('lib-del')) return;
+        if (e.target.classList.contains('sidebar-lib-del')) return;
         const idx = parseInt(el.dataset.libIndex);
         selectLibraryComponent(idx);
       });
     });
 
     
-    libraryList.querySelectorAll('.lib-del').forEach(btn => {
+    sidebarList.querySelectorAll('.sidebar-lib-del').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const key = btn.getAttribute('data-key');
-        console.log('🗑️ Deleting component with key:', key);
         removeFromLibrary(key);
       });
     });
@@ -634,9 +634,12 @@
     selectedLibComp = comp;
 
     
-    libraryList.querySelectorAll('.lib-item').forEach(el => el.classList.remove('active'));
-    const el = libraryList.querySelector(`[data-lib-index="${idx}"]`);
-    if (el) el.classList.add('active');
+    const sidebarList = document.getElementById('sidebar-library-list');
+    if (sidebarList) {
+      sidebarList.querySelectorAll('.sidebar-lib-item').forEach(el => el.classList.remove('active'));
+      const el = sidebarList.querySelector(`[data-lib-index="${idx}"]`);
+      if (el) el.classList.add('active');
+    }
 
     
     if (typeof window.setTool === 'function') {
