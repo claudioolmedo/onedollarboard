@@ -242,6 +242,9 @@ function render() {
   });
 
   
+  drawRatsnest(ctx, scale);
+
+  
   if (state.drawingTrace && state.tracePoints.length > 0) {
     const pts = [...state.tracePoints, state.mouse];
     ctx.beginPath();
@@ -1170,9 +1173,72 @@ renderSavedProjects();
 updateStats();
 setTool('select');
 fitView();
+
+state.ratsnest = []; 
+
+async function loadRatsnest() {
+  const projectID = window.PROJECT_ID;
+  const dbUrl = window._PCB_DB_URL;
+  if (!projectID || !dbUrl) return;
+
+  try {
+    const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic.json`);
+    if (!resp.ok) return;
+    const schData = await resp.json();
+    if (!schData || !schData.netlist) { state.ratsnest = []; render(); return; }
+
+    const compMap = {};
+    (schData.components || []).forEach(c => { compMap[c.id] = (c.ref || '').replace('?', '').toUpperCase(); });
+
+    const newRats = [];
+    Object.entries(schData.netlist).forEach(([netName, pinRefs]) => {
+      const pads = [];
+      pinRefs.forEach(pref => {
+        const [compId, pin] = pref.split(':');
+        const ref = compMap[compId];
+        if (!ref) return;
+        const pad = findPadByRef(`${ref}.${pin}`);
+        if (pad) pads.push(pad);
+      });
+      
+      for (let i = 0; i < pads.length - 1; i++) {
+        newRats.push({ p1: pads[i], p2: pads[i+1], netName });
+      }
+    });
+
+    state.ratsnest = newRats;
+    render();
+  } catch (e) { console.warn('Ratsnest load failed', e); }
+}
+
+function drawRatsnest(ctx, scale) {
+  if (!state.ratsnest || state.ratsnest.length === 0) return;
+  
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 212, 170, 0.4)';
+  ctx.lineWidth = 0.1;
+  ctx.setLineDash([0.5, 0.5]);
+
+  state.ratsnest.forEach(rat => {
+    
+    
+    ctx.beginPath();
+    ctx.moveTo(rat.p1.x, rat.p1.y);
+    ctx.lineTo(rat.p2.x, rat.p2.y);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+
+setInterval(loadRatsnest, 10000); 
+window.loadRatsnest = loadRatsnest;
+
+
 updateZoomLabel();
 updateUI();
 render();
+setTimeout(loadRatsnest, 2000);
 
 
 
@@ -1199,8 +1265,6 @@ window.addNet = function(netName, ...refs) {
 };
 
 window.getNets = function() { return window._pcbNets; };
-
-
 
 window.findPadByRef = function(refName) {
   if (!refName || !refName.includes('.')) return null;
