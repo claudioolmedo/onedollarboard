@@ -44,10 +44,36 @@
                 const nets = data.nets || {};
 
                 
-                const groups = elements.filter(e => e.type === 'group');
-                const traces = elements.filter(e => e.type === 'trace');
+                let schData = null;
+                try {
+                  const schSnap = await get(ref(database, `projects/${projectID}/schematic`));
+                  if (schSnap.exists()) schData = schSnap.val();
+                } catch(e) {}
+
                 
                 let out = `=== ODB ELECTRONICS BOARD CONTEXT ===\n`;
+                out += `Project ID: ${projectID}\n\n`;
+
+                if (schData) {
+                  out += `--- SCHEMATIC BLOCKS ---\n`;
+                  (schData.components || []).forEach(c => {
+                    const pins = (c.pins || []).map(p => p.label).join(', ');
+                    out += `[${c.ref}] ${c.name} (${c.lcsc}) | Pins: ${pins}\n`;
+                  });
+                  const wires = schData.wires || [];
+                  if (wires.length > 0) {
+                     out += `\n--- SCHEMATIC WIRES ---\n`;
+                     wires.forEach(w => {
+                        const from = schData.components.find(c => c.id === w.from.compId);
+                        const to = schData.components.find(c => c.id === w.to.compId);
+                        if (from && to) out += `  ${from.ref}.${w.from.pin} → ${to.ref}.${w.to.pin}\n`;
+                     });
+                  }
+                  out += `\n`;
+                }
+
+                const groups = elements.filter(e => e.type === 'group');
+                const traces = elements.filter(e => e.type === 'trace');
                 out += `Project ID: ${projectID}\n\n`;
                 out += `Components: ${groups.length}  |  Traces: ${traces.length}\n\n`;
 

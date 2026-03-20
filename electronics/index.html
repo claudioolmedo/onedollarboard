@@ -1049,6 +1049,8 @@
 
       console.log(`🔥 Firebase initialized. Project: ${pcbProjectID}`);
       console.log(`📁 PCB path: ${DATABASE_PATH}/pcb`);
+      window._PCB_DB_URL = DATABASE_URL;
+      window.PROJECT_ID = pcbProjectID;
 
       
       checkConnection();

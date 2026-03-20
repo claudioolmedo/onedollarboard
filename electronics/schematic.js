@@ -566,10 +566,106 @@
   }
 
   
+  window.applyAiSchematicPatch = function(patch) {
+    if (!patch || !patch.action) return;
+    console.log('🤖 Applying AI Schematic Patch:', patch.action);
+
+    if (patch.action === 'connect' && Array.isArray(patch.connections)) {
+      patch.connections.forEach(conn => {
+        if (!Array.isArray(conn) || conn.length < 2) return;
+        const [refA, refB] = conn;
+        const pA = findSchPinByRef(refA);
+        const pB = findSchPinByRef(refB);
+        if (pA && pB) {
+          
+          const exists = sch.wires.some(w => 
+            (w.from.compId === pA.comp.id && w.from.pin === pA.pin && w.to.compId === pB.comp.id && w.to.pin === pB.pin) ||
+            (w.from.compId === pB.comp.id && w.from.pin === pB.pin && w.to.compId === pA.comp.id && w.to.pin === pA.pin)
+          );
+          if (!exists) {
+            sch.wires.push({
+              id: sch.nextId++,
+              from: { compId: pA.comp.id, pin: pA.pin },
+              to:   { compId: pB.comp.id, pin: pB.pin }
+            });
+            console.log(`✅ Wired ${refA} to ${refB}`);
+          }
+        }
+      });
+      sch.dirty = true; render(); autoSaveSchematic();
+    }
+
+    if (patch.action === 'layout' && patch.positions) {
+      Object.entries(patch.positions).forEach(([ref, pos]) => {
+        const comp = findSchCompByRef(ref);
+        if (comp && pos.x !== undefined && pos.y !== undefined) {
+          comp.x = pos.x; comp.y = pos.y;
+        }
+      });
+      sch.dirty = true; render(); autoSaveSchematic();
+    }
+    
+    if (patch.action === 'replace' && patch.wires) {
+      sch.wires = patch.wires;
+      sch.dirty = true; render(); autoSaveSchematic();
+    }
+  };
+
+  function findSchCompByRef(ref) {
+    
+    return sch.components.find(c => c.ref.replace('?','').toUpperCase() === ref.replace('?','').toUpperCase()) 
+        || sch.components.find(c => c.ref.toUpperCase().includes(ref.toUpperCase()));
+  }
+
+  function findSchPinByRef(fullRef) {
+    
+    const parts = fullRef.split('.');
+    if (parts.length < 2) return null;
+    const compRef = parts[0];
+    const pinName = parts[1];
+    const comp = findSchCompByRef(compRef);
+    if (!comp) return null;
+    const pin = comp.pins.find(p => p.pin.toString() === pinName.toString() || p.label === pinName);
+    return pin ? { comp, pin: pin.pin } : null;
+  }
+
+  
+  setTimeout(() => {
+    const projectID = window.PROJECT_ID;
+    const dbUrl = window._PCB_DB_URL;
+    if (projectID && dbUrl) {
+      
+      
+      
+      setInterval(async () => {
+        try {
+          const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic/aiPatch.json`);
+          if (resp.ok) {
+            const patch = await resp.json();
+            if (patch && patch.action && !patch._applied) {
+              window.applyAiSchematicPatch(patch);
+              
+              await fetch(`${dbUrl}/projects/${projectID}/schematic/aiPatch/_applied.json`, {
+                method: 'PUT',
+                body: JSON.stringify(true)
+              });
+              await fetch(`${dbUrl}/projects/${projectID}/schematic/aiPatch/_appliedAt.json`, {
+                method: 'PUT',
+                body: JSON.stringify(new Date().toISOString())
+              });
+            }
+          }
+        } catch (e) {  }
+      }, 5000);
+    }
+  }, 3000);
+
+  
   window.schematic = {
     addComponent: addSchComponent,
     load:  loadSchematicFromFirebase,
     save:  saveSchematicToFirebase,
+    applyPatch: window.applyAiSchematicPatch,
     state: sch,
   };
 
