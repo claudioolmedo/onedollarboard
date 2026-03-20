@@ -1195,6 +1195,8 @@ async function loadRatsnest() {
 
     const newRats = [];
     let connectedCount = 0;
+    let missingPads = 0;
+
     Object.entries(schData.netlist || {}).forEach(([netName, pinRefs]) => {
       const pads = [];
       pinRefs.forEach(pref => {
@@ -1202,17 +1204,29 @@ async function loadRatsnest() {
         const ref = compMap[compId];
         if (!ref) return;
         const pad = findPadByRef(`${ref}.${pin}`);
-        if (pad) pads.push(pad);
+        if (pad) {
+            pads.push(pad);
+        } else {
+            missingPads++;
+        }
       });
       
-      for (let i = 0; i < pads.length - 1; i++) {
-        newRats.push({ p1: pads[i], p2: pads[i+1], netName });
-        connectedCount++;
+      if (pads.length > 1) {
+          for (let i = 0; i < pads.length - 1; i++) {
+            newRats.push({ p1: pads[i], p2: pads[i+1], netName });
+            connectedCount++;
+          }
+          
+          if (pads.length > 2) {
+              newRats.push({ p1: pads[pads.length-1], p2: pads[0], netName });
+          }
       }
     });
 
     state.ratsnest = newRats;
-    if (connectedCount > 0) console.info(`🔌 Ratsnest updated: ${connectedCount} connections found.`);
+    if (connectedCount > 0) {
+        console.info(`🔌 Ratsnest updated: ${connectedCount} connections. ${missingPads > 0 ? `⚠️ ${missingPads} pads missing.` : ''}`);
+    }
     render();
   } catch (e) { console.warn('Ratsnest load failed', e); }
 }
@@ -1303,10 +1317,23 @@ window.findPadByRef = function(refName) {
   if (!grp) { console.warn(`⚠️ findPadByRef: no component matching "${compLabel}"`); return null; }
 
   const pads = state.elements.filter(e => e.groupId === grp.id && e.type === 'pad');
+  if (pads.length === 0) return null;
+
+  
+  const match = pads.find(p => 
+    (p.ref || '').toString().toLowerCase() === pinRef.toLowerCase() ||
+    (p.refName || '').toString().toLowerCase() === pinRef.toLowerCase()
+  );
+  if (match) return match;
+
+  
   const idx = parseInt(pinRef);
-  if (!isNaN(idx) && idx >= 1) return pads[idx - 1] || null;
-  return pads.find(p => (p.ref || '').toLowerCase() === pinRef.toLowerCase()
-    || (p.refName || '').toLowerCase() === pinRef.toLowerCase()) || null;
+  if (!isNaN(idx) && idx >= 1 && idx <= pads.length) {
+    return pads[idx - 1];
+  }
+
+  console.warn(`⚠️ Pad "${pinRef}" not found in component "${compLabel}"`);
+  return null;
 };
 
 
