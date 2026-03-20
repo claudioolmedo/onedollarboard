@@ -1140,15 +1140,33 @@ window.getNets = function() { return window._pcbNets; };
 
 window.findPadByRef = function(refName) {
   if (!refName || !refName.includes('.')) return null;
-  const [compLabel, pinRef] = refName.split('.');
+  const dotIdx = refName.lastIndexOf('.');
+  const compLabel = refName.substring(0, dotIdx);
+  const pinRef = refName.substring(dotIdx + 1);
+
   
-  const grp = state.elements.find(e => e.type === 'group' && (e.label === compLabel || e.ref === compLabel));
-  if (!grp) return null;
-  
+  let grp = state.elements.find(e =>
+    e.type === 'group' && (e.label === compLabel || e.ref === compLabel)
+  );
+  if (!grp) {
+    
+    const search = compLabel.toUpperCase();
+    grp = state.elements.find(e =>
+      e.type === 'group' && (
+        (e.label || '').toUpperCase().includes(search) ||
+        (e.value || '').toUpperCase().includes(search) ||
+        (e.lcsc  || '').toUpperCase().includes(search) ||
+        (e.name  || '').toUpperCase().includes(search)
+      )
+    );
+  }
+  if (!grp) { console.warn(`⚠️ findPadByRef: no component matching "${compLabel}"`); return null; }
+
   const pads = state.elements.filter(e => e.groupId === grp.id && e.type === 'pad');
   const idx = parseInt(pinRef);
   if (!isNaN(idx) && idx >= 1) return pads[idx - 1] || null;
-  return pads.find(p => p.ref === pinRef || p.refName === pinRef) || null;
+  return pads.find(p => (p.ref || '').toLowerCase() === pinRef.toLowerCase()
+    || (p.refName || '').toLowerCase() === pinRef.toLowerCase()) || null;
 };
 
 
@@ -1156,25 +1174,60 @@ window.generateTrace = function(fromRef, toRef, layer = 'F.Cu', width = 0.25) {
   const a = window.findPadByRef(fromRef);
   const b = window.findPadByRef(toRef);
   if (!a || !b) { console.warn(`⚠️ generateTrace: could not find pads for "${fromRef}" → "${toRef}"`); return null; }
-  
   const mid = { x: b.x, y: a.y };
-  const trace = { id: newId(), type: 'trace', layer, width, pts: [
-    { x: a.x, y: a.y },
-    { x: mid.x, y: mid.y },
-    { x: b.x, y: b.y }
+  return { id: newId(), type: 'trace', layer, width, pts: [
+    { x: a.x, y: a.y }, { x: mid.x, y: mid.y }, { x: b.x, y: b.y }
   ]};
-  return trace;
 };
 
 
 
 
+window.describePCB = function() {
+  const groups = state.elements.filter(e => e.type === 'group');
+  const traces = state.elements.filter(e => e.type === 'trace');
+  const vias   = state.elements.filter(e => e.type === 'via');
+
+  let out = `=== PCB BOARD SUMMARY ===\n`;
+  out += `Components: ${groups.length}  |  Traces: ${traces.length}  |  Vias: ${vias.length}\n\n`;
+
+  if (groups.length === 0) {
+    out += `(No components placed yet. Use "append" patch to add components.)\n`;
+  } else {
+    out += `--- COMPONENTS ---\n`;
+    groups.forEach(grp => {
+      const pads = state.elements.filter(e => e.groupId === grp.id && e.type === 'pad');
+      const label = grp.label || grp.ref || grp.lcsc || `id:${grp.id}`;
+      const name  = grp.value || grp.name || grp.lcsc || '';
+      out += `\n[${label}] ${name} @ (${(grp.x||0).toFixed(1)}, ${(grp.y||0).toFixed(1)})mm\n`;
+      out += `  Addressable pads (use as "LABEL.N" in connect patches):\n`;
+      pads.forEach((p, i) => {
+        const pinId = p.ref || `${i+1}`;
+        out += `    ${label}.${pinId}  →  x=${p.x.toFixed(2)}, y=${p.y.toFixed(2)} [${p.layer}]\n`;
+      });
+    });
+  }
+
+  if (Object.keys(window._pcbNets).length > 0) {
+    out += `\n--- NETS ---\n`;
+    Object.entries(window._pcbNets).forEach(([net, refs]) => {
+      out += `  ${net}: ${refs.join(' → ')}\n`;
+    });
+  }
+
+  out += `\n=== HOW TO EDIT ===\n`;
+  out += `Return a JSON patch object like:\n`;
+  out += `{ "action": "connect", "connections": [["${groups[0]?.label||'U1'}.1", "${groups[1]?.label||'R1'}.1"]] }\n`;
+  out += `See https://onedollarboard.com/electronics/AI_DOCS.txt for full docs.\n`;
+
+  return out;
+};
+
 
 window.applyAIPatch = function(patch) {
   if (!patch || !patch.action) { console.error('❌ applyAIPatch: missing action'); return; }
-  
   pushHistory();
-  
+
   if (patch.action === 'append' && Array.isArray(patch.elements)) {
     patch.elements.forEach(el => {
       el.id = newId();
@@ -1185,7 +1238,6 @@ window.applyAIPatch = function(patch) {
     });
     setStatus(`✅ AI appended ${patch.elements.length} element(s)`);
   }
-  
   else if (patch.action === 'replace' && Array.isArray(patch.elements)) {
     state.elements = [];
     state.nextId = 1;
@@ -1198,23 +1250,22 @@ window.applyAIPatch = function(patch) {
     });
     setStatus(`✅ AI replaced design with ${patch.elements.length} element(s)`);
   }
-  
   else if (patch.action === 'connect' && Array.isArray(patch.connections)) {
     const layer = patch.layer || 'F.Cu';
     const width = patch.width || 0.25;
     let added = 0;
-    patch.connections.forEach(([from, to]) => {
+    patch.connections.forEach(conn => {
+      const [from, to] = Array.isArray(conn) ? conn : [conn.from, conn.to];
       const trace = window.generateTrace(from, to, layer, width);
       if (trace) { state.elements.push(trace); added++; }
     });
     setStatus(`✅ AI connected ${added} trace(s)`);
   }
-  
-  
+
   if (patch.nets && typeof patch.nets === 'object') {
     Object.entries(patch.nets).forEach(([net, refs]) => window.addNet(net, ...refs));
   }
-  
+
   updateStats();
   render();
   if (typeof window.autoSave === 'function') window.autoSave();
