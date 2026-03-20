@@ -453,6 +453,13 @@
       max-height: none;
       flex: 1;
     }
+    @keyframes magic-pulse {
+      0% { box-shadow: 0 0 5px rgba(255,204,0,0.2); }
+      50% { box-shadow: 0 0 15px rgba(255,204,0,0.5); }
+      100% { box-shadow: 0 0 5px rgba(255,204,0,0.2); }
+    }
+    .magic-glow { animation: magic-pulse 2s infinite ease-in-out; }
+    .magic-glow:hover { background: rgba(255,204,0,0.2) !important; color: #fff !important; transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -509,6 +516,10 @@
       </select>
       <button id="btn-new" class="hdr-btn-text" data-i18n="new">New</button>
       <button id="btn-ai-patch" class="hdr-btn-text" title="Apply a JSON patch from an AI assistant" style="color: var(--accent); border-color: rgba(0,212,170,0.3);">🤖 AI Patch</button>
+      <button id="btn-auto-route" class="hdr-btn-text magic-glow" title="Automatically route all ratsnest connections" 
+              style="background:rgba(255,204,0,0.1); color:#ffcc00; border-color:rgba(255,204,0,0.4); font-weight:bold;">
+        ⚡ Auto-Route
+      </button>
       <button id="btn-save" class="hdr-btn-accent" data-i18n="save">💾 Save</button>
     </div>
   </header>
@@ -835,7 +846,7 @@
   <script src="decode.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
-  <script src="electronics-editor.js?v=20260320_3"></script>
+  <script src="electronics-editor.js?v=20260320_ROUT"></script>
   <script src="lib-import.js"></script>
   <script src="schematic.js"></script>
 
@@ -1424,10 +1435,14 @@ INSTRUCTIONS:
         };
       };
 
-      btnCloseAI.onclick = () => { aiModal.style.display = 'none'; };
+      if (btnCloseAI) btnCloseAI.onclick = () => { aiModal.style.display = 'none'; };
+      if (aiModal) aiModal.onclick = (e) => { if (e.target === aiModal) aiModal.style.display = 'none'; };
+
       
-      
-      aiModal.onclick = (e) => { if (e.target === aiModal) aiModal.style.display = 'none'; };
+      const btnAutoRouteHeader = document.getElementById('btn-auto-route');
+      if (btnAutoRouteHeader) {
+          btnAutoRouteHeader.onclick = () => { if(window.runAutoRouter) window.runAutoRouter(); };
+      }
 
       btnCopyPrompt.onclick = () => {
         const pcbData = JSON.stringify(serializeElements(state.elements), null, 2);
@@ -1509,32 +1524,32 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
     };
 
     
-    
     if (app && database) {
-      const aiPatchRef = ref(database, `${DATABASE_PATH}/pcb/aiPatch`);
-      onValue(aiPatchRef, (snapshot) => {
-        const patch = snapshot.val();
-        if (!patch || !patch.action || patch._applied) return;
-        console.log('🤖 Remote AI Patch received:', patch);
-        
-        if (typeof window.applyAIPatch === 'function') {
-          showFbStatus('🤖 AI Update Applying...', 'synced');
-          window.applyAIPatch(patch);
-          
-          update(ref(database, `${DATABASE_PATH}/pcb/aiPatch`), { _applied: true, _appliedAt: new Date().toISOString() });
-          
-          
-          const msg = document.createElement('div');
-          msg.style = 'position:fixed; bottom:100px; right:50%; transform:translateX(50%); background:var(--accent); color:#000; padding:12px 24px; border-radius:30px; font-weight:700; box-shadow:0 10px 40px rgba(0,212,170,0.5); z-index:9999; animation: slideUp 0.5s ease-out;';
-          msg.innerHTML = '🤖 AI DESIGN UPDATED!';
-          document.body.appendChild(msg);
-          setTimeout(() => { 
-            msg.style.opacity = '0'; msg.style.transition = '0.5s'; 
-            setTimeout(() => msg.remove(), 500);
-          }, 3000);
-        }
-      });
+        const aiPatchRef = ref(database, `${DATABASE_PATH}/pcb/aiPatch`);
+        onValue(aiPatchRef, (snapshot) => {
+            const patch = snapshot.val();
+            if (!patch || !patch.action || patch._applied) return;
+            console.log('🤖 Remote AI Patch received:', patch);
+            
+            if (typeof window.applyAIPatch === 'function') {
+                showFbStatus('🤖 AI Update Applying...', 'synced');
+                window.applyAIPatch(patch);
+                update(ref(database, `${DATABASE_PATH}/pcb/aiPatch`), { _applied: true, _appliedAt: new Date().toISOString() });
+                
+                const msg = document.createElement('div');
+                msg.style = 'position:fixed; bottom:100px; right:50%; transform:translateX(50%); background:var(--accent); color:#000; padding:12px 24px; border-radius:30px; font-weight:700; box-shadow:0 10px 40px rgba(0,212,170,0.5); z-index:9999; animation: slideUp 0.5s ease-out;';
+                msg.innerHTML = '🤖 AI DESIGN UPDATED!';
+                document.body.appendChild(msg);
+                setTimeout(() => { 
+                    msg.style.opacity = '0'; msg.style.transition = '0.5s'; 
+                    setTimeout(() => msg.remove(), 500);
+                }, 3000);
+            }
+        });
     }
-  </script>
+  } catch (error) {
+    console.error("🔥 Critical Editor Initialization Error:", error);
+  }
+</script>
 </body>
 </html>

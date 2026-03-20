@@ -54,6 +54,7 @@ To place components and route traces on the board:
 - **append**: Add new components/traces.
 - **replace**: Clear board and start fresh.
 - **connect**: Auto-route L-shaped traces between pads using logical names (e.g., "RJ45.2").
+- **autoroute**: (POWERFUL) Automatically routes ALL connections currently in the ratsnest using a smart A* grid-based engine. Body: `{ "action": "autoroute" }`
 
 ---
 
