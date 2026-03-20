@@ -1143,6 +1143,32 @@
             showFbStatus('AI Elements loaded', 'synced');
           }
         }
+
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const aiPatchParam = urlParams.get('aiPatch');
+        if (aiPatchParam) {
+          try {
+            const decodedPatch = JSON.parse(window.decodeBase64 ? window.decodeBase64(aiPatchParam) : atob(aiPatchParam));
+            if (decodedPatch && decodedPatch.action) {
+              console.log('🔮 Magic AI Patch found in URL! Applying...');
+              setTimeout(() => {
+                if (decodedPatch.action === 'connect' || decodedPatch.action === 'layout') {
+                   if (typeof window.applyAiSchematicPatch === 'function') {
+                      window.applyAiSchematicPatch(decodedPatch);
+                   } else if (typeof window.applyAIPatch === 'function') {
+                      window.applyAIPatch(decodedPatch);
+                   }
+                } else if (typeof window.applyAIPatch === 'function') {
+                  window.applyAIPatch(decodedPatch);
+                }
+                const url = new URL(window.location);
+                url.searchParams.delete('aiPatch');
+                window.history.replaceState({}, '', url);
+              }, 2000);
+            }
+          } catch (e) { console.warn('❌ Magic patch failed:', e.message); }
+        }
       }).catch((error) => {
         console.error('❌ Error loading PCB data:', error);
         showFbStatus('Error loading data', 'error');
