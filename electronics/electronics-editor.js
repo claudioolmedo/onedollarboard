@@ -172,7 +172,7 @@ function undo() {
   state.redoStack.push(JSON.stringify(state.elements));
   state.elements = JSON.parse(state.history.pop());
   state.selectedIds.clear();
-  state.nextId = 1 + (state.elements.length ? Math.max(...state.elements.map(e=>e.id||0)) : 0);
+  state.nextId = 1 + (state.elements.reduce((max, e) => Math.max(max, e.id || 0), 0));
   updateUI(); render();
 }
 function redo() {
@@ -180,7 +180,7 @@ function redo() {
   state.history.push(JSON.stringify(state.elements));
   state.elements = JSON.parse(state.redoStack.pop());
   state.selectedIds.clear();
-  state.nextId = 1 + (state.elements.length ? Math.max(...state.elements.map(e=>e.id||0)) : 0);
+  state.nextId = 1 + (state.elements.reduce((max, e) => Math.max(max, e.id || 0), 0));
   updateUI(); render();
 }
 
