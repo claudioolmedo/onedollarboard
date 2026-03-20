@@ -1296,16 +1296,18 @@ window.findPadByRef = function(refName) {
   const pinRef = refName.substring(dotIdx + 1);
 
   
-  let grp = state.elements.find(e =>
+  
+  const matchingGroups = state.elements.filter(e =>
     e.type === 'group' && (
       (e.label || '').toUpperCase() === compLabel.toUpperCase() || 
       (e.ref || '').toUpperCase() === compLabel.toUpperCase()
     )
   );
-  if (!grp) {
+
+  if (matchingGroups.length === 0) {
     
     const search = compLabel.toUpperCase();
-    grp = state.elements.find(e =>
+    const fuzzyMatches = state.elements.filter(e =>
       e.type === 'group' && (
         (e.label || '').toUpperCase().includes(search) ||
         (e.value || '').toUpperCase().includes(search) ||
@@ -1313,8 +1315,27 @@ window.findPadByRef = function(refName) {
         (e.name  || '').toUpperCase().includes(search)
       )
     );
+    if (fuzzyMatches.length > 0) matchingGroups.push(...fuzzyMatches);
   }
-  if (!grp) { console.warn(`⚠️ findPadByRef: no component matching "${compLabel}"`); return null; }
+
+  if (matchingGroups.length === 0) {
+    console.warn(`⚠️ findPadByRef: no component matching "${compLabel}"`);
+    return null;
+  }
+
+  
+  matchingGroups.sort((a, b) => {
+    const padsA = state.elements.filter(e => e.groupId === a.id && e.type === 'pad').length;
+    const padsB = state.elements.filter(e => e.groupId === b.id && e.type === 'pad').length;
+    if (padsA !== padsB) return padsB - padsA;
+    return b.id - a.id;
+  });
+
+  if (matchingGroups.length > 1) {
+    console.info(`ℹ️ Multiple matches for "${compLabel}", using ID ${matchingGroups[0].id} (has ${state.elements.filter(e => e.groupId === matchingGroups[0].id && e.type === 'pad').length} pads)`);
+  }
+
+  const grp = matchingGroups[0];
 
   const pads = state.elements.filter(e => e.groupId === grp.id && e.type === 'pad');
   if (pads.length === 0) return null;
