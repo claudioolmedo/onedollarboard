@@ -1243,9 +1243,9 @@ function drawRatsnest(ctx, scale) {
   if (!state.ratsnest || state.ratsnest.length === 0) return;
   
   ctx.save();
-  ctx.strokeStyle = 'rgba(0, 212, 170, 0.6)'; 
-  ctx.lineWidth = 0.2; 
-  ctx.setLineDash([1, 1]);
+  ctx.strokeStyle = 'rgba(255, 204, 0, 0.5)'; 
+  ctx.lineWidth = 0.1; 
+  ctx.setLineDash([0.4, 0.4]);
 
   state.ratsnest.forEach(rat => {
     ctx.beginPath();
@@ -1254,9 +1254,9 @@ function drawRatsnest(ctx, scale) {
     ctx.stroke();
 
     
-    ctx.fillStyle = 'rgba(0, 212, 170, 0.8)';
-    ctx.beginPath(); ctx.arc(rat.p1.x, rat.p1.y, 0.2, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(rat.p2.x, rat.p2.y, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255, 204, 0, 0.6)';
+    ctx.beginPath(); ctx.arc(rat.p1.x, rat.p1.y, 0.15, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(rat.p2.x, rat.p2.y, 0.15, 0, Math.PI*2); ctx.fill();
   });
   ctx.restore();
 }
