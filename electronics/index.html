@@ -1450,10 +1450,22 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
         const patch = snapshot.val();
         if (!patch || !patch.action || patch._applied) return;
         console.log('🤖 Remote AI Patch received:', patch);
+        
         if (typeof window.applyAIPatch === 'function') {
+          showFbStatus('🤖 AI Update Applying...', 'synced');
           window.applyAIPatch(patch);
           
           update(ref(database, `${DATABASE_PATH}/pcb/aiPatch`), { _applied: true, _appliedAt: new Date().toISOString() });
+          
+          
+          const msg = document.createElement('div');
+          msg.style = 'position:fixed; bottom:100px; right:50%; transform:translateX(50%); background:var(--accent); color:#000; padding:12px 24px; border-radius:30px; font-weight:700; box-shadow:0 10px 40px rgba(0,212,170,0.5); z-index:9999; animation: slideUp 0.5s ease-out;';
+          msg.innerHTML = '🤖 AI DESIGN UPDATED!';
+          document.body.appendChild(msg);
+          setTimeout(() => { 
+            msg.style.opacity = '0'; msg.style.transition = '0.5s'; 
+            setTimeout(() => msg.remove(), 500);
+          }, 3000);
         }
       });
     }
