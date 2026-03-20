@@ -490,6 +490,7 @@ function onMouseDown(e) {
       state.selectedIds.add(hit.id);
       
       if (hit.groupId) {
+        state.selectedIds.add(hit.groupId); 
         state.elements.filter(el=>el.groupId===hit.groupId)
           .forEach(el=>state.selectedIds.add(el.id));
       }
@@ -497,7 +498,7 @@ function onMouseDown(e) {
       _dragOffsets = [];
       state.selectedIds.forEach(id => {
         const el = state.elements.find(e=>e.id===id);
-        if (el && el.type!=='group') {
+        if (el) {
           _dragOffsets.push({ id, dx: w.x-(el.x||0), dy: w.y-(el.y||0) });
         }
       });
@@ -589,15 +590,23 @@ function onMouseMove(e) {
   }
 
   if (state.dragging && state.tool==='select' && _dragOffsets.length) {
-    _dragOffsets.forEach(({ id, dx, dy }) => {
-      const el = state.elements.find(e=>e.id===id);
-      if (!el) return;
-      const nx = snapToGrid(w.x - dx);
-      const ny = snapToGrid(w.y - dy);
-      const diffX = nx - (el.x||0);
-      const diffY = ny - (el.y||0);
-      moveElement(el, diffX, diffY);
-    });
+    
+    
+    const anchor = _dragOffsets[0];
+    const elA = state.elements.find(e => e.id === anchor.id);
+    if (!elA) return;
+
+    const nx = snapToGrid(w.x - anchor.dx);
+    const ny = snapToGrid(w.y - anchor.dy);
+    const diffX = nx - (elA.x || 0);
+    const diffY = ny - (elA.y || 0);
+
+    if (diffX !== 0 || diffY !== 0) {
+      _dragOffsets.forEach(({ id }) => {
+        const el = state.elements.find(e => e.id === id);
+        if (el) moveElement(el, diffX, diffY);
+      });
+    }
     render(); return;
   }
 
@@ -670,8 +679,17 @@ function onMouseUp(e) {
     state.elements.forEach(el => {
       if (el.type==='group') return;
       const ex = el.x||0, ey = el.y||0;
-      if (ex>=tl.x && ex<=br.x && ey>=tl.y && ey<=br.y)
+      if (ex>=tl.x && ex<=br.x && ey>=tl.y && ey<=br.y) {
         state.selectedIds.add(el.id);
+        if (el.groupId) state.selectedIds.add(el.groupId);
+      }
+    });
+    
+    state.selectedIds.forEach(id => {
+      const g = state.elements.find(e => e.id === id && e.type === 'group');
+      if (g) {
+        state.elements.filter(e => e.groupId === g.id).forEach(c => state.selectedIds.add(c.id));
+      }
     });
     state.selectionBox = null;
     updatePropsPanel();
@@ -722,6 +740,47 @@ function moveElement(el, dx, dy) {
   if (el.x !== undefined) el.x += dx;
   if (el.y !== undefined) el.y += dy;
   if (el.pts) el.pts = el.pts.map(p=>({ x:p.x+dx, y:p.y+dy }));
+}
+
+function rotateSelection(angleDeg) {
+  if (state.selectedIds.size === 0) return;
+  pushHistory();
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad), sin = Math.sin(rad);
+
+  
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  const els = [];
+  state.selectedIds.forEach(id => {
+    const el = state.elements.find(e => e.id === id);
+    if (el && el.x !== undefined && el.y !== undefined) {
+      els.push(el);
+      minX = Math.min(minX, el.x); minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x); maxY = Math.max(maxY, el.y);
+    }
+  });
+
+  if (els.length === 0) return;
+  const cx = (minX+maxX)/2, cy = (minY+maxY)/2;
+
+  els.forEach(el => {
+    const dx = el.x - cx, dy = el.y - cy;
+    el.x = cx + (dx * cos - dy * sin);
+    el.y = cy + (dx * sin + dy * cos);
+    
+    
+    if (el.type === 'pad' || el.type === 'rect') {
+      const oldW = el.w; el.w = el.h; el.h = oldW;
+    }
+    
+    if (el.pts) {
+      el.pts = el.pts.map(p => {
+        const pdx = p.x - cx, pdy = p.y - cy;
+        return { x: cx + (pdx * cos - pdy * sin), y: cy + (pdx * sin + pdy * cos) };
+      });
+    }
+  });
+  render(); autoSave();
 }
 
 
@@ -779,7 +838,12 @@ document.addEventListener('keydown', e => {
   if (e.key==='f'||e.key==='F') { fitView(); return; }
   
   const shortcuts = {s:'select',t:'trace',v:'via',p:'pad',h:'hole',r:'rect',x:'text',m:'measure'};
-  if (shortcuts[e.key.toLowerCase()]) setTool(shortcuts[e.key.toLowerCase()]);
+  if (shortcuts[e.key.toLowerCase()] && e.key !== 'r') setTool(shortcuts[e.key.toLowerCase()]);
+  
+  
+  if (e.key.toLowerCase() === 'r' && state.selectedIds.size > 0) {
+    rotateSelection(90);
+  }
 });
 document.addEventListener('keyup', e => {
   if (e.code==='Space') { state._spaceDown=false; wrap.classList.remove('tool-pan'); }
