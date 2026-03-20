@@ -1188,10 +1188,14 @@ async function loadRatsnest() {
     if (!schData || !schData.netlist) { state.ratsnest = []; render(); return; }
 
     const compMap = {};
-    (schData.components || []).forEach(c => { compMap[c.id] = (c.ref || '').replace('?', '').toUpperCase(); });
+    (schData.components || []).forEach(c => { 
+      
+      compMap[c.id] = (c.ref || ''); 
+    });
 
     const newRats = [];
-    Object.entries(schData.netlist).forEach(([netName, pinRefs]) => {
+    let connectedCount = 0;
+    Object.entries(schData.netlist || {}).forEach(([netName, pinRefs]) => {
       const pads = [];
       pinRefs.forEach(pref => {
         const [compId, pin] = pref.split(':');
@@ -1203,10 +1207,12 @@ async function loadRatsnest() {
       
       for (let i = 0; i < pads.length - 1; i++) {
         newRats.push({ p1: pads[i], p2: pads[i+1], netName });
+        connectedCount++;
       }
     });
 
     state.ratsnest = newRats;
+    if (connectedCount > 0) console.info(`🔌 Ratsnest updated: ${connectedCount} connections found.`);
     render();
   } catch (e) { console.warn('Ratsnest load failed', e); }
 }
@@ -1215,23 +1221,26 @@ function drawRatsnest(ctx, scale) {
   if (!state.ratsnest || state.ratsnest.length === 0) return;
   
   ctx.save();
-  ctx.strokeStyle = 'rgba(0, 212, 170, 0.4)';
-  ctx.lineWidth = 0.1;
-  ctx.setLineDash([0.5, 0.5]);
+  ctx.strokeStyle = 'rgba(0, 212, 170, 0.6)'; 
+  ctx.lineWidth = 0.2; 
+  ctx.setLineDash([1, 1]);
 
   state.ratsnest.forEach(rat => {
-    
-    
     ctx.beginPath();
     ctx.moveTo(rat.p1.x, rat.p1.y);
     ctx.lineTo(rat.p2.x, rat.p2.y);
     ctx.stroke();
+
+    
+    ctx.fillStyle = 'rgba(0, 212, 170, 0.8)';
+    ctx.beginPath(); ctx.arc(rat.p1.x, rat.p1.y, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(rat.p2.x, rat.p2.y, 0.2, 0, Math.PI*2); ctx.fill();
   });
   ctx.restore();
 }
 
 
-setInterval(loadRatsnest, 10000); 
+setInterval(loadRatsnest, 3000); 
 window.loadRatsnest = loadRatsnest;
 
 
@@ -1274,7 +1283,10 @@ window.findPadByRef = function(refName) {
 
   
   let grp = state.elements.find(e =>
-    e.type === 'group' && (e.label === compLabel || e.ref === compLabel)
+    e.type === 'group' && (
+      (e.label || '').toUpperCase() === compLabel.toUpperCase() || 
+      (e.ref || '').toUpperCase() === compLabel.toUpperCase()
+    )
   );
   if (!grp) {
     
