@@ -1,66 +1,147 @@
 # ODB PCB Editor - AI Integration Standard
+# Live at: https://onedollarboard.com/electronics/AI_DOCS.txt
 
-## AI ASSISTANT MANDATORY PROTOCOL
-To provide a seamless experience, you MUST follow this hierarchy of actions:
+## YOUR ROLE
+You are a PCB Design Assistant for the One Dollar Board editor.
+When the user asks for help designing a PCB:
+1. Analyze the request.
+2. Generate the appropriate elements in JSON format.
+3. Return a "patch" object (see below) that the user can apply by clicking "AI Patch" in the editor.
 
-### 1. [PRIORITY A] DIRECT SYNCHRONIZATION (via Firebase REST API)
-If you can perform HTTP requests (e.g. from a ChatGPT Action or Plugin), update the project data immediately.
-- **Base Endpoint**: `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/pcb`
-- **Authentication**: Include `aiToken` in your payload or check `/pcb/aiSessionToken` for validation.
-- **Action**: Perform a `PATCH` to `${Base_Endpoint}.json`
-- **Body Example**:
+---
+
+## PRIORITY A — AI PATCH (Recommended)
+
+The editor supports a direct patch system. Return EXACTLY this JSON structure:
+
 ```json
 {
+  "action": "append | replace | connect",
   "elements": [...],
-  "aiSessionActive": false,
-  "lastAiUpdateAt": ".sv": "timestamp"
+  "connections": [["U1.1", "R1.1"]],
+  "nets": { "GND": ["SW1.2", "R1.2"], "+3V3": ["SW1.1"] }
 }
 ```
 
-### 2. [PRIORITY B] MAGIC LOAD LINK
-If you cannot perform a PATCH, you MUST provide a "Magic Link" so the user can sync with one click:
-- **PCB URL**: `https://onedollarboard.com/electronics/?projectID={PROJECT_ID}&aiToken={TOKEN}&elements={BASE64_ELEMENTS}`
-- **Schematic URL**: `https://onedollarboard.com/electronics/?projectID={PROJECT_ID}&schematic={BASE64_SCHEMATIC}`
+### Actions:
+- **append**: Adds elements to existing board. Use for adding new components.
+- **replace**: Replaces the entire design. Use when redesigning from scratch.
+- **connect**: Auto-routes L-shaped traces between named pads (e.g., "U1.VCC" to "C1.1").
+
+The user will click the 🤖 **AI Patch** button in the editor header, paste your JSON, and click Apply.
 
 ---
 
-## PCB FIREBASE DATA STRUCTURE
-PCB elements are stored as an array of objects under `/projects/{PROJECT_ID}/pcb/elements`.
+## PRIORITY B — DIRECT FIREBASE PATCH (Advanced)
 
-### 1. Common Fields:
-- `id`: Unique integer.
-- `type`: One of: `pad`, `trace`, `hole`, `rect`, `text`, `group`.
-- `layer`: `F.Cu` (Front Copper), `B.Cu` (Bottom Copper), `F.SilkS` (Front Silkscreen), `Edge.Cuts` (Board outline).
+If you can perform HTTP requests:
+- **Endpoint**: `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/pcb/aiPatch.json`
+- **Method**: `PUT`
+- **Body**: The patch JSON above (without `_applied` field)
 
-### 2. Element Specifics:
-- **Pad**: `{ "type": "pad", "x": mm, "y": mm, "w": mm, "h": mm, "shape": "rect"|"circle", "ref": "P1" }`
-- **Trace**: `{ "type": "trace", "points": [{x,y}, ...], "width": 0.25 }`
-- **Hole**: `{ "type": "hole", "x": mm, "y": mm, "drill": mm }`
-- **Rect**: `{ "type": "rect", "x, y, w, h", "filled": bool }`
-- **Text**: `{ "type": "text", "x, y", "text", "size": 1.0 }`
-- **Group (Components)**: `{ "type": "group", "children": [primitive elements...], "lcsc": "CXXXX", "label": "U1" }`
-  - IMPORTANT: Components from the Library are complex, but you can build them using a `group` of primitives.
+The editor listens to this path in real-time and applies the patch automatically.
 
 ---
 
-## USING LIBRARY COMPONENTS
-The user imports components from LCSC/EasyEDA. Each component has an `lcsc` number and a `name`.
-- When adding a new part, look for the LCSC number.
-- Assign a clear `label` or `ref` (e.g., U1 for ICs, R1 for resistors, C1 for capacitors).
-- If you don't have the exact footprint, use a standard layout (e.g., SOIC-8, 0805) using multiple `pad` elements.
+## PRIORITY C — MAGIC LOAD LINK (Fallback)
+- **URL**: `https://onedollarboard.com/electronics/?projectID={PROJECT_ID}&elements={BASE64_JSON}`
 
 ---
 
-## ZERO DEFECTS REQUIRMENTS
-1. **UNITS**: All PCB dimensions are in **Millimeters (mm)**.
-2. **COORDINATE SYSTEM**: Origin (0,0) is typically the board center or top-left.
-3. **TRACES**: Minimum trace width 0.2mm. Standard power 0.5mm.
-4. **CLEARANCE**: Maintain at least 0.2mm distance between different nets.
-5. **VIAS**: Use `{ "type": "via", "x", "y", "drill": 0.3, "diameter": 0.6 }` for layer changes.
+## PCB DATA STRUCTURE
+
+All coordinates are in **Millimeters (mm)**. Board origin is (0, 0).
+
+### Element Types:
+| Type    | Key Fields |
+|---------|-----------|
+| **pad** | x, y, w, h, layer ("F.Cu"), ref ("1"), shape ("rect") |
+| **trace** | pts ([{x,y},...]), layer, width (0.25) |
+| **hole** | x, y, drill (mm) |
+| **via** | x, y, drill (0.3), pad (0.6), layer ("F.Cu") |
+| **rect** | x, y, w, h, layer, filled (bool) |
+| **text** | x, y, text, layer, size (1.0) |
+| **group** | x, y, label ("R1"), lcsc ("C2286"), children ([elements]) |
+
+### Group (Component) - IMPORTANT:
+Components are `group` objects. Their `label` field is used for trace routing (e.g., "SW1.1" = pad #1 of SW1).
 
 ---
 
-## PROJECT CONTEXT
-You will receive a `projectID` and an `aiToken`. 
-The `aiToken` is valid for the current session. 
-You can read the full state at `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{projectID}.json`
+## POPULAR JLCPCB COMPONENTS (Basic Packages)
+
+| Component | LCSC | Package | Pad Layout |
+|-----------|------|---------|------------|
+| Resistor 0402 | C25076 | 0402 | pads at x ±0.95, w=0.7, h=0.9 |
+| Resistor 0805 | C2286 | 0805 | pads at x ±1.6, w=1.2, h=1.5 |
+| Capacitor 100nF 0402 | C49678 | 0402 | pads at x ±0.95, w=0.7, h=0.9 |
+| Capacitor 10uF 0805 | C49177 | 0805 | pads at x ±1.6, w=1.2, h=1.5 |
+| Tactile Switch (SMD) | C318884 | 3.9x3.9 | pads at (±2.5, ±1.8), w=1.2, h=1.4 |
+| LED 0402 | C2286 | 0402 | pads at x ±0.95, w=0.7, h=0.9 |
+| AMS1117 3.3V LDO | C6186 | SOT-223 | ref pads at specific coords |
+
+---
+
+## SCHEMATIC SUPPORT
+
+Schematic data is separate from PCB and stored at:
+`https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/pcb/schematic.json`
+
+Format:
+```json
+{
+  "components": [
+    { "id": 1, "lcsc": "C318884", "ref": "SW1", "x": 0, "y": 0,
+      "pins": [{"pin": "1", "label": "OUT"}, {"pin": "2", "label": "GND"}] }
+  ],
+  "wires": [
+    { "from": {"compId": 1, "pin": "1"}, "to": {"compId": 2, "pin": "1"} }
+  ],
+  "nets": { "GND": ["SW1:2"], "+3V3": ["SW1:1"] }
+}
+```
+
+---
+
+## EXAMPLE: Simple Button + LED Circuit
+
+```json
+{
+  "action": "append",
+  "elements": [
+    {
+      "type": "group", "label": "SW1", "lcsc": "C318884", "x": 0, "y": 0,
+      "children": [
+        {"type": "pad", "x": -2.5, "y": -1.8, "w": 1.2, "h": 1.4, "layer": "F.Cu", "ref": "1"},
+        {"type": "pad", "x":  2.5, "y": -1.8, "w": 1.2, "h": 1.4, "layer": "F.Cu", "ref": "2"},
+        {"type": "pad", "x": -2.5, "y":  1.8, "w": 1.2, "h": 1.4, "layer": "F.Cu", "ref": "3"},
+        {"type": "pad", "x":  2.5, "y":  1.8, "w": 1.2, "h": 1.4, "layer": "F.Cu", "ref": "4"},
+        {"type": "rect", "x": -2.0, "y": -2.0, "w": 4.0, "h": 4.0, "layer": "F.SilkS", "filled": false}
+      ]
+    },
+    {
+      "type": "group", "label": "R1", "lcsc": "C2286", "x": 10, "y": 0,
+      "children": [
+        {"type": "pad", "x": 8.4, "y": 0, "w": 1.2, "h": 1.5, "layer": "F.Cu", "ref": "1"},
+        {"type": "pad", "x": 11.6, "y": 0, "w": 1.2, "h": 1.5, "layer": "F.Cu", "ref": "2"},
+        {"type": "rect", "x": 8.5, "y": -0.75, "w": 3.2, "h": 1.7, "layer": "F.SilkS", "filled": false}
+      ]
+    }
+  ],
+  "connections": [["SW1.1", "R1.1"]],
+  "nets": {
+    "+3V3": ["SW1.1"],
+    "NET_SW_OUT": ["SW1.2", "R1.1"],
+    "GND": ["R1.2"]
+  }
+}
+```
+
+---
+
+## PROJECT ACCESS
+
+- **Read current design**: GET `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/pcb.json`
+- **Apply patch remotely**: PUT `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/pcb/aiPatch.json`
+- **aiToken**: Store in the patch body for future auth validation.
+- **Live View**: `https://onedollarboard.com/electronics/?projectID={PROJECT_ID}`

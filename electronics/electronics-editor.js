@@ -1122,5 +1122,103 @@ window.loadProject = loadProject;
 window.deleteSelected = deleteSelected;
 window.setStatus = setStatus;
 window.setTool = setTool;
+window.addElement = addElement;
+window.newId = newId;
+
+
+
+window._pcbNets = {};
+
+window.addNet = function(netName, ...refs) {
+  if (!window._pcbNets[netName]) window._pcbNets[netName] = [];
+  refs.forEach(r => { if (!window._pcbNets[netName].includes(r)) window._pcbNets[netName].push(r); });
+};
+
+window.getNets = function() { return window._pcbNets; };
+
+
+
+window.findPadByRef = function(refName) {
+  if (!refName || !refName.includes('.')) return null;
+  const [compLabel, pinRef] = refName.split('.');
+  
+  const grp = state.elements.find(e => e.type === 'group' && (e.label === compLabel || e.ref === compLabel));
+  if (!grp) return null;
+  
+  const pads = state.elements.filter(e => e.groupId === grp.id && e.type === 'pad');
+  const idx = parseInt(pinRef);
+  if (!isNaN(idx) && idx >= 1) return pads[idx - 1] || null;
+  return pads.find(p => p.ref === pinRef || p.refName === pinRef) || null;
+};
+
+
+window.generateTrace = function(fromRef, toRef, layer = 'F.Cu', width = 0.25) {
+  const a = window.findPadByRef(fromRef);
+  const b = window.findPadByRef(toRef);
+  if (!a || !b) { console.warn(`⚠️ generateTrace: could not find pads for "${fromRef}" → "${toRef}"`); return null; }
+  
+  const mid = { x: b.x, y: a.y };
+  const trace = { id: newId(), type: 'trace', layer, width, pts: [
+    { x: a.x, y: a.y },
+    { x: mid.x, y: mid.y },
+    { x: b.x, y: b.y }
+  ]};
+  return trace;
+};
+
+
+
+
+
+window.applyAIPatch = function(patch) {
+  if (!patch || !patch.action) { console.error('❌ applyAIPatch: missing action'); return; }
+  
+  pushHistory();
+  
+  if (patch.action === 'append' && Array.isArray(patch.elements)) {
+    patch.elements.forEach(el => {
+      el.id = newId();
+      if (el.type === 'group' && Array.isArray(el.children)) {
+        el.children.forEach(c => { c.id = newId(); c.groupId = el.id; state.elements.push(c); });
+      }
+      state.elements.push(el);
+    });
+    setStatus(`✅ AI appended ${patch.elements.length} element(s)`);
+  }
+  
+  else if (patch.action === 'replace' && Array.isArray(patch.elements)) {
+    state.elements = [];
+    state.nextId = 1;
+    patch.elements.forEach(el => {
+      el.id = newId();
+      if (el.type === 'group' && Array.isArray(el.children)) {
+        el.children.forEach(c => { c.id = newId(); c.groupId = el.id; state.elements.push(c); });
+      }
+      state.elements.push(el);
+    });
+    setStatus(`✅ AI replaced design with ${patch.elements.length} element(s)`);
+  }
+  
+  else if (patch.action === 'connect' && Array.isArray(patch.connections)) {
+    const layer = patch.layer || 'F.Cu';
+    const width = patch.width || 0.25;
+    let added = 0;
+    patch.connections.forEach(([from, to]) => {
+      const trace = window.generateTrace(from, to, layer, width);
+      if (trace) { state.elements.push(trace); added++; }
+    });
+    setStatus(`✅ AI connected ${added} trace(s)`);
+  }
+  
+  
+  if (patch.nets && typeof patch.nets === 'object') {
+    Object.entries(patch.nets).forEach(([net, refs]) => window.addNet(net, ...refs));
+  }
+  
+  updateStats();
+  render();
+  if (typeof window.autoSave === 'function') window.autoSave();
+  console.log('✅ AI Patch applied:', patch);
+};
 
 console.log('%c Electronics Editor ready! ', 'background:#00d4aa;color:#000;font-weight:bold;font-size:14px;border-radius:4px;padding:2px 8px');
