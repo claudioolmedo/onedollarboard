@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ODB Electronics - Live Context for AI</title>
+    <style>
+        body { font-family: monospace; background: #070b12; color: #00d4aa; padding: 20px; line-height: 1.5; white-space: pre-wrap; }
+        .loading { color: #666; }
+        .error { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div id="content" class="loading">Fetching board state...</div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
+        import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
+
+        const firebaseConfig = {
+            databaseURL: "https://onedollarboard-1b26a-default-rtdb.firebaseio.com"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        async function loadContext() {
+            const params = new URLSearchParams(window.location.search);
+            const projectID = params.get('projectID');
+            const content = document.getElementById('content');
+
+            if (!projectID) {
+                content.innerHTML = '<span class="error">Error: No projectID provided in URL.</span>';
+                return;
+            }
+
+            try {
+                const snapshot = await get(ref(database, `projects/${projectID}/pcb`));
+                if (!snapshot.exists()) {
+                    content.innerHTML = `<span class="error">Project "${projectID}" not found.</span>`;
+                    return;
+                }
+
+                const data = snapshot.val();
+                const elements = data.elements || [];
+                const nets = data.nets || {};
+
+                
+                const groups = elements.filter(e => e.type === 'group');
+                const traces = elements.filter(e => e.type === 'trace');
+                
+                let out = `=== ODB ELECTRONICS BOARD CONTEXT ===\n`;
+                out += `Project ID: ${projectID}\n\n`;
+                out += `Components: ${groups.length}  |  Traces: ${traces.length}\n\n`;
+
+                if (groups.length === 0) {
+                    out += `(No components placed yet)\n`;
+                } else {
+                    out += `--- COMPONENTS ---\n`;
+                    groups.forEach(grp => {
+                        const pads = elements.filter(e => e.groupId === grp.id && e.type === 'pad');
+                        const label = grp.label || grp.ref || grp.lcsc || `id:${grp.id}`;
+                        const name  = grp.value || grp.name || grp.lcsc || '';
+                        out += `\n[${label}] ${name} @ (${(grp.x||0).toFixed(1)}, ${(grp.y||0).toFixed(1)})mm\n`;
+                        pads.forEach((p, i) => {
+                            const pinId = p.ref || `${i+1}`;
+                            out += `    ${label}.${pinId}  →  x=${p.x?.toFixed(2)}, y=${p.y?.toFixed(2)} [${p.layer}]\n`;
+                        });
+                    });
+                }
+
+                if (Object.keys(nets).length > 0) {
+                    out += `\n--- NETS ---\n`;
+                    Object.entries(nets).forEach(([net, refs]) => {
+                        out += `  ${net}: ${refs.join(' → ')}\n`;
+                    });
+                }
+
+                out += `\n=== INSTRUCTIONS FOR AI ===\n`;
+                out += `Analyze the board above. To suggest changes, return a JSON patch with an "action" (append/replace/connect).\n`;
+                out += `Example: { "action": "connect", "connections": [["U1.1", "R1.1"]] }\n`;
+
+                content.textContent = out;
+            } catch (error) {
+                content.innerHTML = `<span class="error">Error loading data: ${error.message}</span>`;
+            }
+        }
+
+        loadContext();
+    </script>
+</body>
+</html>

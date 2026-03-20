@@ -1283,27 +1283,28 @@
         const docsUrl = `https://onedollarboard.com/electronics/AI_DOCS.txt`;
         
         
-        const boardDesc = (typeof window.describePCB === 'function') ? window.describePCB() : '(Board description unavailable)';
-        
+        const liveContextUrl = `${baseUrl.replace('index.html', '')}live.html?projectID=${projectID}`;
+
         
         const prompt = `You are a PCB Design Assistant for the One Dollar Board editor.
 
+LIVE STATE (Visit to see board): ${liveContextUrl}
 DOCS: ${docsUrl}
 
 SESSION CONTEXT:
 - projectID: "${projectID}"
-- aiToken: "${aiToken}"
+- aiToken: "${aiToken}" (use for direct Firebase PATCH to update my design at the endpoint below)
 - applyPatch endpoint: https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/pcb/aiPatch.json (PUT)
 - Live view: ${baseUrl}?projectID=${projectID}
 
 ${boardDesc}
 
 INSTRUCTIONS:
-1. Help me design or improve the PCB based on the board summary above.
-2. Return a JSON patch with action "append", "replace", or "connect".
+1. Use the LIVE STATE URL above to browse the current board details.
+2. If you suggest changes, return a JSON patch with action "append", "replace", or "connect".
 3. Use pad refs like "SW1.1" or "RJ45.2" for connections.
-4. The user will paste your JSON into the 🤖 AI Patch button in the editor to apply it instantly.
-5. If you can make HTTP requests, PUT the patch directly to the applyPatch endpoint above.`;
+4. The user will paste your JSON into the 🤖 AI Patch button in the editor.
+5. If you can make HTTP requests (e.g. via GPT Actions), PUT the patch directly to the applyPatch endpoint above.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
         
