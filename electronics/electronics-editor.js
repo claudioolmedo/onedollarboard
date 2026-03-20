@@ -795,6 +795,14 @@ function deleteSelected() {
   state.elements.filter(el=>el.groupId && state.selectedIds.has(el.groupId))
     .forEach(el=>toDelete.add(el.id));
   state.elements = state.elements.filter(el=>!toDelete.has(el.id));
+  
+  
+  const groups = state.elements.filter(e => e.type === 'group');
+  groups.forEach(g => {
+    const hasChildren = state.elements.some(e => e.groupId === g.id);
+    if (!hasChildren) state.elements = state.elements.filter(e => e.id !== g.id);
+  });
+
   state.selectedIds.clear();
   updatePropsPanel();
   updateStats();
@@ -1412,19 +1420,68 @@ window.describePCB = function() {
 };
 
 
+function cleanProjectState() {
+  if (!state.elements) return;
+  
+  const groups = state.elements.filter(e => e.type === 'group');
+  let removedCount = 0;
+  groups.forEach(g => {
+    const children = state.elements.filter(e => e.groupId === g.id);
+    if (children.length === 0) {
+      state.elements = state.elements.filter(e => e.id !== g.id);
+      removedCount++;
+    }
+  });
+  
+  const seenLabels = new Set();
+  const sorted = [...state.elements].sort((a,b) => (b.id||0) - (a.id||0));
+  const toKeep = [];
+  const toDiscard = new Set();
+
+  sorted.forEach(el => {
+    if (el.type === 'group' && el.label) {
+      if (seenLabels.has(el.label.toUpperCase())) {
+        toDiscard.add(el.id);
+        
+        state.elements.filter(e => e.groupId === el.id).forEach(p => toDiscard.add(p.id));
+      } else {
+        seenLabels.add(el.label.toUpperCase());
+        toKeep.push(el.id);
+      }
+    }
+  });
+  
+  if (toDiscard.size > 0) {
+    state.elements = state.elements.filter(el => !toDiscard.has(el.id));
+    console.log(`🧹 Project cleaned: removed ${toDiscard.size} redundant/orphaned items.`);
+  }
+}
+window.cleanProject = cleanProjectState;
+
+
 window.applyAIPatch = function(patch) {
   if (!patch || !patch.action) { console.error('❌ applyAIPatch: missing action'); return; }
+  cleanProjectState(); 
   pushHistory();
 
   if (patch.action === 'append' && Array.isArray(patch.elements)) {
     patch.elements.forEach(el => {
+      
+      if (el.type === 'group' && el.label) {
+        const existingId = state.elements.find(e => e.type === 'group' && e.label === el.label)?.id;
+        if (existingId) {
+          state.elements = state.elements.filter(e => e.id !== existingId && e.groupId !== existingId);
+          console.log(`♻️ Replacing existing component: ${el.label}`);
+        }
+      }
+
       el.id = newId();
       if (el.type === 'group' && Array.isArray(el.children)) {
         el.children.forEach(c => { c.id = newId(); c.groupId = el.id; state.elements.push(c); });
       }
       state.elements.push(el);
     });
-    setStatus(`✅ AI appended ${patch.elements.length} element(s)`);
+    setStatus(`✅ AI updated ${patch.elements.length} element(s)`);
   }
   else if (patch.action === 'replace' && Array.isArray(patch.elements)) {
     state.elements = [];
