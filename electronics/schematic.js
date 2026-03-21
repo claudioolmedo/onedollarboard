@@ -16,6 +16,7 @@
     wiring: null,     
     mouse: { x: 0, y: 0 },
     dirty: false,
+    tool: 'wire', 
   };
 
   
@@ -26,6 +27,8 @@
   const btnClose    = document.getElementById('btn-sch-close');
   const btnSchSave  = document.getElementById('btn-sch-save');
   const btnSchClear = document.getElementById('btn-sch-clear');
+  const btnSchWire  = document.getElementById('btn-sch-wire');
+  const btnSchLabel = document.getElementById('btn-sch-label');
 
   if (!panel || !cvs) return; 
 
@@ -119,6 +122,7 @@
         const sp = toScreen(pp.x, pp.y);
         const dx = sx - sp.x, dy = sy - sp.y;
         if (Math.abs(dx) < radius && Math.abs(dy) < radius) {
+          console.log(`📍 Pin hit: ${comp.ref}.${comp.pins[i].pin}`);
           return { comp, pinIndex: i, pin: comp.pins[i] };
         }
       }
@@ -136,6 +140,15 @@
       }
     }
     return null;
+  }
+
+  
+  function setPinNetLabel(comp, pinIndex, netName) {
+    if (!comp || !comp.pins[pinIndex]) return;
+    comp.pins[pinIndex].net = netName || null;
+    sch.dirty = true;
+    render();
+    autoSaveSchematic();
   }
 
   
@@ -275,7 +288,27 @@
       ctx.font = `${Math.round(9 * sch.zoom)}px Inter,sans-serif`;
       ctx.textAlign = rightSide ? 'left' : 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`${pin.label}`, lineEndX + (rightSide ? 3 : -3) * sch.zoom, ps.y);
+      const labelX = lineEndX + (rightSide ? 3 : -3) * sch.zoom;
+      ctx.fillText(`${pin.label}`, labelX, ps.y);
+
+      
+      if (pin.net) {
+        ctx.fillStyle = '#10b981'; 
+        ctx.font = `bold ${Math.round(9 * sch.zoom)}px Inter,sans-serif`;
+        const netX = labelX + (rightSide ? 15 : -15) * sch.zoom;
+        ctx.fillText(pin.net, netX, ps.y);
+        
+        
+        
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const startX = labelX + (rightSide ? ctx.measureText(pin.label).width + 2 : -ctx.measureText(pin.label).width - 2);
+        const endX = netX + (rightSide ? -2 : 2);
+        ctx.moveTo(startX, ps.y);
+        ctx.lineTo(endX, ps.y);
+        ctx.stroke();
+      }
     });
 
     
@@ -288,10 +321,15 @@
   }
 
   function isConnected(comp, pin) {
-    return sch.wires.some(w =>
+    
+    const hasWire = sch.wires.some(w =>
       (w.from.compId === comp.id && w.from.pin === pin) ||
       (w.to.compId === comp.id && w.to.pin === pin)
     );
+    if (hasWire) return true;
+    
+    const pObj = comp.pins.find(p => p.pin === pin);
+    return !!(pObj && pObj.net);
   }
 
   
@@ -347,6 +385,15 @@
     
     const pinHit = pinAtScreen(x, y, 14);
     if (pinHit) {
+      if (sch.tool === 'label') {
+        const current = pinHit.pin.net || '';
+        const name = prompt('Enter Net Name (e.g. 3V3, GND, PD1):', current);
+        if (name !== null) {
+          setPinNetLabel(pinHit.comp, pinHit.pinIndex, name.trim().toUpperCase());
+        }
+        return;
+      }
+      
       const pp = getPinPos(pinHit.comp, pinHit.pinIndex);
       sch.wiring = {
         fromCompId: pinHit.comp.id,
@@ -435,11 +482,34 @@
   });
 
   btnSchClear?.addEventListener('click', () => {
-    if (!confirm('Clear all wires from schematic?')) return;
+    if (!confirm('Clear all wires and labels from schematic?')) return;
     sch.wires = [];
+    sch.components.forEach(c => c.pins.forEach(p => { if (p.net) delete p.net; }));
     sch.dirty = true;
     render();
     autoSaveSchematic();
+  });
+
+  function setSchTool(tool) {
+    sch.tool = tool;
+    btnSchWire?.classList.toggle('active', tool === 'wire');
+    btnSchLabel?.classList.toggle('active', tool === 'label');
+    showStatus(`Tool: ${tool.toUpperCase()}`);
+    render();
+  }
+  btnSchWire?.addEventListener('click', () => setSchTool('wire'));
+  btnSchLabel?.addEventListener('click', () => setSchTool('label'));
+
+  
+  window.addEventListener('keydown', (e) => {
+    if (!sch.visible) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key.toLowerCase() === 'w') setSchTool('wire');
+    if (e.key.toLowerCase() === 'l') setSchTool('label');
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+       
+       
+    }
   });
 
   
@@ -533,29 +603,65 @@
   
   function buildNetlist() {
     
-    const nets = {};
-    let netId = 1;
+    const pinToNet = {}; 
+    const nets = {};     
+    let nextNetId = 1;
 
-    sch.wires.forEach(wire => {
-      const fromKey = `${wire.from.compId}:${wire.from.pin}`;
-      const toKey   = `${wire.to.compId}:${wire.to.pin}`;
+    
+    function union(p1, p2) {
+      let n1 = pinToNet[p1];
+      let n2 = pinToNet[p2];
 
-      
-      let fromNet = Object.keys(nets).find(n => nets[n].includes(fromKey));
-      let toNet   = Object.keys(nets).find(n => nets[n].includes(toKey));
-
-      if (!fromNet && !toNet) {
-        const nId = 'NET' + (netId++);
-        nets[nId] = [fromKey, toKey];
-      } else if (fromNet && !toNet) {
-        nets[fromNet].push(toKey);
-      } else if (!fromNet && toNet) {
-        nets[toNet].push(fromKey);
-      } else if (fromNet !== toNet) {
+      if (!n1 && !n2) {
+        const id = 'NET' + (nextNetId++);
+        pinToNet[p1] = pinToNet[p2] = id;
+        nets[id] = [p1, p2];
+      } else if (n1 && !n2) {
+        pinToNet[p2] = n1;
+        nets[n1].push(p2);
+      } else if (!n1 && n2) {
+        pinToNet[p1] = n2;
+        nets[n2].push(p1);
+      } else if (n1 !== n2) {
         
-        nets[fromNet] = [...nets[fromNet], ...nets[toNet]];
-        delete nets[toNet];
+        nets[n2].forEach(p => pinToNet[p] = n1);
+        nets[n1] = nets[n1].concat(nets[n2]);
+        delete nets[n2];
       }
+    }
+
+    
+    sch.wires.forEach(w => {
+      union(`${w.from.compId}:${w.from.pin}`, `${w.to.compId}:${w.to.pin}`);
+    });
+
+    
+    const labeledPins = {}; 
+    sch.components.forEach(c => {
+      c.pins.forEach(p => {
+        if (p.net) {
+          const name = p.net.trim().toUpperCase();
+          const key = `${c.id}:${p.pin}`;
+          if (!labeledPins[name]) labeledPins[name] = [];
+          labeledPins[name].push(key);
+        }
+      });
+    });
+
+    Object.entries(labeledPins).forEach(([name, keys]) => {
+      const first = keys[0];
+      
+      keys.forEach(k => {
+        
+        if (!pinToNet[k]) {
+          const id = name; 
+          pinToNet[k] = id;
+          if (!nets[id]) nets[id] = [];
+          nets[id].push(k);
+        }
+        
+        union(first, k);
+      });
     });
 
     return nets;
@@ -608,6 +714,30 @@
     if (patch.action === 'replace' && patch.wires) {
       sch.wires = patch.wires;
       sch.dirty = true; render(); autoSaveSchematic();
+    }
+
+    if (patch.action === 'label' && patch.labels) {
+      if (Array.isArray(patch.labels)) {
+        patch.labels.forEach(l => {
+          if (l.ref && l.net) setLabelOnRef(l.ref, l.net);
+        });
+      } else {
+        Object.entries(patch.labels).forEach(([fullRef, netName]) => {
+          setLabelOnRef(fullRef, netName);
+        });
+      }
+      sch.dirty = true; render(); autoSaveSchematic();
+    }
+
+    function setLabelOnRef(fullRef, netName) {
+      const pinObj = findSchPinByRef(fullRef);
+      if (pinObj) {
+        const comp = pinObj.comp;
+        const pinIdx = comp.pins.findIndex(p => p.pin === pinObj.pin);
+        if (pinIdx >= 0) {
+          comp.pins[pinIdx].net = (netName || '').trim().toUpperCase();
+        }
+      }
     }
   };
 

@@ -28,7 +28,8 @@ To connect components in the schematic without user intervention:
 ### **Schematic Actions:**
 - **connect**: Connects logical pins by name (e.g. "U1.1"). Use if components are already present.
 - **layout**: Move schematic blocks to clear positions. Body: `{ "action": "layout", "positions": { "U1": {"x": 100, "y": 200} } }`
-- **replace**: Overwrite all wires. Body: `{ "action": "replace", "wires": [{ "from": {"compId":1, "pin":"1"}, "to": {"compId":2, "pin":"2"} }] }`
+- **label**: Set net names on pins (e.g. 3V3, GND) to connect them logically. Body: `{ "action": "label", "labels": [{ "ref": "U1.1", "net": "3V3" }, { "ref": "U1.8", "net": "GND" }] }`
+- **replace**: Overwrite all wires. Body: `{ "action": "replace", "wires": [...] }`
 
 ---
 
