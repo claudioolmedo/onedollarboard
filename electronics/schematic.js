@@ -14,6 +14,7 @@
     mouse: { x: 0, y: 0 },
     dirty: false,
     tool: 'label',
+    highlightNet: null, 
   };
 
   const panel       = document.getElementById('schematic-panel');
@@ -24,6 +25,7 @@
   const btnSchSave  = document.getElementById('btn-sch-save');
   const btnSchClear = document.getElementById('btn-sch-clear');
   const btnSchLabel = document.getElementById('btn-sch-label');
+  const cmdInput    = document.getElementById('sch-command-input');
   const labelModal = document.getElementById('label-modal');
   const labelInput = document.getElementById('label-input');
   const labelOk    = document.getElementById('label-ok');
@@ -212,16 +214,18 @@
 
       
       const connected = !!pin.net;
+      const isHighlighted = sch.highlightNet && pin.net && pin.net.toUpperCase() === sch.highlightNet.toUpperCase();
+
       ctx.beginPath();
       ctx.arc(ps.x, ps.y, 4 * sch.zoom, 0, Math.PI * 2);
-      ctx.fillStyle = connected ? '#00d4aa' : '#374151';
-      ctx.strokeStyle = connected ? '#00d4aa' : '#6b7280';
+      ctx.fillStyle = isHighlighted ? '#ffcc00' : (connected ? '#00d4aa' : '#374151');
+      ctx.strokeStyle = isHighlighted ? '#ffcc00' : (connected ? '#00d4aa' : '#6b7280');
       ctx.fill();
       ctx.stroke();
 
       
-      ctx.fillStyle = '#d1d5db';
-      ctx.font = `${Math.round(9 * sch.zoom)}px Inter,sans-serif,Arial`;
+      ctx.fillStyle = isHighlighted ? '#ffea00' : '#d1d5db';
+      ctx.font = `${isHighlighted ? 'bold ' : ''}${Math.round(9 * sch.zoom)}px Inter,sans-serif,Arial`;
       ctx.textAlign = rightSide ? 'left' : 'right';
       ctx.textBaseline = 'middle';
       const labelX = lineEndX + (rightSide ? 3 : -3) * sch.zoom;
@@ -230,15 +234,15 @@
       
       if (pin.net) {
         ctx.save();
-        ctx.fillStyle = '#10b981';
-        ctx.font = `bold ${Math.round(10 * sch.zoom)}px Inter,sans-serif,Arial`;
+        ctx.fillStyle = isHighlighted ? '#ffea00' : '#10b981';
+        ctx.font = `bold ${Math.round(11 * sch.zoom)}px Inter,sans-serif,Arial`;
         ctx.textAlign = rightSide ? 'left' : 'right';
         ctx.textBaseline = 'middle';
         const labelWidth = ctx.measureText(pin.label).width;
         const netX = labelX + (rightSide ? (labelWidth + 10) : -(labelWidth + 10)) * sch.zoom;
         ctx.fillText(pin.net, netX, ps.y);
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = isHighlighted ? 'rgba(255,204,0,0.6)' : 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = isHighlighted ? 2 : 1;
         ctx.beginPath();
         const startX = labelX + (rightSide ? labelWidth + 2 : -labelWidth - 2) * sch.zoom;
         const endX   = netX + (rightSide ? -2 : 2) * sch.zoom;
@@ -343,6 +347,30 @@
   labelModal?.addEventListener('click', (e) => { if (e.target === labelModal) closeLabelModal(); });
   labelInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') labelOk.click(); if (e.key === 'Escape') closeLabelModal(); });
 
+  cmdInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const cmd = cmdInput.value.trim().toLowerCase();
+      if (cmd.startsWith('show ')) {
+        const net = cmd.slice(5).trim();
+        sch.highlightNet = net || null;
+        showStatus(net ? `Highlighting Net: ${net.toUpperCase()}` : 'Highlight cleared');
+        render();
+      } else if (cmd === 'hide' || cmd === 'clear' || cmd === 'none') {
+        sch.highlightNet = null;
+        cmdInput.value = '';
+        showStatus('Highlight cleared');
+        render();
+      }
+    }
+  });
+
+  
+  window.addEventListener('keydown', (e) => {
+    if (!sch.visible || activeLabelPin) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key.toLowerCase() === 'l') setSchTool('label');
+  });
+
   
   let saveTimer = null;
   function autoSaveSchematic(force = false) {
@@ -428,6 +456,10 @@
     return pin ? { comp, pin: pin.pin } : null;
   }
 
+  function showStatus(msg) {
+    if (typeof window.setStatus === 'function') window.setStatus(msg);
+  }
+
   window.schematic = {
     addComponent: addSchComponent,
     load: loadSchematicFromFirebase,
@@ -441,5 +473,8 @@
     },
     state: sch,
   };
+
+  
+  setTimeout(() => { if (typeof loadSchematicFromFirebase === 'function') loadSchematicFromFirebase(); }, 1200);
 
 })();
