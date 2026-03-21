@@ -30,6 +30,7 @@
   const btnSchWire  = document.getElementById('btn-sch-wire');
   const btnSchLabel = document.getElementById('btn-sch-label');
   const labelModal = document.getElementById('label-modal');
+  const labelInput = document.getElementById('label-input');
   const labelOk    = document.getElementById('label-ok');
   const labelCancel= document.getElementById('label-cancel');
   const labelDelete= document.getElementById('label-delete');
@@ -566,8 +567,10 @@
   let saveTimer = null;
 
   function autoSaveSchematic(force = false) {
+    if (!sch.dirty && !force) return;
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => saveSchematicToFirebase(), force ? 0 : 1500);
+    console.log('📐 Queuing schematic save...');
+    saveTimer = setTimeout(() => saveSchematicToFirebase(), force ? 100 : 1500);
   }
 
   async function saveSchematicToFirebase() {
@@ -602,17 +605,22 @@
     }
 
     try {
+      console.log('📐 Saving schematic to Firebase...', `${dbUrl}/projects/${projectID}/schematic.json`);
       const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       if (resp.ok) {
-        console.log('📐 Schematic saved to Firebase');
+        console.log('📐 ✅ Schematic saved to Firebase');
         sch.dirty = false;
         showStatus('Schematic saved ✓');
+      } else {
+        const txt = await resp.text();
+        console.error('📐 ❌ Schematic save failed:', resp.status, txt);
       }
     } catch (err) {
+      console.error('📐 ❌ Schematic save error:', err);
       localStorage.setItem(`sch_${projectID}`, JSON.stringify(data));
       console.warn('⚠️ Schematic saved to localStorage (offline)');
     }
@@ -621,32 +629,41 @@
   async function loadSchematicFromFirebase() {
     const projectID = window.PROJECT_ID;
     if (!projectID) return;
-
     const dbUrl = window._PCB_DB_URL;
+    if (!dbUrl) return;
 
-    let data = null;
+    try {
+      console.log('📐 Loading schematic from Firebase...');
+      const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic.json`);
+      if (!resp.ok) throw new Error(`Load failed: ${resp.status}`);
+      const data = await resp.json();
 
-    if (dbUrl) {
-      try {
-        const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic.json`);
-        if (resp.ok) data = await resp.json();
-      } catch (err) {  }
-    }
-
-    if (!data) {
-      try {
-        data = JSON.parse(localStorage.getItem(`sch_${projectID}`) || 'null');
-      } catch (e) {  }
-    }
-
-    if (data && data.components) {
-      sch.components = data.components;
-      sch.wires = data.wires || [];
-      
-      const maxId = Math.max(0, ...sch.components.map(c => c.id), ...sch.wires.map(w => w.id));
-      sch.nextId = maxId + 1;
-      render();
-      console.log('📐 Schematic loaded from Firebase');
+      if (data && data.components) {
+        console.log('📐 ✅ Schematic loaded successfully', data.components.length, 'components');
+        sch.components = data.components;
+        sch.wires = data.wires || [];
+        
+        
+        const componentIds = sch.components.map(c => c.id || 0);
+        const wireIds = sch.wires.map(w => w.id || 0);
+        sch.nextId = Math.max(0, ...componentIds, ...wireIds) + 1;
+        
+        sch.dirty = false;
+        render();
+      } else {
+        console.log('📐 No starting schematic found in Firebase');
+      }
+    } catch (err) {
+      console.warn('📐 ⚠️ Failed to load schematic from Firebase:', err);
+      const local = localStorage.getItem(`sch_${projectID}`);
+      if (local) {
+        try {
+          const data = JSON.parse(local);
+          sch.components = data.components;
+          sch.wires = data.wires || [];
+          render();
+        } catch(e) {}
+      }
     }
   }
 
@@ -751,27 +768,13 @@
       sch.dirty = true; render(); autoSaveSchematic();
     }
 
-    if (patch.action === 'layout' && patch.positions) {
-      Object.entries(patch.positions).forEach(([ref, pos]) => {
-        const comp = findSchCompByRef(ref);
-        if (comp && pos.x !== undefined && pos.y !== undefined) {
-          comp.x = pos.x; comp.y = pos.y;
-        }
-      });
-      sch.dirty = true; render(); autoSaveSchematic();
-    }
-    
-    if (patch.action === 'replace' && patch.wires) {
-      sch.wires = patch.wires;
-      sch.dirty = true; render(); autoSaveSchematic();
-    }
-
     if (patch.action === 'label' && patch.labels) {
       if (Array.isArray(patch.labels)) {
         patch.labels.forEach(l => {
           if (l.ref && l.net) setLabelOnRef(l.ref, l.net);
         });
       } else {
+        
         Object.entries(patch.labels).forEach(([fullRef, netName]) => {
           setLabelOnRef(fullRef, netName);
         });
@@ -810,37 +813,6 @@
   }
 
   
-  setTimeout(() => {
-    const projectID = window.PROJECT_ID;
-    const dbUrl = window._PCB_DB_URL;
-    if (projectID && dbUrl) {
-      
-      
-      
-      setInterval(async () => {
-        try {
-          const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic/aiPatch.json`);
-          if (resp.ok) {
-            const patch = await resp.json();
-            if (patch && patch.action && !patch._applied) {
-              window.applyAiSchematicPatch(patch);
-              
-              await fetch(`${dbUrl}/projects/${projectID}/schematic/aiPatch/_applied.json`, {
-                method: 'PUT',
-                body: JSON.stringify(true)
-              });
-              await fetch(`${dbUrl}/projects/${projectID}/schematic/aiPatch/_appliedAt.json`, {
-                method: 'PUT',
-                body: JSON.stringify(new Date().toISOString())
-              });
-            }
-          }
-        } catch (e) {  }
-      }, 5000);
-    }
-  }, 3000);
-
-  
   window.schematic = {
     addComponent: addSchComponent,
     load:  loadSchematicFromFirebase,
@@ -851,15 +823,23 @@
       if (sch.dragging || sch.wiring) return; 
       if (!data || !data.components) return;
       
+      console.log('📐 📥 Syncing schematic from remote update...');
       sch.components = data.components;
       sch.wires = data.wires || [];
-      sch.nextId = Math.max(sch.nextId, ...(sch.components.map(c => c.id) || []), ...(sch.wires.map(w => w.id) || [])) + 1;
+      
+      
+      const componentIds = sch.components.map(c => c.id || 0);
+      const wireIds = sch.wires.map(w => w.id || 0);
+      sch.nextId = Math.max(sch.nextId, ...componentIds, ...wireIds) + 1;
+      
       render();
     },
     state: sch,
   };
 
   
-  setTimeout(loadSchematicFromFirebase, 1200);
+  setTimeout(() => {
+    if (typeof loadSchematicFromFirebase === 'function') loadSchematicFromFirebase();
+  }, 1200);
 
 })();

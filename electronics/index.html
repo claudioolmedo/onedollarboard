@@ -860,7 +860,7 @@
   
   <script src="electronics-editor.js?v=20260320_3"></script>
   <script src="lib-import.js"></script>
-  <script src="schematic.js?v=20260321_figma"></script>
+  <script src="schematic.js?v=20260321_stable"></script>
 
   
   <script type="module">
@@ -1563,14 +1563,19 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
 
     
     if (app && database) {
-      const schRef = ref(database, `${DATABASE_PATH}/schematic`);
+      const schPath = `${DATABASE_PATH}/schematic`;
+      console.log('📐 Subscribing to schematic updates at:', schPath);
+      const schRef = ref(database, schPath);
       onValue(schRef, (snapshot) => {
         const data = snapshot.val();
         if (!data || !data.components) return;
+        console.log('📐 📥 Remote schematic update detected');
         if (typeof window.schematic?.syncFromServer === 'function') {
           window.schematic.syncFromServer(data);
         }
       });
+      
+      if (typeof window.schematic?.load === 'function') window.schematic.load();
     }
   </script>
 </body>
