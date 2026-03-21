@@ -445,8 +445,10 @@
   function onUp(e) {
     if (sch.dragging) {
       sch.dragging = null;
-      if (sch.dirty) autoSaveSchematic();
+      console.log('💾 Drag finished, saving position...');
+      autoSaveSchematic(true);
     }
+    sch.wiring = null; 
   }
 
   function onWheel(e) {
@@ -844,6 +846,16 @@
     load:  loadSchematicFromFirebase,
     save:  saveSchematicToFirebase,
     applyPatch: window.applyAiSchematicPatch,
+    syncFromServer: (data) => {
+      
+      if (sch.dragging || sch.wiring) return; 
+      if (!data || !data.components) return;
+      
+      sch.components = data.components;
+      sch.wires = data.wires || [];
+      sch.nextId = Math.max(sch.nextId, ...(sch.components.map(c => c.id) || []), ...(sch.wires.map(w => w.id) || [])) + 1;
+      render();
+    },
     state: sch,
   };
 

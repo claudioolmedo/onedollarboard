@@ -860,7 +860,7 @@
   
   <script src="electronics-editor.js?v=20260320_3"></script>
   <script src="lib-import.js"></script>
-  <script src="schematic.js?v=20260320_pos"></script>
+  <script src="schematic.js?v=20260321_figma"></script>
 
   
   <script type="module">
@@ -1557,6 +1557,18 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
             msg.style.opacity = '0'; msg.style.transition = '0.5s'; 
             setTimeout(() => msg.remove(), 500);
           }, 3000);
+        }
+      });
+    }
+
+    
+    if (app && database) {
+      const schRef = ref(database, `${DATABASE_PATH}/schematic`);
+      onValue(schRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data || !data.components) return;
+        if (typeof window.schematic?.syncFromServer === 'function') {
+          window.schematic.syncFromServer(data);
         }
       });
     }
