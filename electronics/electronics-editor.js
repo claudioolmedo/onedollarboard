@@ -1582,10 +1582,13 @@ window.findPadAtRef = function(refStr) {
   const parts = refStr.replace(':', '.').split('.');
   const ref = parts[0].toUpperCase();
   const pin = parts[1];
-  const comp = state.elements.find(el => el.type === 'component' && (el.ref || '').toUpperCase() === ref);
+  const comp = state.elements.find(el => 
+    (el.type === 'component' || el.type === 'group') && 
+    (el.ref || el.label || '').toUpperCase() === ref
+  );
   if (!comp) return null;
   const pads = state.elements.filter(el => el.groupId === comp.id && (el.type === 'pad' || el.type === 'hole'));
-  return pads.find(p => p.pin === pin) || null;
+  return pads.find(p => p.pin == pin) || null;
 };
 
 async function runAStar(start, end, grid) {

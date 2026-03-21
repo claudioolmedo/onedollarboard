@@ -420,7 +420,7 @@
       c.pins.forEach(p => {
         if (p.net) {
           const name = p.net.trim().toUpperCase();
-          const key = `${c.id}:${p.pin}`;
+          const key = `${c.ref}.${p.pin}`;
           if (!nets[name]) nets[name] = [];
           nets[name].push(key);
         }
