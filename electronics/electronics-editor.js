@@ -841,7 +841,6 @@ document.addEventListener('keydown', e => {
   }
   if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); undo(); return; }
   if ((e.ctrlKey||e.metaKey) && (e.key==='y'||(e.shiftKey&&e.key==='z'))) { e.preventDefault(); redo(); return; }
-  if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); saveProject(); return; }
   if ((e.ctrlKey||e.metaKey) && e.key==='a') { e.preventDefault(); selectAll(); return; }
   if (e.key==='Delete'||e.key==='Backspace') { deleteSelected(); return; }
   if (e.key==='+'||e.key==='=') { state.zoom=Math.min(20,state.zoom*1.2); updateZoomLabel(); render(); return; }
@@ -1118,7 +1117,6 @@ window.deleteProjectByIndex = (i) => {
 };
 
 
-document.getElementById('btn-save').onclick = saveProject;
 document.getElementById('btn-new').onclick = () => {
   showModal(t('modal_new_title'), `<p>${t('modal_new_msg')}</p>`, () => {
     state.elements=[]; state.selectedIds.clear(); state.history=[]; state.redoStack=[]; state.nextId=1;
