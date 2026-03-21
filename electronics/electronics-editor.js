@@ -242,7 +242,7 @@ function render() {
   });
 
   
-  drawRatsnest(ctx, scale);
+  if (typeof drawRatsnest === 'function') drawRatsnest(ctx, scale);
 
   
   if (state.drawingTrace && state.tracePoints.length > 0) {
@@ -1181,7 +1181,30 @@ updateStats();
 setTool('select');
 fitView();
 
+
 state.ratsnest = []; 
+
+function drawRatsnest(ctx, scale) {
+  if (!state.ratsnest || state.ratsnest.length === 0) return;
+  
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 212, 170, 0.5)'; 
+  ctx.lineWidth = 0.5 / scale; // Screen-relative thin line
+  ctx.setLineDash([5 / scale, 5 / scale]);
+
+  state.ratsnest.forEach(rat => {
+    ctx.beginPath();
+    ctx.moveTo(rat.p1.x, rat.p1.y);
+    ctx.lineTo(rat.p2.x, rat.p2.y);
+    ctx.stroke();
+
+    
+    ctx.fillStyle = 'rgba(0, 212, 170, 0.6)';
+    ctx.beginPath(); ctx.arc(rat.p1.x, rat.p1.y, 1.5 / scale, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(rat.p2.x, rat.p2.y, 1.5 / scale, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
 
 async function loadRatsnest() {
   const projectID = window.PROJECT_ID;
@@ -1207,10 +1230,18 @@ async function loadRatsnest() {
     Object.entries(schData.netlist || {}).forEach(([netName, pinRefs]) => {
       const pads = [];
       pinRefs.forEach(pref => {
-        const [compId, pin] = pref.split(':');
-        const ref = compMap[compId];
+        let ref = null, pin = null;
+        if (pref.includes(':')) {
+           const parts = pref.split(':');
+           ref = compMap[parts[0]];
+           pin = parts[1];
+        } else if (pref.includes('.')) {
+           const parts = pref.split('.');
+           ref = parts[0];
+           pin = parts[1];
+        }
         if (!ref) return;
-        const pad = findPadByRef(`${ref}.${pin}`);
+        const pad = window.findPadAtRef(`${ref}.${pin}`);
         if (pad) {
             pads.push(pad);
         } else {
@@ -1605,7 +1636,8 @@ async function runAStar(start, end, grid) {
   fScore.set(key(startG), manhattan(startG, endG));
   
   let iters = 0;
-  while (openSet.length > 0 && iters < 5000) {
+  const MAX_ITERS = 50000;
+  while (openSet.length > 0 && iters < MAX_ITERS) {
     iters++;
     openSet.sort((a,b) => (fScore.get(key(a)) || Infinity) - (fScore.get(key(b)) || Infinity));
     const current = openSet.shift();
