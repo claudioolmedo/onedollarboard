@@ -115,7 +115,7 @@
     };
   }
 
-  function pinAtScreen(sx, sy, radius = 10) {
+  function pinAtScreen(sx, sy, radius = 14) {
     for (const comp of sch.components) {
       for (let i = 0; i < comp.pins.length; i++) {
         const pp = getPinPos(comp, i);
@@ -285,7 +285,7 @@
 
       
       ctx.fillStyle = '#d1d5db';
-      ctx.font = `${Math.round(9 * sch.zoom)}px Inter,sans-serif`;
+      ctx.font = `${Math.round(9 * sch.zoom)}px Inter,sans-serif,Arial`;
       ctx.textAlign = rightSide ? 'left' : 'right';
       ctx.textBaseline = 'middle';
       const labelX = lineEndX + (rightSide ? 3 : -3) * sch.zoom;
@@ -293,21 +293,25 @@
 
       
       if (pin.net) {
+        ctx.save();
         ctx.fillStyle = '#10b981'; 
-        ctx.font = `bold ${Math.round(9 * sch.zoom)}px Inter,sans-serif`;
-        const netX = labelX + (rightSide ? 15 : -15) * sch.zoom;
-        ctx.fillText(pin.net, netX, ps.y);
+        ctx.font = `bold ${Math.round(10 * sch.zoom)}px Inter,sans-serif,Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
         
         
+        const midX = (ps.x + lineEndX) / 2;
+        const netY = ps.y - 2 * sch.zoom;
+        ctx.fillText(pin.net, midX, netY);
+
         
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-        ctx.lineWidth = 1;
+        const tw = ctx.measureText(pin.net).width;
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.3)';
         ctx.beginPath();
-        const startX = labelX + (rightSide ? ctx.measureText(pin.label).width + 2 : -ctx.measureText(pin.label).width - 2);
-        const endX = netX + (rightSide ? -2 : 2);
-        ctx.moveTo(startX, ps.y);
-        ctx.lineTo(endX, ps.y);
+        ctx.moveTo(midX - tw/2 - 2, netY + 2);
+        ctx.lineTo(midX + tw/2 + 2, netY + 2);
         ctx.stroke();
+        ctx.restore();
       }
     });
 
