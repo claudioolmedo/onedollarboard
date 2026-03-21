@@ -1118,7 +1118,7 @@ window.deleteProjectByIndex = (i) => {
 };
 
 
-document.getElementById('btn-save').onclick = saveProject;
+
 document.getElementById('btn-new').onclick = () => {
   showModal(t('modal_new_title'), `<p>${t('modal_new_msg')}</p>`, () => {
     state.elements=[]; state.selectedIds.clear(); state.history=[]; state.redoStack=[]; state.nextId=1;
