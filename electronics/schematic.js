@@ -30,10 +30,11 @@
   const btnSchWire  = document.getElementById('btn-sch-wire');
   const btnSchLabel = document.getElementById('btn-sch-label');
   const labelModal = document.getElementById('label-modal');
-  const labelInput = document.getElementById('label-input');
   const labelOk    = document.getElementById('label-ok');
   const labelCancel= document.getElementById('label-cancel');
   const labelDelete= document.getElementById('label-delete');
+  const btnSchAi   = document.getElementById('btn-sch-ai');
+  const globalAiHelpBtn = document.getElementById('btnAIHelp');
 
   if (!panel || !cvs) return; 
 
@@ -505,6 +506,10 @@
   }
   btnSchWire?.addEventListener('click', () => setSchTool('wire'));
   btnSchLabel?.addEventListener('click', () => setSchTool('label'));
+  btnSchAi?.addEventListener('click', () => {
+    
+    if (globalAiHelpBtn) globalAiHelpBtn.click();
+  });
 
   
   let activeLabelPin = null; 
