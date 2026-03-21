@@ -38,6 +38,8 @@ const state = {
   measureStart: null,
   measureEnd: null,
   mouse: { x:0, y:0 },
+  activeSearchNodes: [],
+  activeSearchGrid: 0.5,
 };
 
 
@@ -271,6 +273,18 @@ function render() {
     ctx.fillStyle = '#ffff00';
     ctx.font = `${1/state.zoom}px Inter`;
     ctx.fillText(`${dist} mm`, (s.x+e.x)/2+0.2, (s.y+e.y)/2-0.3);
+  }
+
+  
+  if (state.activeSearchNodes && state.activeSearchNodes.length > 0) {
+    const g = state.activeSearchGrid;
+    ctx.fillStyle = 'rgba(0, 212, 170, 0.4)';
+    state.activeSearchNodes.forEach(nk => {
+      const pts = nk.split(',');
+      const x = parseFloat(pts[0]) * g;
+      const y = parseFloat(pts[1]) * g;
+      ctx.fillRect(x - g/2, y - g/2, g, g);
+    });
   }
 
   ctx.restore();
@@ -1566,10 +1580,12 @@ window.pcbAutoroute = async function() {
               });
               totalTraces++;
             }
+            render(); 
           }
       }
     }
     
+    state.activeSearchNodes = [];
     updateStats();
     render();
     if (typeof window.autoSave === 'function') window.autoSave();
@@ -1623,7 +1639,10 @@ async function runAStar(start, end, grid) {
     iters++;
     
     
-    if (iters % 1000 === 0) {
+    if (iters % 500 === 0) {
+      state.activeSearchNodes = Array.from(inOpenSet);
+      state.activeSearchGrid = grid;
+      render();
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
