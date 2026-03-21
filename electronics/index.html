@@ -900,10 +900,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   
-  <script src="version.js?v=V5"></script>
-  <script src="electronics-editor.js?v=V5"></script>
+  <script src="version.js?v=V6"></script>
+  <script src="electronics-editor.js?v=V6"></script>
   <script src="lib-import.js"></script>
-  <script src="schematic.js?v=V5"></script>
+  <script src="schematic.js?v=V6"></script>
 
   
   <script type="module">
@@ -1644,6 +1644,9 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
         console.log('📐 📥 Remote schematic update detected');
         if (typeof window.schematic?.syncFromServer === 'function') {
           window.schematic.syncFromServer(data);
+        }
+        if (typeof window.updateRatsnest === 'function') {
+          window.updateRatsnest(data);
         }
       });
       

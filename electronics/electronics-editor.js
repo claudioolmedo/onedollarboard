@@ -1189,7 +1189,7 @@ function drawRatsnest(ctx, scale) {
   
   ctx.save();
   ctx.strokeStyle = 'rgba(0, 212, 170, 0.5)'; 
-  ctx.lineWidth = 0.5 / scale; // Screen-relative thin line
+  ctx.lineWidth = 0.5 / scale; 
   ctx.setLineDash([5 / scale, 5 / scale]);
 
   state.ratsnest.forEach(rat => {
@@ -1206,94 +1206,57 @@ function drawRatsnest(ctx, scale) {
   ctx.restore();
 }
 
-async function loadRatsnest() {
-  const projectID = window.PROJECT_ID;
-  const dbUrl = window._PCB_DB_URL;
-  if (!projectID || !dbUrl) return;
+window.updateRatsnest = function(schData) {
+  if (!schData || !schData.netlist) { state.ratsnest = []; render(); return; }
 
-  try {
-    const resp = await fetch(`${dbUrl}/projects/${projectID}/schematic.json`);
-    if (!resp.ok) return;
-    const schData = await resp.json();
-    if (!schData || !schData.netlist) { state.ratsnest = []; render(); return; }
+  const compMap = {};
+  (schData.components || []).forEach(c => { 
+    compMap[c.id] = (c.ref || ''); 
+  });
 
-    const compMap = {};
-    (schData.components || []).forEach(c => { 
-      
-      compMap[c.id] = (c.ref || ''); 
-    });
+  const newRats = [];
+  let connectedCount = 0;
+  let missingPads = 0;
 
-    const newRats = [];
-    let connectedCount = 0;
-    let missingPads = 0;
-
-    Object.entries(schData.netlist || {}).forEach(([netName, pinRefs]) => {
-      const pads = [];
-      pinRefs.forEach(pref => {
-        let ref = null, pin = null;
-        if (pref.includes(':')) {
-           const parts = pref.split(':');
-           ref = compMap[parts[0]];
-           pin = parts[1];
-        } else if (pref.includes('.')) {
-           const parts = pref.split('.');
-           ref = parts[0];
-           pin = parts[1];
-        }
-        if (!ref) return;
-        const pad = window.findPadAtRef(`${ref}.${pin}`);
-        if (pad) {
-            pads.push(pad);
-        } else {
-            missingPads++;
-        }
-      });
-      
-      if (pads.length > 1) {
-          for (let i = 0; i < pads.length - 1; i++) {
-            newRats.push({ p1: pads[i], p2: pads[i+1], netName });
-            connectedCount++;
-          }
-          
-          if (pads.length > 2) {
-              newRats.push({ p1: pads[pads.length-1], p2: pads[0], netName });
-          }
+  Object.entries(schData.netlist || {}).forEach(([netName, pinRefs]) => {
+    const pads = [];
+    pinRefs.forEach(pref => {
+      let ref = null, pin = null;
+      if (pref.includes(':')) {
+          const parts = pref.split(':');
+          ref = compMap[parts[parts.length - 2]];
+          pin = parts[parts.length - 1];
+      } else if (pref.includes('.')) {
+          const parts = pref.split('.');
+          ref = parts[0];
+          pin = parts[1];
+      }
+      if (!ref) return;
+      const pad = window.findPadAtRef(`${ref}.${pin}`);
+      if (pad) {
+          pads.push(pad);
+      } else {
+          missingPads++;
       }
     });
-
-    state.ratsnest = newRats;
-    if (connectedCount > 0) {
-        console.info(`🔌 Ratsnest updated: ${connectedCount} connections. ${missingPads > 0 ? `⚠️ ${missingPads} pads missing.` : ''}`);
-    }
-    render();
-  } catch (e) { console.warn('Ratsnest load failed', e); }
-}
-
-function drawRatsnest(ctx, scale) {
-  if (!state.ratsnest || state.ratsnest.length === 0) return;
-  
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255, 204, 0, 0.5)'; 
-  ctx.lineWidth = 0.1; 
-  ctx.setLineDash([0.4, 0.4]);
-
-  state.ratsnest.forEach(rat => {
-    ctx.beginPath();
-    ctx.moveTo(rat.p1.x, rat.p1.y);
-    ctx.lineTo(rat.p2.x, rat.p2.y);
-    ctx.stroke();
-
     
-    ctx.fillStyle = 'rgba(255, 204, 0, 0.6)';
-    ctx.beginPath(); ctx.arc(rat.p1.x, rat.p1.y, 0.15, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(rat.p2.x, rat.p2.y, 0.15, 0, Math.PI*2); ctx.fill();
+    if (pads.length > 1) {
+        for (let i = 0; i < pads.length - 1; i++) {
+          newRats.push({ p1: pads[i], p2: pads[i+1], netName });
+          connectedCount++;
+        }
+        if (pads.length > 2) {
+            newRats.push({ p1: pads[pads.length-1], p2: pads[0], netName });
+        }
+    }
   });
-  ctx.restore();
-}
+
+  state.ratsnest = newRats;
+  render();
+};
 
 
-setInterval(loadRatsnest, 3000); 
-window.loadRatsnest = loadRatsnest;
+window.loadRatsnest = () => { if (window.schematic?.state) window.updateRatsnest(window.schematic.state); };
 
 
 updateZoomLabel();
