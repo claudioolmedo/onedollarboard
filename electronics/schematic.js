@@ -29,6 +29,10 @@
   const btnSchClear = document.getElementById('btn-sch-clear');
   const btnSchWire  = document.getElementById('btn-sch-wire');
   const btnSchLabel = document.getElementById('btn-sch-label');
+  const labelModal = document.getElementById('label-modal');
+  const labelInput = document.getElementById('label-input');
+  const labelOk    = document.getElementById('label-ok');
+  const labelCancel= document.getElementById('label-cancel');
 
   if (!panel || !cvs) return; 
 
@@ -390,11 +394,7 @@
     const pinHit = pinAtScreen(x, y, 14);
     if (pinHit) {
       if (sch.tool === 'label') {
-        const current = pinHit.pin.net || '';
-        const name = prompt('Enter Net Name (e.g. 3V3, GND, PD1):', current);
-        if (name !== null) {
-          setPinNetLabel(pinHit.comp, pinHit.pinIndex, name.trim().toUpperCase());
-        }
+        openLabelModal(pinHit.comp, pinHit.pinIndex, pinHit.pin.net || '');
         return;
       }
       
@@ -505,8 +505,38 @@
   btnSchLabel?.addEventListener('click', () => setSchTool('label'));
 
   
+  let activeLabelPin = null; 
+
+  function openLabelModal(comp, pinIndex, current) {
+    activeLabelPin = { comp, pinIndex };
+    labelInput.value = current;
+    labelModal.style.display = 'flex';
+    setTimeout(() => { labelInput.focus(); labelInput.select(); }, 50);
+  }
+
+  function closeLabelModal() {
+    labelModal.style.display = 'none';
+    activeLabelPin = null;
+  }
+
+  labelOk?.addEventListener('click', () => {
+    if (activeLabelPin) {
+      setPinNetLabel(activeLabelPin.comp, activeLabelPin.pinIndex, labelInput.value.trim().toUpperCase());
+    }
+    closeLabelModal();
+  });
+
+  labelCancel?.addEventListener('click', closeLabelModal);
+  labelModal?.addEventListener('click', (e) => { if (e.target === labelModal) closeLabelModal(); });
+
+  labelInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') labelOk.click();
+    if (e.key === 'Escape') closeLabelModal();
+  });
+
+  
   window.addEventListener('keydown', (e) => {
-    if (!sch.visible) return;
+    if (!sch.visible || activeLabelPin) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key.toLowerCase() === 'w') setSchTool('wire');
     if (e.key.toLowerCase() === 'l') setSchTool('label');
