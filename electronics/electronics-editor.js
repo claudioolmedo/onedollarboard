@@ -861,6 +861,7 @@ document.addEventListener('keyup', e => {
 
 
 function setTool(tool) {
+  if (!tool) return;
   state.tool = tool;
   state.drawingTrace = false; state.tracePoints = [];
   document.querySelectorAll('.tool-btn').forEach(b => {
@@ -1517,8 +1518,8 @@ window.applyAIPatch = function(patch) {
 
 
 window.pcbAutoroute = async function() {
-  const netlist = (window.schematic && window.schematic.state) ? window.schematic.state.netlist : {};
-  if (!Object.keys(netlist).length) {
+  const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
+  if (!netlist || Object.keys(netlist).length === 0) {
     setStatus('⚠️ No netlist found (create labels in Schematic first)');
     return;
   }
