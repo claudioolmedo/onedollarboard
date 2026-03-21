@@ -31,7 +31,6 @@
   const labelOk    = document.getElementById('label-ok');
   const labelCancel= document.getElementById('label-cancel');
   const labelDelete= document.getElementById('label-delete');
-  const btnSchAi   = document.getElementById('btn-sch-ai');
   const globalAiHelpBtn = document.getElementById('btnAIHelp');
 
   if (!panel || !cvs) return;
@@ -323,7 +322,6 @@
     sch.components.forEach(c => c.pins.forEach(p => { if (p.net) delete p.net; }));
     sch.dirty = true; render(); autoSaveSchematic();
   });
-  btnSchAi?.addEventListener('click', () => globalAiHelpBtn?.click());
 
   function openLabelModal(comp, pinIndex, current) {
     activeLabelPin = { comp, pinIndex };
