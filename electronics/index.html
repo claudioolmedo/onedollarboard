@@ -508,8 +508,8 @@
         <option value="de">🇩🇪 Deutsch</option>
       </select>
       <button id="btn-new" class="hdr-btn-text" data-i18n="new">New</button>
-
-
+      <button id="btn-ai-patch" class="hdr-btn-text" title="Apply a JSON patch from an AI assistant" style="color: var(--accent); border-color: rgba(0,212,170,0.3);">🤖 AI Patch</button>
+      <button id="btn-save" class="hdr-btn-accent" data-i18n="save">💾 Save</button>
     </div>
   </header>
 
@@ -782,7 +782,41 @@
     </div>
   </div>
 
-
+  
+  <div id="ai-patch-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9000; justify-content:center; align-items:center; backdrop-filter:blur(8px);">
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:32px; max-width:620px; width:90%; box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="font-size:18px; margin:0; color:var(--accent);">🤖 Apply AI Patch</h2>
+        <button id="ai-patch-close" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;">&#x2715;</button>
+      </div>
+      <p style="font-size:12px; color:var(--text2); margin-bottom:16px; line-height:1.6;">
+        Paste JSON from ChatGPT or any AI. Supports 3 modes:<br>
+        <code style="color:var(--accent)">append</code> — add components &nbsp;|
+        <code style="color:var(--accent)">replace</code> — replace full design &nbsp;|
+        <code style="color:var(--accent)">connect</code> — auto-route between pads
+      </p>
+      <textarea id="ai-patch-input" placeholder='{
+  "action": "append",
+  "elements": [
+    {
+      "type": "group",
+      "label": "SW1",
+      "lcsc": "C318884",
+      "x": 0, "y": 0,
+      "children": [
+        { "type": "pad", "x": -1.5, "y": 0, "w": 1.2, "h": 1.2, "layer": "F.Cu", "ref": "1" },
+        { "type": "pad", "x":  1.5, "y": 0, "w": 1.2, "h": 1.2, "layer": "F.Cu", "ref": "2" }
+      ]
+    }
+  ]
+}' style="width:100%; height:220px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:monospace; font-size:12px; padding:12px; resize:vertical; box-sizing:border-box;"></textarea>
+      <div id="ai-patch-error" style="color:#ff6b6b; font-size:12px; margin-top:8px; display:none;"></div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button id="ai-patch-apply" style="flex:1; padding:12px; background:var(--accent); color:#000; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; transition:opacity 0.2s;">⚡ Apply Patch</button>
+        <button id="ai-patch-close2" style="padding:12px 20px; background:var(--bg3); color:var(--text2); border:1px solid var(--border); border-radius:8px; cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   
   <div id="confirm-modal" class="confirm-overlay">
@@ -1335,8 +1369,8 @@ INSTRUCTIONS:
 1. Use the LIVE STATE URL above to browse the current board details.
 2. If you suggest changes, return a JSON patch with action "append", "replace", or "connect".
 3. Use pad refs like "SW1.1" or "RJ45.2" for connections.
-4. If you can make HTTP requests (e.g. via GPT Actions), PUT the patch directly to the applyPatch endpoint above.
-5. All updates to the 'aiPatch' field will be applied automatically in the editor via Firebase live sync.`;
+4. The user will paste your JSON into the 🤖 AI Patch button in the editor.
+5. If you can make HTTP requests (e.g. via GPT Actions), PUT the patch directly to the applyPatch endpoint above.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
         
@@ -1447,7 +1481,32 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
       });
     }
 
+    
+    const aiPatchModal = document.getElementById('ai-patch-modal');
+    const aiPatchInput = document.getElementById('ai-patch-input');
+    const aiPatchError = document.getElementById('ai-patch-error');
+    const btnAiPatch = document.getElementById('btn-ai-patch');
 
+    function openAIPatchModal() { aiPatchModal.style.display = 'flex'; aiPatchInput.focus(); }
+    function closeAIPatchModal() { aiPatchModal.style.display = 'none'; aiPatchError.style.display = 'none'; }
+
+    if (btnAiPatch) btnAiPatch.onclick = openAIPatchModal;
+    document.getElementById('ai-patch-close').onclick = closeAIPatchModal;
+    document.getElementById('ai-patch-close2').onclick = closeAIPatchModal;
+    aiPatchModal.addEventListener('click', (e) => { if (e.target === aiPatchModal) closeAIPatchModal(); });
+
+    document.getElementById('ai-patch-apply').onclick = () => {
+      try {
+        const patch = JSON.parse(aiPatchInput.value);
+        if (typeof window.applyAIPatch !== 'function') throw new Error('Editor not ready yet. Try again in a moment.');
+        window.applyAIPatch(patch);
+        closeAIPatchModal();
+        aiPatchInput.value = '';
+      } catch(e) {
+        aiPatchError.textContent = '❌ ' + e.message;
+        aiPatchError.style.display = 'block';
+      }
+    };
 
     
     
