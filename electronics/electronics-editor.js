@@ -1511,6 +1511,7 @@ window.applyAIPatch = function(patch) {
 
 
 window.pcbAutoroute = async function() {
+  const extra = document.getElementById('status-extra');
   try {
     const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
     if (!netlist || Object.keys(netlist).length === 0) {
@@ -1520,6 +1521,10 @@ window.pcbAutoroute = async function() {
     
     console.log('🔌 Running Auto-Trace on netlist:', netlist);
     setStatus('🔌 Auto-Trace running...');
+    if (extra) {
+      extra.textContent = t('status_autoroute_warning');
+      extra.style.display = 'block';
+    }
     
     let totalTraces = 0;
     const gridSize = 0.5; 
@@ -1565,9 +1570,11 @@ window.pcbAutoroute = async function() {
     render();
     if (typeof window.autoSave === 'function') window.autoSave();
     setStatus(`✅ Auto-Trace complete: ${totalTraces} segments added`);
+    if (extra) extra.style.display = 'none';
   } catch (err) {
     console.error('❌ Autoroute Error:', err);
     setStatus('❌ Auto-Trace failed (check console)');
+    if (extra) extra.style.display = 'none';
   }
 };
 

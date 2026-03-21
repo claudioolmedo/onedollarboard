@@ -716,7 +716,10 @@
 
   
   <div id="status-bar">
-    <span id="status-msg" data-i18n="ready">Ready. Select a tool and start drawing!</span>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <span id="status-msg" data-i18n="ready">Ready. Select a tool and start drawing!</span>
+      <span id="status-extra" style="font-size:9px; color:#8a9ab8; opacity:0.8; display:none; margin-top:-2px;"></span>
+    </div>
     <span id="status-tool" data-i18n="tool_status">Tool: Select</span>
   </div>
 

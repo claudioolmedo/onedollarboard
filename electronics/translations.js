@@ -94,6 +94,7 @@ const translations = {
     
     status_saved: '💾 Project "{v}" saved!',
     status_loaded: '📂 Project "{v}" loaded.',
+    status_autoroute_warning: "This may take some time depending on project complexity.",
     no_projects: "No projects saved"
   },
   pt: {
@@ -184,6 +185,7 @@ const translations = {
     drc_small_drill: "⚠️ Via: furo muito pequeno {v}mm",
     status_saved: '💾 Projeto "{v}" salvo!',
     status_loaded: '📂 Projeto "{v}" carregado.',
+    status_autoroute_warning: "Isso pode levar algum tempo dependendo da complexidade do projeto.",
     no_projects: "Nenhum projeto salvo"
   },
   es: {
@@ -274,6 +276,7 @@ const translations = {
     drc_small_drill: "⚠️ Vía: taladro muy pequeño {v}mm",
     status_saved: '💾 ¡Proyecto "{v}" guardado!',
     status_loaded: '📂 Proyecto "{v}" cargado.',
+    status_autoroute_warning: "Esto puede llevar tiempo dependiendo de la complejidad del proyecto.",
     no_projects: "No hay proyectos guardados"
   },
   de: {
@@ -364,6 +367,7 @@ const translations = {
     drc_small_drill: "⚠️ Bohrung zu klein {v}mm",
     status_saved: '💾 Projekt "{v}" gespeichert!',
     status_loaded: '📂 Projekt "{v}" geladen.',
+    status_autoroute_warning: "Dies kann je nach Projektkomplexität einige Zeit dauern.",
     no_projects: "Keine gespeicherten Projekte"
   }
 };
