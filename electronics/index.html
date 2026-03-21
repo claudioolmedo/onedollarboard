@@ -773,8 +773,13 @@
   <div id="aiModal" class="ai-modal-overlay">
     <div class="ai-modal-content">
       <h2>AI Design Assistant</h2>
-      <p>Scan the code or choose an AI to continue designing your PCB.</p>
-      <div id="qrcode-container"></div>
+      <p style="margin-bottom: 15px;">Scan the code or choose an AI to continue designing your PCB.</p>
+      
+      <div style="background: rgba(0,212,170,0.1); padding: 12px; border-radius: 8px; font-size: 0.9rem; color: #ccc; margin-bottom: 20px; border-left: 4px solid var(--accent); line-height: 1.5; text-align: left;">
+        💡 <b>Philosophy:</b> You shouldn't have to pay for another AI API to build hardware. Use your existing ChatGPT Plus, Claude Pro, or Gemini accounts with full project context and memory via this Magic Link.
+      </div>
+
+      <div id="qrcode-container" style="display:flex; justify-content:center; margin-bottom: 20px;"></div>
       
       <div class="ai-links-container">
         <a id="linkChatGPT" href="#" target="_blank" class="ai-link-btn btn-chatgpt">
@@ -1370,25 +1375,25 @@
         const boardDesc = typeof window.describePCB === 'function' ? window.describePCB() : '';
 
         
-        const prompt = `You are a PCB Design Assistant for the One Dollar Board editor.
-
-LIVE STATE (Visit to see board): ${liveContextUrl}
+        const prompt = `You are a PCB and Schematic Design Assistant for the One Dollar Board editor.
+        
+LIVE STATE (Visit to see actual board/schematic): ${liveContextUrl}
 DOCS: ${docsUrl}
 
 SESSION CONTEXT:
 - projectID: "${projectID}"
-- aiToken: "${aiToken}" (use for direct Firebase PATCH to update my design at the endpoint below)
-- applyPatch endpoint: https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/pcb/aiPatch.json (PUT)
-- Live view: ${baseUrl}?projectID=${projectID}
+- aiToken: "${aiToken}"
+- pcbPatch (PUT): https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/pcb/aiPatch.json
+- schematicPatch (PUT): https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/${projectID}/schematic/aiPatch.json
 
 ${boardDesc}
 
 INSTRUCTIONS:
-1. Use the LIVE STATE URL above to browse the current board details.
-2. If you suggest changes, return a JSON patch with action "append", "replace", or "connect".
-3. Use pad refs like "SW1.1" or "RJ45.2" for connections.
-4. Your changes will be applied automatically to the user's design via the Firebase endpoint below.
-5. If you cannot make HTTP requests, tell the user to wait for your next response.`;
+1. Use the LIVE STATE URL above to browse the current project status.
+2. If you suggest Schematic changes (nets, labels), use the schematicPatch endpoint.
+3. If you suggest PCB changes (traces, layout), use the pcbPatch endpoint.
+4. Return JSON patches based on the DOCS.
+5. Your actions update the design in real-time.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
         
