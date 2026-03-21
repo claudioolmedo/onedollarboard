@@ -1188,7 +1188,7 @@ function drawRatsnest(ctx, scale) {
   if (!state.ratsnest || state.ratsnest.length === 0) return;
   
   ctx.save();
-  ctx.strokeStyle = 'rgba(0, 212, 170, 0.5)'; 
+  ctx.strokeStyle = 'rgba(255, 204, 0, 0.6)'; 
   ctx.lineWidth = 0.5 / scale; 
   ctx.setLineDash([5 / scale, 5 / scale]);
 
@@ -1199,7 +1199,7 @@ function drawRatsnest(ctx, scale) {
     ctx.stroke();
 
     
-    ctx.fillStyle = 'rgba(0, 212, 170, 0.6)';
+    ctx.fillStyle = 'rgba(255, 204, 0, 0.7)';
     ctx.beginPath(); ctx.arc(rat.p1.x, rat.p1.y, 1.5 / scale, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(rat.p2.x, rat.p2.y, 1.5 / scale, 0, Math.PI*2); ctx.fill();
   });
@@ -1576,13 +1576,19 @@ window.findPadAtRef = function(refStr) {
   const parts = refStr.replace(':', '.').split('.');
   const ref = parts[0].toUpperCase();
   const pin = parts[1];
-  const comp = state.elements.find(el => 
+  
+  
+  const comps = state.elements.filter(el => 
     (el.type === 'component' || el.type === 'group') && 
     (el.ref || el.label || '').toUpperCase() === ref
   );
-  if (!comp) return null;
-  const pads = state.elements.filter(el => el.groupId === comp.id && (el.type === 'pad' || el.type === 'hole'));
-  return pads.find(p => (p.pin == pin || p.ref == pin)) || null;
+  
+  for (const comp of comps) {
+    const pads = state.elements.filter(el => el.groupId === comp.id && (el.type === 'pad' || el.type === 'hole'));
+    const found = pads.find(p => (p.pin == pin || p.ref == pin));
+    if (found) return found;
+  }
+  return null;
 };
 
 async function runAStar(start, end, grid) {
