@@ -838,6 +838,7 @@
       <div class="confirm-msg" style="margin-bottom: 5px;">Enter name for this pin:</div>
       <input type="text" id="label-input" placeholder="e.g. 3V3, GND, SDA" autocomplete="off" spellcheck="false" style="text-transform: uppercase;">
       <div class="confirm-actions">
+        <button id="label-delete" class="confirm-btn confirm-btn-cancel" style="background: rgba(255,50,50,0.1); color: #ff3232; border-color: rgba(255,50,50,0.2);">Remove</button>
         <button id="label-cancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
         <button id="label-ok" class="confirm-btn confirm-btn-ok" style="background: var(--accent); color: #000;">⚡ Set Label</button>
       </div>
@@ -852,7 +853,7 @@
   
   <script src="electronics-editor.js?v=20260320_3"></script>
   <script src="lib-import.js"></script>
-  <script src="schematic.js?v=20260320_modal"></script>
+  <script src="schematic.js?v=20260320_pos"></script>
 
   
   <script type="module">

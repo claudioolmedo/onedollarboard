@@ -33,6 +33,7 @@
   const labelInput = document.getElementById('label-input');
   const labelOk    = document.getElementById('label-ok');
   const labelCancel= document.getElementById('label-cancel');
+  const labelDelete= document.getElementById('label-delete');
 
   if (!panel || !cvs) return; 
 
@@ -300,20 +301,21 @@
         ctx.save();
         ctx.fillStyle = '#10b981'; 
         ctx.font = `bold ${Math.round(10 * sch.zoom)}px Inter,sans-serif,Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
+        ctx.textAlign = rightSide ? 'left' : 'right';
+        ctx.textBaseline = 'middle';
         
-        
-        const midX = (ps.x + lineEndX) / 2;
-        const netY = ps.y - 2 * sch.zoom;
-        ctx.fillText(pin.net, midX, netY);
+        const labelWidth = ctx.measureText(pin.label).width;
+        const netX = labelX + (rightSide ? (labelWidth + 10) : -(labelWidth + 10)) * sch.zoom;
+        ctx.fillText(pin.net, netX, ps.y);
 
         
-        const tw = ctx.measureText(pin.net).width;
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.3)';
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(midX - tw/2 - 2, netY + 2);
-        ctx.lineTo(midX + tw/2 + 2, netY + 2);
+        const startX = labelX + (rightSide ? labelWidth + 2 : -labelWidth - 2) * sch.zoom;
+        const endX   = netX + (rightSide ? -2 : 2) * sch.zoom;
+        ctx.moveTo(startX, ps.y);
+        ctx.lineTo(endX, ps.y);
         ctx.stroke();
         ctx.restore();
       }
@@ -522,6 +524,13 @@
   labelOk?.addEventListener('click', () => {
     if (activeLabelPin) {
       setPinNetLabel(activeLabelPin.comp, activeLabelPin.pinIndex, labelInput.value.trim().toUpperCase());
+    }
+    closeLabelModal();
+  });
+
+  labelDelete?.addEventListener('click', () => {
+    if (activeLabelPin) {
+      setPinNetLabel(activeLabelPin.comp, activeLabelPin.pinIndex, null);
     }
     closeLabelModal();
   });
