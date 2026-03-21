@@ -247,6 +247,18 @@ function render() {
   if (typeof drawRatsnest === 'function') drawRatsnest(ctx, scale);
 
   
+  if (state.tool === 'trace' && state.activeNet) {
+    const netPads = state.elements.filter(el => el.type === 'pad' && window.getPadNet && window.getPadNet(el) === state.activeNet);
+    netPads.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, (p.w||1.5) * 0.8, 0, Math.PI*2);
+      ctx.strokeStyle = '#ffea00';
+      ctx.lineWidth = 0.2;
+      ctx.stroke();
+    });
+  }
+
+  
   if (state.drawingTrace && state.tracePoints.length > 0) {
     const pts = [...state.tracePoints, state.mouse];
     ctx.beginPath();
@@ -529,12 +541,33 @@ function onMouseDown(e) {
     }
   }
   else if (state.tool === 'trace') {
+    const pad = hitTest(w.x, w.y, 1.0);
+    const snapPt = (pad && (pad.type === 'pad' || pad.type === 'via')) ? {x: pad.x, y: pad.y} : snapped;
+    
     if (!state.drawingTrace) {
       state.drawingTrace = true;
-      state.tracePoints = [snapped];
+      state.tracePoints = [snapPt];
+      
+      const net = (pad && pad.type === 'pad') ? window.getPadNet?.(pad) : null;
+      state.activeNet = net;
+      if (net) setStatus(`🔌 Manual Route: Net ${net}`);
     } else {
-      state.tracePoints.push(snapped);
+      const prev = state.tracePoints[state.tracePoints.length-1];
+      if (prev.x !== snapPt.x || prev.y !== snapPt.y) {
+        
+        const segment = {
+          id: newId(),
+          type: 'trace',
+          layer: state.activeLayer,
+          width: state.traceWidth,
+          pts: [prev, snapPt],
+          net: state.activeNet
+        };
+        addElement(segment);
+        state.tracePoints = [snapPt];
+      }
     }
+    render();
   }
   else if (state.tool === 'via') {
     addElement(makeVia(snapped.x, snapped.y));
@@ -598,7 +631,14 @@ function onMouseMove(e) {
   const r = canvas.getBoundingClientRect();
   const sx = e.clientX - r.left, sy = e.clientY - r.top;
   const w = screenToWorld(sx, sy);
-  state.mouse = snapPt(w);
+  
+  
+  const hit = hitTest(w.x, w.y, 1.0);
+  if (state.tool === 'trace' && hit && (hit.type === 'pad' || hit.type === 'via')) {
+    state.mouse = { x: hit.x, y: hit.y };
+  } else {
+    state.mouse = snapPt(w);
+  }
 
   if (state.panning) {
     state.panX = _panOriginX + (e.clientX - _panStartX);
@@ -715,14 +755,26 @@ function onMouseUp(e) {
 }
 
 function onDblClick(e) {
-  if (state.tool==='trace' && state.drawingTrace && state.tracePoints.length >= 2) {
-    const pts = [...state.tracePoints];
-    addElement(makeTrace(pts, state.activeLayer, state.traceWidth));
+  if (state.tool==='trace' && state.drawingTrace) {
     state.drawingTrace = false;
     state.tracePoints = [];
+    state.activeNet = null;
     render();
   }
 }
+
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (state.drawingTrace) {
+      state.drawingTrace = false;
+      state.tracePoints = [];
+      state.activeNet = null;
+      render();
+    }
+    if (state.activeLayerDropdown) {  }
+  }
+});
 
 function onWheel(e) {
   e.preventDefault();
@@ -1617,6 +1669,26 @@ window.findPadAtRef = function(refStr) {
   return null;
 };
 
+
+window.getPadNet = function(pad) {
+  if (!pad || !pad.groupId) return null;
+  const parent = state.elements.find(e => e.id === pad.groupId);
+  if (!parent) return null;
+  const ref = (parent.ref || parent.label || '').toUpperCase();
+  if (!ref) return null;
+  
+  const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
+  for (const netName in netlist) {
+    if (netlist[netName].some(r => r.toUpperCase().includes(ref + '.' ) || r.toUpperCase().includes(ref + ':'))) {
+        const pin = (pad.pin || pad.ref || '').toString();
+        if (netlist[netName].some(r => r.toUpperCase() === `${ref}.${pin}`.toUpperCase() || r.toUpperCase() === `${ref}:${pin}`.toUpperCase())) {
+          return netName;
+        }
+    }
+  }
+  return null;
+};
+
 async function runAStar(start, end, grid) {
   const startG = { x: Math.round(start.x / grid), y: Math.round(start.y / grid) };
   const endG   = { x: Math.round(end.x / grid),   y: Math.round(end.y / grid) };
@@ -1640,7 +1712,9 @@ async function runAStar(start, end, grid) {
     
     
     if (iters % 500 === 0) {
-      state.activeSearchNodes = Array.from(inOpenSet);
+      
+      const nodes = Array.from(inOpenSet);
+      state.activeSearchNodes = nodes.slice(-1000); 
       state.activeSearchGrid = grid;
       render();
       await new Promise(resolve => setTimeout(resolve, 0));
