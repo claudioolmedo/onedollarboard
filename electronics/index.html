@@ -1349,6 +1349,8 @@
         
         const liveContextUrl = `${baseUrl.replace('index.html', '')}live.html?projectID=${projectID}`;
 
+        const boardDesc = typeof window.describePCB === 'function' ? window.describePCB() : '';
+
         
         const prompt = `You are a PCB Design Assistant for the One Dollar Board editor.
 
@@ -1367,8 +1369,8 @@ INSTRUCTIONS:
 1. Use the LIVE STATE URL above to browse the current board details.
 2. If you suggest changes, return a JSON patch with action "append", "replace", or "connect".
 3. Use pad refs like "SW1.1" or "RJ45.2" for connections.
-4. The user will paste your JSON into the 🤖 AI Patch button in the editor.
-5. If you can make HTTP requests (e.g. via GPT Actions), PUT the patch directly to the applyPatch endpoint above.`;
+4. Your changes will be applied automatically to the user's design via the Firebase endpoint below.
+5. If you cannot make HTTP requests, tell the user to wait for your next response.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
         
