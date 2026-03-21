@@ -1588,7 +1588,7 @@ window.findPadAtRef = function(refStr) {
   );
   if (!comp) return null;
   const pads = state.elements.filter(el => el.groupId === comp.id && (el.type === 'pad' || el.type === 'hole'));
-  return pads.find(p => p.pin == pin) || null;
+  return pads.find(p => (p.pin == pin || p.ref == pin)) || null;
 };
 
 async function runAStar(start, end, grid) {
