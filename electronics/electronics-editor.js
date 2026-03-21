@@ -1518,59 +1518,64 @@ window.applyAIPatch = function(patch) {
 
 
 window.pcbAutoroute = async function() {
-  const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
-  if (!netlist || Object.keys(netlist).length === 0) {
-    setStatus('⚠️ No netlist found (create labels in Schematic first)');
-    return;
-  }
-  
-  console.log('🔌 Running Auto-Trace on netlist:', netlist);
-  setStatus('🔌 Auto-Trace running...');
-  
-  let totalTraces = 0;
-  const gridSize = 0.5; 
-  const copperTraces = [];
-  
-  for (const net in netlist) {
-    const refs = netlist[net];
-    if (refs.length < 2) continue;
-    
-    
-    const padPositions = [];
-    refs.forEach(r => {
-      const p = window.findPadAtRef(r);
-      if (p) padPositions.push({ x: p.x, y: p.y, ref: r });
-    });
-    
-    if (padPositions.length < 2) continue;
-    
-    
-    for (let i = 0; i < padPositions.length - 1; i++) {
-        const start = padPositions[i];
-        const end   = padPositions[i+1];
-        
-        const path = await runAStar(start, end, gridSize);
-        if (path && path.length > 1) {
-          
-          const simplifiedPath = simplifyPath(path);
-          for (let j = 0; j < simplifiedPath.length - 1; j++) {
-            const A = simplifiedPath[j];
-            const B = simplifiedPath[j+1];
-            state.elements.push({
-              id: newId(), type: 'trace', layer: 'F.Cu', width: 0.25,
-              x1: A.x, y1: A.y, x2: B.x, y2: B.y,
-              net: net
-            });
-            totalTraces++;
-          }
-        }
+  try {
+    const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
+    if (!netlist || Object.keys(netlist).length === 0) {
+      setStatus('⚠️ No netlist found (create labels in Schematic first)');
+      return;
     }
+    
+    console.log('🔌 Running Auto-Trace on netlist:', netlist);
+    setStatus('🔌 Auto-Trace running...');
+    
+    let totalTraces = 0;
+    const gridSize = 0.5; 
+    const copperTraces = [];
+    
+    for (const net in netlist) {
+      const refs = netlist[net];
+      if (refs.length < 2) continue;
+      
+      
+      const padPositions = [];
+      refs.forEach(r => {
+        const p = window.findPadAtRef(r);
+        if (p) padPositions.push({ x: p.x, y: p.y, ref: r });
+      });
+      
+      if (padPositions.length < 2) continue;
+      
+      
+      for (let i = 0; i < padPositions.length - 1; i++) {
+          const start = padPositions[i];
+          const end   = padPositions[i+1];
+          
+          const path = await runAStar(start, end, gridSize);
+          if (path && path.length > 1) {
+            
+            const simplifiedPath = simplifyPath(path);
+            for (let j = 0; j < simplifiedPath.length - 1; j++) {
+              const A = simplifiedPath[j];
+              const B = simplifiedPath[j+1];
+              state.elements.push({
+                id: newId(), type: 'trace', layer: 'F.Cu', width: 0.25,
+                x1: A.x, y1: A.y, x2: B.x, y2: B.y,
+                net: net
+              });
+              totalTraces++;
+            }
+          }
+      }
+    }
+    
+    updateStats();
+    render();
+    if (typeof window.autoSave === 'function') window.autoSave();
+    setStatus(`✅ Auto-Trace complete: ${totalTraces} segments added`);
+  } catch (err) {
+    console.error('❌ Autoroute Error:', err);
+    setStatus('❌ Auto-Trace failed (check console)');
   }
-  
-  updateStats();
-  render();
-  if (typeof window.autoSave === 'function') window.autoSave();
-  setStatus(`✅ Auto-Trace complete: ${totalTraces} segments added`);
 };
 
 window.findPadAtRef = function(refStr) {
