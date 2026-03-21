@@ -753,14 +753,13 @@
   <div id="schematic-panel">
     <div class="sch-toolbar">
       <button id="btn-sch-save" class="sch-btn accent" title="Save Schematic">💾 Save Schematic</button>
-      <button id="btn-sch-clear" class="sch-btn" title="Clear Wires">🧹 Clear Wires</button>
+      <button id="btn-sch-clear" class="sch-btn" title="Clear Labels">🧹 Clear Labels</button>
       <div class="sep"></div>
-      <button id="btn-sch-wire" class="sch-btn active" title="Wire Tool (W)">🔌 Wire</button>
-      <button id="btn-sch-label" class="sch-btn" title="Net Label Tool (L)">🏷️ Label</button>
+      <button id="btn-sch-label" class="sch-btn active" title="Net Label Tool">🏷️ Set Label</button>
       <div class="sep"></div>
       <button id="btn-sch-ai" class="sch-btn" style="color: var(--accent); border-color: rgba(0,212,170,0.3);" title="AI Assistant">🤖 AI Assistant</button>
       <div class="sep"></div>
-      <span style="color:#666; font-size:10px; padding:0 8px;">Drag components to move • Click pins to wire/label • Dbl-click pin to delete wire</span>
+      <span style="color:#666; font-size:10px; padding:0 8px;">Drag components to move • Click pins to set Net Labels (GND, VCC, etc.)</span>
     </div>
     <button id="btn-sch-close" class="sch-close" title="Close Schematic">✕</button>
     <canvas id="sch-canvas"></canvas>
