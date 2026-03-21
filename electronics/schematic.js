@@ -466,6 +466,7 @@
       if (sch.dragging) return;
       if (!data || !data.components) return;
       sch.components = data.components;
+      sch.netlist = buildNetlist();
       sch.nextId = Math.max(sch.nextId, ...sch.components.map(c => c.id || 0)) + 1;
       render();
     },

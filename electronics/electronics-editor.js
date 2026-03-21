@@ -1262,7 +1262,6 @@ window.loadRatsnest = () => { if (window.schematic?.state) window.updateRatsnest
 updateZoomLabel();
 updateUI();
 render();
-setTimeout(loadRatsnest, 2000);
 
 
 
