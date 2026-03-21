@@ -1366,128 +1366,14 @@ window.findPadByRef = function(refName) {
 };
 
 
-
-window.runAutoRouter = function() {
-  if (!state.ratsnest || state.ratsnest.length === 0) {
-      console.warn("No ratsnest connections to route.");
-      return;
-  }
-  
-  setStatus("⚡ Routing in progress...");
-  pushHistory();
-  
-  let successCount = 0;
-  
-  state.ratsnest.forEach(rat => {
-      const trace = window.generateSmartTrace(rat.p1, rat.p2);
-      if (trace) {
-          state.elements.push(trace);
-          successCount++;
-      }
-  });
-
-  render();
-  autoSave();
-  setStatus(`🚀 Auto-routed ${successCount} traces!`);
-};
-
-window.generateSmartTrace = function(p1, p2, layer = 'F.Cu', width = 0.25) {
-  
-  const step = 0.5;
-  const start = { x: Math.round(p1.x / step), y: Math.round(p1.y / step) };
-  const end = { x: Math.round(p2.x / step), y: Math.round(p2.y / step) };
-  
-  
-  const obstacles = state.elements.filter(e => 
-      (e.type === 'pad' && e.id !== p1.id && e.id !== p2.id) || 
-      (e.type === 'trace')
-  );
-
-  const openSet = [start];
-  const cameFrom = new Map();
-  const gScore = new Map();
-  const fScore = new Map();
-  
-  const posKey = p => `${p.x},${p.y}`;
-  const dist = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-
-  gScore.set(posKey(start), 0);
-  fScore.set(posKey(start), dist(start, end));
-
-  let iterations = 0;
-  const maxIterations = 2000;
-
-  while (openSet.length > 0 && iterations < maxIterations) {
-    iterations++;
-    
-    openSet.sort((a,b) => fScore.get(posKey(a)) - fScore.get(posKey(b)));
-    const current = openSet.shift();
-
-    if (current.x === end.x && current.y === end.y) {
-      
-      const path = [p2];
-      let curr = current;
-      while (cameFrom.has(posKey(curr))) {
-        curr = cameFrom.get(posKey(curr));
-        path.unshift({ x: curr.x * step, y: curr.y * step });
-      }
-      path.unshift(p1);
-      
-      
-      const simplified = [path[0]];
-      for(let i=1; i<path.length-1; i++) {
-          const dx1 = path[i].x - path[i-1].x, dy1 = path[i].y - path[i-1].y;
-          const dx2 = path[i+1].x - path[i].x, dy2 = path[i+1].y - path[i].y;
-          if (Math.sign(dx1)!==Math.sign(dx2) || Math.sign(dy1)!==Math.sign(dy2)) {
-              simplified.push(path[i]);
-          }
-      }
-      simplified.push(path[path.length-1]);
-
-      return { id: newId(), type: 'trace', layer, width, pts: simplified };
-    }
-
-    
-    const neighbors = [
-      {x: current.x+1, y: current.y}, {x: current.x-1, y: current.y},
-      {x: current.x, y: current.y+1}, {x: current.x, y: current.y-1}
-    ];
-
-    for (let neighbor of neighbors) {
-      
-      const worldX = neighbor.x * step, worldY = neighbor.y * step;
-      const hitObstacle = obstacles.some(obs => {
-          if (obs.type === 'pad') {
-              const r = (obs.w || 1) / 2;
-              return Math.abs(worldX - obs.x) < r && Math.abs(worldY - obs.y) < r;
-          }
-          return false; 
-      });
-      if (hitObstacle) continue;
-
-      const tentativeG = gScore.get(posKey(current)) + 1;
-      if (!gScore.has(posKey(neighbor)) || tentativeG < gScore.get(posKey(neighbor))) {
-        cameFrom.set(posKey(neighbor), current);
-        gScore.set(posKey(neighbor), tentativeG);
-        fScore.set(posKey(neighbor), tentativeG + dist(neighbor, end));
-        if (!openSet.some(n => n.x === neighbor.x && n.y === neighbor.y)) {
-          openSet.push(neighbor);
-        }
-      }
-    }
-  }
-  
-  
-  const mid = { x: p2.x, y: p1.y };
-  return { id: newId(), type: 'trace', layer, width, pts: [{x: p1.x, y: p1.y}, mid, {x: p2.x, y: p2.y}] };
-};
-
-
 window.generateTrace = function(fromRef, toRef, layer = 'F.Cu', width = 0.25) {
   const a = window.findPadByRef(fromRef);
   const b = window.findPadByRef(toRef);
-  if (!a || !b) return null;
-  return window.generateSmartTrace(a, b, layer, width);
+  if (!a || !b) { console.warn(`⚠️ generateTrace: could not find pads for "${fromRef}" → "${toRef}"`); return null; }
+  const mid = { x: b.x, y: a.y };
+  return { id: newId(), type: 'trace', layer, width, pts: [
+    { x: a.x, y: a.y }, { x: mid.x, y: mid.y }, { x: b.x, y: b.y }
+  ]};
 };
 
 
@@ -1524,9 +1410,6 @@ window.describePCB = function() {
       out += `  ${net}: ${refs.join(' → ')}\n`;
     });
   }
-
-  out += `\n=== AUTOMATION ===\n`;
-  out += `You can now use "action": "autoroute" to automatically route all connections.\n`;
 
   out += `\n=== HOW TO EDIT ===\n`;
   out += `Return a JSON patch object like:\n`;
@@ -1622,9 +1505,6 @@ window.applyAIPatch = function(patch) {
       if (trace) { state.elements.push(trace); added++; }
     });
     setStatus(`✅ AI connected ${added} trace(s)`);
-  }
-  else if (patch.action === 'autoroute') {
-    window.runAutoRouter();
   }
 
   if (patch.nets && typeof patch.nets === 'object') {
