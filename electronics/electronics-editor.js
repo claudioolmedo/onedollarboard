@@ -1515,4 +1515,146 @@ window.applyAIPatch = function(patch) {
   console.log('✅ AI Patch applied:', patch);
 };
 
+
+window.pcbAutoroute = async function() {
+  const netlist = (window.schematic && window.schematic.state) ? window.schematic.state.netlist : {};
+  if (!Object.keys(netlist).length) {
+    setStatus('⚠️ No netlist found (create labels in Schematic first)');
+    return;
+  }
+  
+  console.log('🔌 Running Auto-Trace on netlist:', netlist);
+  setStatus('🔌 Auto-Trace running...');
+  
+  let totalTraces = 0;
+  const gridSize = 0.5; 
+  const copperTraces = [];
+  
+  for (const net in netlist) {
+    const refs = netlist[net];
+    if (refs.length < 2) continue;
+    
+    
+    const padPositions = [];
+    refs.forEach(r => {
+      const p = window.findPadAtRef(r);
+      if (p) padPositions.push({ x: p.x, y: p.y, ref: r });
+    });
+    
+    if (padPositions.length < 2) continue;
+    
+    
+    for (let i = 0; i < padPositions.length - 1; i++) {
+        const start = padPositions[i];
+        const end   = padPositions[i+1];
+        
+        const path = await runAStar(start, end, gridSize);
+        if (path && path.length > 1) {
+          
+          const simplifiedPath = simplifyPath(path);
+          for (let j = 0; j < simplifiedPath.length - 1; j++) {
+            const A = simplifiedPath[j];
+            const B = simplifiedPath[j+1];
+            state.elements.push({
+              id: newId(), type: 'trace', layer: 'F.Cu', width: 0.25,
+              x1: A.x, y1: A.y, x2: B.x, y2: B.y,
+              net: net
+            });
+            totalTraces++;
+          }
+        }
+    }
+  }
+  
+  updateStats();
+  render();
+  if (typeof window.autoSave === 'function') window.autoSave();
+  setStatus(`✅ Auto-Trace complete: ${totalTraces} segments added`);
+};
+
+window.findPadAtRef = function(refStr) {
+  const parts = refStr.replace(':', '.').split('.');
+  const ref = parts[0].toUpperCase();
+  const pin = parts[1];
+  const comp = state.elements.find(el => el.type === 'component' && (el.ref || '').toUpperCase() === ref);
+  if (!comp) return null;
+  const pads = state.elements.filter(el => el.groupId === comp.id && (el.type === 'pad' || el.type === 'hole'));
+  return pads.find(p => p.pin === pin) || null;
+};
+
+async function runAStar(start, end, grid) {
+  const startG = { x: Math.round(start.x / grid), y: Math.round(start.y / grid) };
+  const endG   = { x: Math.round(end.x / grid),   y: Math.round(end.y / grid) };
+  
+  const openSet = [startG];
+  const cameFrom = new Map();
+  const gScore = new Map();
+  const fScore = new Map();
+  
+  const key = (p) => `${p.x},${p.y}`;
+  gScore.set(key(startG), 0);
+  fScore.set(key(startG), manhattan(startG, endG));
+  
+  let iters = 0;
+  while (openSet.length > 0 && iters < 5000) {
+    iters++;
+    openSet.sort((a,b) => (fScore.get(key(a)) || Infinity) - (fScore.get(key(b)) || Infinity));
+    const current = openSet.shift();
+    
+    if (current.x === endG.x && current.y === endG.y) {
+       return reconstructPath(cameFrom, current, grid);
+    }
+    
+    const neighbors = [
+      {x: current.x+1, y: current.y}, {x: current.x-1, y: current.y},
+      {x: current.x, y: current.y+1}, {x: current.x, y: current.y-1}
+    ];
+    
+    for (const neighbor of neighbors) {
+      const g = (gScore.get(key(current)) || 0) + 1;
+      
+      const prev = cameFrom.get(key(current));
+      if (prev && (prev.x !== neighbor.x && prev.y !== neighbor.y)) {  }
+      
+      if (g < (gScore.get(key(neighbor)) || Infinity)) {
+        cameFrom.set(key(neighbor), current);
+        gScore.set(key(neighbor), g);
+        fScore.set(key(neighbor), g + manhattan(neighbor, endG));
+        if (!openSet.some(p => p.x === neighbor.x && p.y === neighbor.y)) {
+          openSet.push(neighbor);
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function manhattan(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); }
+
+function reconstructPath(cameFrom, current, grid) {
+  const path = [];
+  const key = (p) => `${p.x},${p.y}`;
+  while (current) {
+    path.push({ x: current.x * grid, y: current.y * grid });
+    current = cameFrom.get(key(current));
+  }
+  return path.reverse();
+}
+
+function simplifyPath(path) {
+  if (path.length < 3) return path;
+  const result = [path[0]];
+  for (let i = 1; i < path.length - 1; i++) {
+    const prev = path[i-1];
+    const curr = path[i];
+    const next = path[i+1];
+    
+    const isHorizontal = prev.y === curr.y && curr.y === next.y;
+    const isVertical   = prev.x === curr.x && curr.x === next.x;
+    if (!isHorizontal && !isVertical) result.push(curr);
+  }
+  result.push(path[path.length-1]);
+  return result;
+}
+
 console.log('%c Electronics Editor ready! ', 'background:#00d4aa;color:#000;font-weight:bold;font-size:14px;border-radius:4px;padding:2px 8px');
