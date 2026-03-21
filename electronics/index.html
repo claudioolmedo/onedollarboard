@@ -135,9 +135,26 @@
       display:none;
     }
     .import-progress.active { display:block; }
-    .import-progress .log-line { margin:3px 0; }
-    .import-progress .log-ok { color: var(--accent, #00d4aa); }
     .import-progress .log-err { color: #ff4d6a; }
+
+    /* About Modal */
+    #about-modal {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.85); display:none; justify-content:center;
+      align-items:center; z-index:9000; backdrop-filter: blur(8px);
+    }
+    .about-box {
+      background: #161b22; border: 1px solid var(--border); border-radius: 20px;
+      padding: 40px; width: 420px; text-align: center; color: #fff;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .about-logo { font-size: 40px; margin-bottom: 20px; }
+    .about-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 15px; color: var(--accent); }
+    .about-version { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #888; margin-bottom: 30px; }
+    .about-details { text-align: left; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px; font-size: 0.85rem; line-height: 1.6; color: #ccc; margin-bottom: 30px; }
+    .about-details b { color: var(--accent); }
+    .about-close { background: var(--accent); color: #000; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .about-close:hover { opacity: 0.9; transform: scale(1.05); }
     .import-preview {
       margin-top:14px; padding:14px; border-radius:10px;
       background: var(--bg3, #0e1117); border:1px solid var(--border, #2a3040);
@@ -520,6 +537,7 @@
         <option value="de">🇩🇪 Deutsch</option>
       </select>
       <button id="btn-new" class="hdr-btn-text" data-i18n="new">New</button>
+      <button id="btn-about" class="hdr-btn-text" style="opacity:0.6; padding:4px 8px; font-size:0.7rem;">ABOUT</button>
     </div>
   </header>
 
@@ -856,6 +874,19 @@
         <button id="label-cancel" class="confirm-btn confirm-btn-cancel">Cancel</button>
         <button id="label-ok" class="confirm-btn confirm-btn-ok" style="background: var(--accent); color: #000;">⚡ Set Label</button>
       </div>
+  
+  <div id="about-modal">
+    <div class="about-box">
+      <div class="about-logo">⚡</div>
+      <div class="about-title">One Dollar Board</div>
+      <div class="about-version" id="about-version-display">v26.03.21.0000</div>
+      <div class="about-details">
+        <p><b>Platform:</b> Electronics Design Editor</p>
+        <p><b>Philosophy:</b> Bring Your Own AI. Use your existing subscriptions for professional hardware design.</p>
+        <p><b>Author:</b> Claudio Olmedo</p>
+        <p style="margin-top:10px; font-size:0.75rem; color:#666;">Crafted for extreme ease of use and speed.</p>
+      </div>
+      <button class="about-close" id="about-btn-close">DONE</button>
     </div>
   </div>
 
@@ -865,6 +896,8 @@
   <script src="decode.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
+  
+  <script src="version.js?v=999"></script>
   <script src="electronics-editor.js?v=20260321_route"></script>
   <script src="lib-import.js"></script>
   <script src="schematic.js?v=20260321_v2"></script>
@@ -1511,6 +1544,23 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
           btnToggleTools.classList.remove('active');
         });
       });
+    }
+
+    
+    const btnAbout = document.getElementById('btn-about');
+    const aboutModal = document.getElementById('about-modal');
+    const aboutVersionDisplay = document.getElementById('about-version-display');
+    const aboutClose = document.getElementById('about-btn-close');
+
+    if (btnAbout && aboutModal) {
+      btnAbout.onclick = () => {
+        if (window._ODB_VERSION) {
+          aboutVersionDisplay.innerText = `${window._ODB_VERSION.tag} (${window._ODB_VERSION.date})`;
+        }
+        aboutModal.style.display = 'flex';
+      };
+      aboutClose.onclick = () => aboutModal.style.display = 'none';
+      aboutModal.onclick = (e) => { if (e.target === aboutModal) aboutModal.style.display = 'none'; };
     }
 
     
