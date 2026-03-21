@@ -1512,19 +1512,23 @@ window.applyAIPatch = function(patch) {
 
 window.pcbAutoroute = async function() {
   const extra = document.getElementById('status-extra');
+  if (extra) {
+    extra.textContent = typeof t === 'function' ? t('status_autoroute_warning') : 'Auto-Trace is processing, this may take a moment...';
+    extra.style.display = 'block';
+  }
+  console.log('🚀 pcbAutoroute started');
+  
   try {
     const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
     if (!netlist || Object.keys(netlist).length === 0) {
+      console.warn('⚠️ No netlist found');
       setStatus('⚠️ No netlist found (create labels in Schematic first)');
+      if (extra) extra.style.display = 'none';
       return;
     }
     
     console.log('🔌 Running Auto-Trace on netlist:', netlist);
     setStatus('🔌 Auto-Trace running...');
-    if (extra) {
-      extra.textContent = t('status_autoroute_warning');
-      extra.style.display = 'block';
-    }
     
     let totalTraces = 0;
     const gridSize = 0.5; 
@@ -1602,24 +1606,46 @@ async function runAStar(start, end, grid) {
   const endG   = { x: Math.round(end.x / grid),   y: Math.round(end.y / grid) };
   
   const openSet = [startG];
+  const inOpenSet = new Set([`${startG.x},${startG.y}`]);
   const cameFrom = new Map();
   const gScore = new Map();
   const fScore = new Map();
   
   const key = (p) => `${p.x},${p.y}`;
-  gScore.set(key(startG), 0);
-  fScore.set(key(startG), manhattan(startG, endG));
+  const startKey = key(startG);
+  gScore.set(startKey, 0);
+  fScore.set(startKey, manhattan(startG, endG));
   
   let iters = 0;
   const MAX_ITERS = 50000;
+  
   while (openSet.length > 0 && iters < MAX_ITERS) {
     iters++;
-    openSet.sort((a,b) => (fScore.get(key(a)) || Infinity) - (fScore.get(key(b)) || Infinity));
-    const current = openSet.shift();
     
+    
+    if (iters % 1000 === 0) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    
+    let lowestIdx = 0;
+    let lowestF = Infinity;
+    for (let i = 0; i < openSet.length; i++) {
+      const f = fScore.get(key(openSet[i])) || Infinity;
+      if (f < lowestF) { lowestF = f; lowestIdx = i; }
+    }
+    
+    const current = openSet[lowestIdx];
+    const currentKey = key(current);
+
     if (current.x === endG.x && current.y === endG.y) {
        return reconstructPath(cameFrom, current, grid);
     }
+    
+    
+    openSet[lowestIdx] = openSet[openSet.length - 1];
+    openSet.pop();
+    inOpenSet.delete(currentKey);
     
     const neighbors = [
       {x: current.x+1, y: current.y}, {x: current.x-1, y: current.y},
@@ -1627,17 +1653,17 @@ async function runAStar(start, end, grid) {
     ];
     
     for (const neighbor of neighbors) {
-      const g = (gScore.get(key(current)) || 0) + 1;
+      const nKey = key(neighbor);
+      const g = (gScore.get(currentKey) || 0) + 1;
       
-      const prev = cameFrom.get(key(current));
-      if (prev && (prev.x !== neighbor.x && prev.y !== neighbor.y)) {  }
-      
-      if (g < (gScore.get(key(neighbor)) || Infinity)) {
-        cameFrom.set(key(neighbor), current);
-        gScore.set(key(neighbor), g);
-        fScore.set(key(neighbor), g + manhattan(neighbor, endG));
-        if (!openSet.some(p => p.x === neighbor.x && p.y === neighbor.y)) {
+      if (g < (gScore.get(nKey) || Infinity)) {
+        cameFrom.set(nKey, current);
+        gScore.set(nKey, g);
+        fScore.set(nKey, g + manhattan(neighbor, endG));
+        
+        if (!inOpenSet.has(nKey)) {
           openSet.push(neighbor);
+          inOpenSet.add(nKey);
         }
       }
     }
