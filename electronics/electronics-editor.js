@@ -83,14 +83,14 @@ function snapPt(pt) {
 }
 
 
-function makeTrace(pts, layer, width) {
-  return { id:newId(), type:'trace', layer, width, pts:[...pts] };
+function makeTrace(pts, layer, width, net) {
+  return { id:newId(), type:'trace', layer, width, pts:[...pts], net };
 }
-function makeVia(x, y, drill=0.8, pad=1.6) {
-  return { id:newId(), type:'via', x, y, drill, pad, layer:'F.Cu' };
+function makeVia(x, y, drill=0.8, pad=1.6, net) {
+  return { id:newId(), type:'via', x, y, drill, pad, layer:'F.Cu', net };
 }
-function makePad(x, y, w=1.5, h=1.0, layer='F.Cu', ref='P1') {
-  return { id:newId(), type:'pad', x, y, w, h, layer, ref };
+function makePad(x, y, w=1.5, h=1.0, layer='F.Cu', ref='P1', net) {
+  return { id:newId(), type:'pad', x, y, w, h, layer, ref, net };
 }
 function makeHole(x, y, drill=1.0) {
   return { id:newId(), type:'hole', x, y, drill };
@@ -177,6 +177,7 @@ function undo() {
   state.selectedIds.clear();
   state.nextId = 1 + (state.elements.reduce((max, e) => Math.max(max, e.id || 0), 0));
   updateUI(); render();
+  if (window.loadRatsnest) window.loadRatsnest();
 }
 function redo() {
   if (!state.redoStack.length) return;
@@ -185,6 +186,7 @@ function redo() {
   state.selectedIds.clear();
   state.nextId = 1 + (state.elements.reduce((max, e) => Math.max(max, e.id || 0), 0));
   updateUI(); render();
+  if (window.loadRatsnest) window.loadRatsnest();
 }
 
 
@@ -197,6 +199,7 @@ function addElement(el) {
     state.elements.push(el);
   }
   updateStats();
+  if (window.loadRatsnest) window.loadRatsnest();
   autoSave();
 }
 
@@ -610,7 +613,8 @@ function onMouseDown(e) {
     render();
   }
   else if (state.tool === 'via') {
-    addElement(makeVia(snapped.x, snapped.y));
+    const via = makeVia(snapped.x, snapped.y, 0.8, 1.6, state.activeNet);
+    addElement(via);
     render();
   }
   else if (state.tool === 'pad') {
@@ -920,6 +924,7 @@ function deleteSelected() {
   state.selectedIds.clear();
   updatePropsPanel();
   updateStats();
+  if (window.loadRatsnest) window.loadRatsnest();
   autoSave();
   render();
 }
@@ -1327,47 +1332,67 @@ function drawRatsnest(ctx, scale) {
 }
 
 window.updateRatsnest = function(schData) {
-  if (!schData || !schData.netlist) { state.ratsnest = []; render(); return; }
+  const data = schData || (window.schematic && window.schematic.state);
+  if (!data || !data.netlist) { state.ratsnest = []; render(); return; }
 
   const compMap = {};
-  (schData.components || []).forEach(c => { 
+  (data.components || []).forEach(c => { 
     compMap[c.id] = (c.ref || ''); 
   });
 
   const newRats = [];
-  let connectedCount = 0;
-  let missingPads = 0;
-
-  Object.entries(schData.netlist || {}).forEach(([netName, pinRefs]) => {
-    const pads = [];
+  Object.entries(data.netlist || {}).forEach(([netName, pinRefs]) => {
+    
+    const allNetPads = [];
     pinRefs.forEach(pref => {
       let ref = null, pin = null;
       if (pref.includes(':')) {
-          const parts = pref.split(':');
-          ref = compMap[parts[parts.length - 2]];
-          pin = parts[parts.length - 1];
+        const parts = pref.split(':');
+        ref = compMap[parts[parts.length - 2]];
+        pin = parts[parts.length - 1];
       } else if (pref.includes('.')) {
-          const parts = pref.split('.');
-          ref = parts[0];
-          pin = parts[1];
+        const parts = pref.split('.');
+        ref = parts[0]; pin = parts[1];
       }
       if (!ref) return;
       const pad = window.findPadAtRef(`${ref}.${pin}`);
-      if (pad) {
-          pads.push(pad);
-      } else {
-          missingPads++;
+      if (pad) allNetPads.push(pad);
+    });
+
+    if (allNetPads.length < 2) return;
+
+    
+    const islands = Router.findConnectedIslands(state.elements, netName);
+    
+    
+    
+    const pcbIslandsOfPads = [];
+    const padsAccountedFor = new Set();
+
+    islands.forEach(island => {
+      const padsInThisIsland = island.filter(el => el.type === 'pad' || el.type === 'hole');
+      if (padsInThisIsland.length > 0) {
+        pcbIslandsOfPads.push(padsInThisIsland);
+        padsInThisIsland.forEach(p => padsAccountedFor.add(p.id));
       }
     });
+
     
-    if (pads.length > 1) {
-        for (let i = 0; i < pads.length - 1; i++) {
-          newRats.push({ p1: pads[i], p2: pads[i+1], netName });
-          connectedCount++;
-        }
-        if (pads.length > 2) {
-            newRats.push({ p1: pads[pads.length-1], p2: pads[0], netName });
-        }
+    allNetPads.forEach(p => {
+      if (!padsAccountedFor.has(p.id)) {
+        pcbIslandsOfPads.push([p]);
+      }
+    });
+
+    
+    if (pcbIslandsOfPads.length > 1) {
+      for (let i = 0; i < pcbIslandsOfPads.length - 1; i++) {
+        newRats.push({ 
+          p1: pcbIslandsOfPads[i][0], 
+          p2: pcbIslandsOfPads[i+1][0], 
+          netName 
+        });
+      }
     }
   });
 

@@ -57,6 +57,89 @@ const Router = {
       x: center.x + Math.cos(snappedAngle) * dist,
       y: center.y + Math.sin(snappedAngle) * dist
     };
+  },
+
+  
+  findConnectedIslands(elements, netName) {
+    if (!netName) return [];
+    
+    
+    const netElts = elements.filter(el => {
+      if (el.net === netName) return true;
+      if (typeof window.getPadNet === 'function' && (el.type === 'pad' || el.type === 'hole')) {
+        return window.getPadNet(el) === netName;
+      }
+      return false;
+    });
+
+    if (netElts.length === 0) return [];
+
+    const dsu = new Router.DSU(netElts.length);
+    const EPS = 0.01; 
+
+    function isPointAt(px, py, el) {
+      if (el.type === 'pad' || el.type === 'hole' || el.type === 'via') {
+        return Math.hypot(px - el.x, py - el.y) < EPS;
+      }
+      if (el.type === 'trace' && el.pts) {
+        return el.pts.some(p => Math.hypot(px - p.x, py - p.y) < EPS);
+      }
+      return false;
+    }
+
+    
+    for (let i = 0; i < netElts.length; i++) {
+      const e1 = netElts[i];
+      for (let j = i + 1; j < netElts.length; j++) {
+        const e2 = netElts[j];
+        
+        let connected = false;
+
+        
+        if (e1.type === 'trace' && e2.type === 'trace') {
+          connected = e1.pts.some(p => isPointAt(p.x, p.y, e2));
+        } 
+        
+        else if (e1.type === 'trace') {
+          connected = isPointAt(e2.x, e2.y, e1);
+        }
+        else if (e2.type === 'trace') {
+          connected = isPointAt(e1.x, e1.y, e2);
+        }
+        
+        else {
+          connected = Math.hypot(e1.x - e2.x, e1.y - e2.y) < EPS;
+        }
+
+        if (connected) dsu.union(i, j);
+      }
+    }
+
+    
+    const islandsMap = new Map();
+    netElts.forEach((el, idx) => {
+      const root = dsu.find(idx);
+      if (!islandsMap.has(root)) islandsMap.set(root, []);
+      islandsMap.get(root).push(el);
+    });
+
+    return Array.from(islandsMap.values());
+  },
+
+  
+  DSU: class {
+    constructor(n) {
+      this.parent = Array.from({ length: n }, (_, i) => i);
+    }
+    find(i) {
+      if (this.parent[i] === i) return i;
+      return this.parent[i] = this.find(this.parent[i]);
+    }
+    union(i, j) {
+      const rootI = this.find(i);
+      const rootJ = this.find(j);
+      if (rootI !== rootJ) this.parent[rootI] = rootJ;
+    }
   }
 };
 
