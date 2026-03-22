@@ -83,5 +83,12 @@ Always check the current state before patching:
 
 ## 💡 TIPS FOR AI
 1. **Always use logical refs**: Connect "U1.1" to "R1.1" instead of using raw coordinates.
-2. **Batch changes**: Put multiple connections in a single `PUT` to `aiPatch.json`.
-3. **Notify User**: After patching, tell the user: "I've updated your schematic/PCB logic via Firebase."
+2. **Fresh Patches**: When sending a new patch, always use **PUT**. The system adds `"_applied": true` once processed; overwriting the node with a fresh JSON will trigger the editor again.
+3. **Wait for marker**: After sending, you can check the node again. When `"_applied": true` appears, the change is live in the user's browser.
+4. **Batch changes**: Put multiple connections in a single `PUT` to `aiPatch.json`.
+5. **Notify User**: After patching, tell the user: "I've updated your schematic/PCB logic via Firebase."
+
+## ❓ TROUBLESHOOTING
+- **Patch not applying?** Ensure you are using `PUT` and NOT `PATCH`. `PATCH` might merge with an old `_applied: true` state and prevent re-triggering.
+- **Project ID?** If unsure, ask the user or look for `projectID=` in the browser console logs if you have access to them.
+- **Component names?** Use `GET pcb.json` to see exact `label` values (e.g., "U1", "R1").

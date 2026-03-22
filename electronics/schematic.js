@@ -430,18 +430,32 @@
   }
 
   window.applyAiSchematicPatch = function(patch) {
-    if (!patch || !patch.action || patch.action !== 'label' || !patch.labels) return;
-    if (Array.isArray(patch.labels)) {
-      patch.labels.forEach(l => {
-        const pinObj = findSchPinByRef(l.ref);
-        if (pinObj) pinObj.comp.pins.find(p => p.pin === pinObj.pin).net = (l.net || '').trim().toUpperCase();
-      });
-    } else {
-      Object.entries(patch.labels).forEach(([fullRef, netName]) => {
-        const pinObj = findSchPinByRef(fullRef);
-        if (pinObj) pinObj.comp.pins.find(p => p.pin === pinObj.pin).net = (netName || '').trim().toUpperCase();
+    if (!patch || !patch.action) return;
+
+    if (patch.action === 'label' && patch.labels) {
+      if (Array.isArray(patch.labels)) {
+        patch.labels.forEach(l => {
+          const pinObj = findSchPinByRef(l.ref);
+          if (pinObj) setPinNetLabel(pinObj.comp, pinObj.comp.pins.findIndex(p => p.pin === pinObj.pin), (l.net || '').trim().toUpperCase());
+        });
+      } else {
+        Object.entries(patch.labels).forEach(([fullRef, netName]) => {
+          const pinObj = findSchPinByRef(fullRef);
+          if (pinObj) setPinNetLabel(pinObj.comp, pinObj.comp.pins.findIndex(p => p.pin === pinObj.pin), (netName || '').trim().toUpperCase());
+        });
+      }
+    }
+    else if (patch.action === 'connect' && patch.connections) {
+      patch.connections.forEach((conn, idx) => {
+        const refs = Array.isArray(conn) ? conn : [conn.from, conn.to];
+        const netName = patch.net || `NET_AI_${Date.now()}_${idx}`;
+        refs.forEach(refStr => {
+          const pinObj = findSchPinByRef(refStr);
+          if (pinObj) setPinNetLabel(pinObj.comp, pinObj.comp.pins.findIndex(p => p.pin === pinObj.pin), netName.toUpperCase());
+        });
       });
     }
+
     sch.dirty = true; render(); autoSaveSchematic();
   };
 
