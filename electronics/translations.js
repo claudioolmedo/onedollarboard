@@ -95,6 +95,7 @@ const translations = {
     status_saved: '💾 Project "{v}" saved!',
     status_loaded: '📂 Project "{v}" loaded.',
     status_autoroute_warning: "This may take some time depending on project complexity.",
+    manual_route_msg: "🔌 Manual Route: Net {v}",
     no_projects: "No projects saved"
   },
   pt: {
@@ -186,6 +187,7 @@ const translations = {
     status_saved: '💾 Projeto "{v}" salvo!',
     status_loaded: '📂 Projeto "{v}" carregado.',
     status_autoroute_warning: "Isso pode levar algum tempo dependendo da complexidade do projeto.",
+    manual_route_msg: "🔌 Rota Manual: Net {v}",
     no_projects: "Nenhum projeto salvo"
   },
   es: {
@@ -277,6 +279,7 @@ const translations = {
     status_saved: '💾 ¡Proyecto "{v}" guardado!',
     status_loaded: '📂 Proyecto "{v}" cargado.',
     status_autoroute_warning: "Esto puede llevar tiempo dependiendo de la complejidad del proyecto.",
+    manual_route_msg: "🔌 Ruta Manual: Net {v}",
     no_projects: "No hay proyectos guardados"
   },
   de: {
@@ -368,6 +371,7 @@ const translations = {
     status_saved: '💾 Projekt "{v}" gespeichert!',
     status_loaded: '📂 Projekt "{v}" geladen.',
     status_autoroute_warning: "Dies kann je nach Projektkomplexität einige Zeit dauern.",
+    manual_route_msg: "🔌 Manuelle Route: Netz {v}",
     no_projects: "Keine gespeicherten Projekte"
   }
 };

@@ -31,6 +31,7 @@ const state = {
   panning: false,
   drawingTrace: false,
   tracePoints: [],
+  routingMode: 0,      
   selectionBox: null,
   dragStart: null,
   dragElementsStart: null,
@@ -260,15 +261,25 @@ function render() {
 
   
   if (state.drawingTrace && state.tracePoints.length > 0) {
-    const pts = [...state.tracePoints, state.mouse];
+    const prev = state.tracePoints[state.tracePoints.length-1];
+    const path = Router.getOctilinearPath(prev, state.mouse, state.routingMode || 0);
+    
     ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y);
-    for (let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
     ctx.strokeStyle = LAYER_COLORS[state.activeLayer] + 'cc';
     ctx.lineWidth = state.traceWidth;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
+
+    
+    if (path.length > 2) {
+      ctx.beginPath();
+      ctx.arc(path[1].x, path[1].y, 0.1, 0, Math.PI*2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
   }
 
   
@@ -481,6 +492,36 @@ function distSegment(px,py, ax,ay, bx,by) {
 }
 
 
+function getOctilinearPoints(p1, p2) {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+
+  
+  if (absDx < 0.001 || absDy < 0.001 || Math.abs(absDx - absDy) < 0.001) {
+    return [p1, p2];
+  }
+
+  
+  
+  
+  let corner;
+  if (absDx > absDy) {
+    corner = {
+      x: p1.x + Math.sign(dx) * absDy,
+      y: p1.y + Math.sign(dy) * absDy
+    };
+  } else {
+    corner = {
+      x: p1.x + Math.sign(dx) * absDx,
+      y: p1.y + Math.sign(dy) * absDx
+    };
+  }
+  return [p1, corner, p2];
+}
+
+
 let _panStartX=0, _panStartY=0, _panOriginX=0, _panOriginY=0;
 let _dragOffsets = [];
 
@@ -547,23 +588,22 @@ function onMouseDown(e) {
     if (!state.drawingTrace) {
       state.drawingTrace = true;
       state.tracePoints = [snapPt];
-      
       const net = (pad && pad.type === 'pad') ? window.getPadNet?.(pad) : null;
       state.activeNet = net;
-      if (net) setStatus(`🔌 Manual Route: Net ${net}`);
+      if (net) setStatus(t('manual_route_msg', net));
     } else {
       const prev = state.tracePoints[state.tracePoints.length-1];
       if (prev.x !== snapPt.x || prev.y !== snapPt.y) {
         
-        const segment = {
+        const path = Router.getOctilinearPath(prev, snapPt, state.routingMode || 0);
+        addElement({
           id: newId(),
           type: 'trace',
           layer: state.activeLayer,
           width: state.traceWidth,
-          pts: [prev, snapPt],
+          pts: path,
           net: state.activeNet
-        };
-        addElement(segment);
+        });
         state.tracePoints = [snapPt];
       }
     }
@@ -793,7 +833,15 @@ function onWheel(e) {
 
 function onContextMenu(e) {
   e.preventDefault();
+  if (state.drawingTrace) {
+    state.drawingTrace = false;
+    state.tracePoints = [];
+    state.activeNet = null;
+    render();
+    return;
+  }
   const w = getWorld(e);
+  const r = canvas.getBoundingClientRect();
   const hit = hitTest(w.x, w.y);
   if (hit) {
     state.selectedIds.clear();
@@ -919,6 +967,12 @@ document.addEventListener('keydown', e => {
   
   if (e.key.toLowerCase() === 'r' && state.selectedIds.size > 0) {
     rotateSelection(90);
+  }
+  
+  
+  if (e.key === '/') {
+    state.routingMode = (state.routingMode + 1) % 2;
+    render();
   }
 });
 document.addEventListener('keyup', e => {
