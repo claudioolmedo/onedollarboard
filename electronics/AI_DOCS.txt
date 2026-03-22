@@ -60,6 +60,9 @@ To place components and route traces on the board:
 - **replace**: Clear board and start fresh.
 - **connect**: Auto-route L-shaped traces between pads using logical names (e.g., "RJ45.2").
 
+### 🎨 OCTILINEAR STANDARD (PROFESSIONAL)
+Always prioritize **45-degree corners** (octilinear). Avoid 90-degree or arbitrary angles. All ODB tools and routers follow this standard for professional result. See `ROUTING_SPEC.md` for geometry details.
+
 ---
 
 ## 🔍 3. HOW TO SEE THE BOARD
