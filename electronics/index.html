@@ -298,6 +298,23 @@
     .confirm-btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border: 1px solid transparent; flex: 1; }
     .confirm-btn-cancel { background: #21262d; border-color: #30363d; color: #c9d1d9; }
     .confirm-btn-cancel:hover { background: #30363d; }
+
+    /* Interactive Router & Filter UI */
+    .tool-select, .tool-input {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text2); border-radius: 6px; padding: 6px 8px; font-size: 0.75rem;
+      outline: none; transition: border-color 0.2s; cursor: pointer;
+    }
+    .tool-select:hover, .tool-input:focus { border-color: var(--accent); color: var(--text); }
+    .tool-input { cursor: text; }
+    
+    .filter-item {
+      display: flex; align-items: center; gap: 8px; font-size: 0.75rem;
+      color: #8a9ab8; margin-bottom: 6px; cursor: pointer;
+      user-select: none; transition: color 0.15s;
+    }
+    .filter-item:hover { color: var(--text); }
+    .filter-item input { accent-color: var(--accent); cursor: pointer; }
     .confirm-btn-ok { background: #da3633; color: #fff; }
     .confirm-btn-ok:hover { background: #f85149; }
 
@@ -582,13 +599,35 @@
     
     <aside id="toolbar">
       <div class="tool-section-label" data-i18n="library">Library</div>
-      <div style="display:flex; flex-direction:column; gap:5px; align-items:center; width:100%;">
-        <button id="btn-import" class="tool-btn" style="border:1.5px dashed var(--accent); color:var(--accent); height:32px; flex-direction:row; justify-content:center; background:rgba(0, 212, 170, 0.05); width: 100px;">
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;">
+        <button id="btn-import" class="tool-btn" style="border:1.5px dashed var(--accent); color:var(--accent); height:32px; flex-direction:row; justify-content:center; background:rgba(0, 212, 170, 0.05); width: 100%;">
            <span style="font-weight:700; font-size:10px; letter-spacing:0.5px;">IMPORT</span>
         </button>
-        <button id="btn-autotrace" class="pcb-action-btn" style="border:1.5px solid var(--accent); color:#000; height:32px; flex-direction:row; justify-content:center; align-items:center; display:flex; background:var(--accent); width: 100px; border-radius:6px; cursor:pointer;" title="Auto-Route Netlist">
+        <button id="btn-autotrace" class="pcb-action-btn" style="border:1.5px solid var(--accent); color:#000; height:32px; flex-direction:row; justify-content:center; align-items:center; display:flex; background:var(--accent); width: 100%; border-radius:6px; cursor:pointer;" title="Auto-Route Netlist">
            <span style="font-weight:700; font-size:10px; letter-spacing:0.5px;">AUTOTRACE</span>
         </button>
+      </div>
+
+      
+      <div class="tool-section-label" style="margin-top:20px;">Router</div>
+      <div style="width:100%; display:flex; flex-direction:column; gap:4px;">
+        <select id="routing-mode" class="tool-select">
+          <option value="highlight" selected>Collision Highlight</option>
+          <option value="walkaround">Walkaround (Beta)</option>
+        </select>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+           <span style="font-size:0.6rem; color:#8a9ab8;">Clearance (mm)</span>
+           <input type="number" id="routing-clearance" value="0.2" step="0.05" min="0.05" class="tool-input" style="width:50px;">
+        </div>
+      </div>
+
+      
+      <div class="tool-section-label" style="margin-top:20px;">Filter</div>
+      <div style="width:100%; padding:0 4px;">
+        <label class="filter-item"><input type="checkbox" id="filter-traces" checked> Traces</label>
+        <label class="filter-item"><input type="checkbox" id="filter-pads" checked> Pads</label>
+        <label class="filter-item"><input type="checkbox" id="filter-vias" checked> Vias</label>
+        <label class="filter-item"><input type="checkbox" id="filter-text" checked> Text</label>
       </div>
 
       <div class="tool-section-label" style="margin-top:12px">Components</div>

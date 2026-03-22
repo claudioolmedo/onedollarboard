@@ -267,6 +267,28 @@ function render() {
         ctx.fill();
       }
     });
+
+    
+    if (state.activeViolations && state.activeViolations.length > 0) {
+      state.activeViolations.forEach(vid => {
+        const vel = state.elements.find(e => e.id === vid);
+        if (vel) {
+          ctx.beginPath();
+          if (vel.type === 'pad' || vel.type === 'via') {
+            const rad = (vel.pad || vel.w || 1.6) / 2 + 0.1;
+            ctx.arc(vel.x, vel.y, rad, 0, Math.PI*2);
+          } else if (vel.pts) {
+             
+             vel.pts.forEach(pt => { ctx.arc(pt.x, pt.y, 0.4, 0, Math.PI*2); });
+          }
+          ctx.strokeStyle = '#ff3333';
+          ctx.lineWidth = 0.3;
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(253, 51, 51, 0.2)';
+          ctx.fill();
+        }
+      });
+    }
   }
 
   
@@ -280,8 +302,6 @@ function render() {
       const targetNet = state.activeNet.toUpperCase();
       const relevantRat = state.ratsnest.find(r => r.netName.toUpperCase() === targetNet);
       if (relevantRat) {
-        
-        
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(tip.x, tip.y);
@@ -297,7 +317,11 @@ function render() {
     ctx.beginPath();
     ctx.moveTo(path[0].x, path[0].y);
     for (let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-    ctx.strokeStyle = LAYER_COLORS[state.activeLayer] + 'cc';
+    
+    
+    const hasViolations = state.activeViolations && state.activeViolations.length > 0;
+    ctx.strokeStyle = hasViolations ? 'rgba(255, 51, 51, 0.9)' : LAYER_COLORS[state.activeLayer] + 'cc';
+    
     ctx.lineWidth = state.traceWidth;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -484,11 +508,24 @@ function drawSelectionHighlight(el, scale) {
 
 
 function hitTest(wx, wy) {
+  
+  const fTraces = document.getElementById('filter-traces')?.checked ?? true;
+  const fPads   = document.getElementById('filter-pads')?.checked ?? true;
+  const fVias   = document.getElementById('filter-vias')?.checked ?? true;
+  const fText   = document.getElementById('filter-text')?.checked ?? true;
+
   const tol = 1.0 / state.zoom;
   
   for (let i = state.elements.length-1; i >= 0; i--) {
     const el = state.elements[i];
     if (el.type==='group') continue;
+
+    
+    if (el.type === 'trace' && !fTraces) continue;
+    if ((el.type === 'pad' || el.type === 'hole') && !fPads) continue;
+    if (el.type === 'via' && !fVias) continue;
+    if (el.type === 'text' && !fText) continue;
+
     if (!state.layerVisible[el.layer] && el.type!=='via' && el.type!=='hole') continue;
     if (hitElement(el, wx, wy, tol)) return el;
   }
@@ -615,21 +652,25 @@ function onMouseDown(e) {
     const pad = hitTest(w.x, w.y, 1.0);
     const snapPt = (pad && (pad.type === 'pad' || pad.type === 'via')) ? {x: pad.x, y: pad.y} : snapped;
     
-    if (!state.drawingTrace) {
-      state.drawingTrace = true;
-      state.tracePoints = [snapPt];
-      
-      
-      let net = (pad && pad.type === 'pad') ? window.getPadNet?.(pad) : null;
-      if (!net && pad && pad.type === 'via') net = pad.net;
-      if (!net) {
-        const hit = hitTest(w.x, w.y);
-        if (hit && hit.net) net = hit.net;
-      }
-      
-      state.activeNet = net;
-      if (net) setStatus(t('manual_route_msg', net));
-    } else {
+      if (!state.drawingTrace) {
+        state.drawingTrace = true;
+        state.tracePoints = [snapPt];
+        
+        
+        const opts = document.getElementById('router-opts');
+        if (opts) opts.style.display = 'block';
+        
+        
+        let net = (pad && pad.type === 'pad') ? window.getPadNet?.(pad) : null;
+        if (!net && pad && pad.type === 'via') net = pad.net;
+        if (!net) {
+          const hit = hitTest(w.x, w.y);
+          if (hit && hit.net) net = hit.net;
+        }
+        
+        state.activeNet = net;
+        if (net) setStatus(t('manual_route_msg', net));
+      } else {
       const prev = state.tracePoints[state.tracePoints.length-1];
       if (prev.x !== snapPt.x || prev.y !== snapPt.y) {
         
@@ -765,7 +806,17 @@ function onMouseMove(e) {
 
   if (state.measureStart) { state.measureEnd = state.mouse; render(); return; }
 
-  if (state.drawingTrace) { render(); return; }
+  if (state.drawingTrace) {
+    const prev = state.tracePoints[state.tracePoints.length-1];
+    const path = Router.getOctilinearPath(prev, state.mouse, state.routingMode || 0);
+    
+    
+    const cl = parseFloat(document.getElementById('routing-clearance')?.value || 0.2);
+    state.activeViolations = Router.getViolations(path, state.traceWidth, state.elements, state.activeNet, cl);
+    
+    render(); 
+    return; 
+  }
 
   render();
 }
@@ -838,6 +889,9 @@ function onDblClick(e) {
     state.drawingTrace = false;
     state.tracePoints = [];
     state.activeNet = null;
+    state.activeViolations = [];
+    const opts = document.getElementById('router-opts');
+    if (opts) opts.style.display = 'none';
     render();
   }
 }
@@ -849,6 +903,9 @@ window.addEventListener('keydown', (e) => {
       state.drawingTrace = false;
       state.tracePoints = [];
       state.activeNet = null;
+      state.activeViolations = [];
+      const opts = document.getElementById('router-opts');
+      if (opts) opts.style.display = 'none';
       render();
     }
     if (state.activeLayerDropdown) {  }
@@ -876,6 +933,9 @@ function onContextMenu(e) {
     state.drawingTrace = false;
     state.tracePoints = [];
     state.activeNet = null;
+    state.activeViolations = [];
+    const opts = document.getElementById('router-opts');
+    if (opts) opts.style.display = 'none';
     render();
     return;
   }
@@ -1813,7 +1873,8 @@ window.getPadNet = function(pad) {
   if (!pad || !pad.groupId) return null;
   const parent = state.elements.find(e => e.id === pad.groupId);
   if (!parent) return null;
-  const ref = (parent.ref || parent.label || '').toUpperCase();
+  
+  let ref = (parent.ref || parent.label || '').toUpperCase();
   if (!ref) return null;
   
   const pin = (pad.pin || pad.ref || '').toString().toUpperCase();
@@ -1824,7 +1885,14 @@ window.getPadNet = function(pad) {
     if (refs.some(r => {
       const r_norm = r.replace(':', '.').toUpperCase();
       const parts = r_norm.split('.');
-      return parts[0] === ref && (parts[1] === pin || parts[1] === pin.replace('PAD',''));
+      const entryRef = parts[0];
+      
+      
+      let match = (entryRef === ref);
+      if (!match && ref.endsWith('?') && entryRef.startsWith(ref.slice(0, -1))) match = true;
+      if (!match && entryRef.endsWith('?') && ref.startsWith(entryRef.slice(0, -1))) match = true;
+
+      return match && (parts[1] === pin || parts[1] === pin.replace('PAD',''));
     })) {
       return netName;
     }

@@ -135,6 +135,72 @@ const Router = {
   },
 
   
+  distPtToSeg(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    if (dx === 0 && dy === 0) return Math.hypot(px - ax, py - ay);
+    const t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy);
+    if (t < 0) return Math.hypot(px - ax, py - ay);
+    if (t > 1) return Math.hypot(px - bx, py - by);
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  },
+
+  
+  distSegToSeg(ax, ay, bx, by, cx, cy, dx, dy) {
+    
+    const det = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+    if (det !== 0) {
+      const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / det;
+      const u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / det;
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return 0;
+    }
+    
+    return Math.min(
+      this.distPtToSeg(ax, ay, cx, cy, dx, dy),
+      this.distPtToSeg(bx, by, cx, cy, dx, dy),
+      this.distPtToSeg(cx, cy, ax, ay, bx, by),
+      this.distPtToSeg(dx, dy, ax, ay, bx, by)
+    );
+  },
+
+  
+  getViolations(path, traceWidth, elements, netName, clearance = 0.2) {
+    const collisions = new Set();
+    const targetNet = netName ? netName.toUpperCase() : null;
+
+    for (let i = 0; i < path.length - 1; i++) {
+        const p1 = path[i], p2 = path[i+1];
+        
+        elements.forEach(el => {
+            
+            if (targetNet && el.net && el.net.toUpperCase() === targetNet) return;
+            if (targetNet && typeof window.getPadNet === 'function' && (el.type === 'pad' || el.type === 'hole')) {
+                const pNet = window.getPadNet(el);
+                if (pNet && pNet.toUpperCase() === targetNet) return;
+            }
+
+            let dist = Infinity;
+            let radius = 0;
+
+            if (el.type === 'pad' || el.type === 'via') {
+                dist = this.distPtToSeg(el.x, el.y, p1.x, p1.y, p2.x, p2.y);
+                radius = (el.pad || el.w || 1.0) / 2;
+            } else if (el.type === 'trace') {
+                for (let j = 0; j < el.pts.length - 1; j++) {
+                    const e1 = el.pts[j], e2 = el.pts[j+1];
+                    dist = Math.min(dist, this.distSegToSeg(p1.x, p1.y, p2.x, p2.y, e1.x, e1.y, e2.x, e2.y));
+                }
+                radius = (el.width || 0.2) / 2;
+            }
+
+            if (dist < (traceWidth / 2 + radius + clearance)) {
+                collisions.add(el.id);
+            }
+        });
+    }
+    return Array.from(collisions);
+  },
+
+  
   DSU: class {
     constructor(n) {
       this.parent = Array.from({ length: n }, (_, i) => i);
