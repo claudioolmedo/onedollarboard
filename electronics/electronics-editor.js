@@ -294,7 +294,14 @@ function render() {
   
   if (state.drawingTrace && state.tracePoints.length > 0) {
     const prev = state.tracePoints[state.tracePoints.length-1];
-    const path = Router.getOctilinearPath(prev, state.mouse, state.routingMode || 0);
+    const mode = document.getElementById('routing-mode')?.value || 'highlight';
+    const cl = parseFloat(document.getElementById('routing-clearance')?.value || 0.2);
+
+    const path = PNS.route(prev, state.mouse, state.traceWidth, state.elements, state.activeNet, {
+      mode: mode,
+      clearance: cl,
+      posture: state.routingMode || 0
+    });
     const tip = path[path.length-1];
     
     
@@ -671,21 +678,26 @@ function onMouseDown(e) {
         state.activeNet = net;
         if (net) setStatus(t('manual_route_msg', net));
       } else {
-      const prev = state.tracePoints[state.tracePoints.length-1];
-      if (prev.x !== snapPt.x || prev.y !== snapPt.y) {
-        
-        const path = Router.getOctilinearPath(prev, snapPt, state.routingMode || 0);
-        addElement({
-          id: newId(),
-          type: 'trace',
-          layer: state.activeLayer,
-          width: state.traceWidth,
-          pts: path,
-          net: state.activeNet
-        });
-        state.tracePoints = [snapPt];
+        const prev = state.tracePoints[state.tracePoints.length-1];
+        if (prev.x !== snapPt.x || prev.y !== snapPt.y) {
+          
+          const mode = (document.getElementById('routing-mode')?.value || 'highlight');
+          const cl = parseFloat(document.getElementById('routing-clearance')?.value || 0.2);
+          const path = PNS.route(prev, snapPt, state.traceWidth, state.elements, state.activeNet, {
+            mode: mode, clearance: cl, posture: state.routingMode || 0
+          });
+
+          addElement({
+            id: newId(),
+            type: 'trace',
+            layer: state.activeLayer,
+            width: state.traceWidth,
+            pts: path,
+            net: state.activeNet
+          });
+          state.tracePoints = [snapPt];
+        }
       }
-    }
     render();
   }
   else if (state.tool === 'via') {
@@ -808,10 +820,17 @@ function onMouseMove(e) {
 
   if (state.drawingTrace) {
     const prev = state.tracePoints[state.tracePoints.length-1];
-    const path = Router.getOctilinearPath(prev, state.mouse, state.routingMode || 0);
-    
-    
+    const mode = document.getElementById('routing-mode')?.value || 'highlight';
     const cl = parseFloat(document.getElementById('routing-clearance')?.value || 0.2);
+
+    
+    const path = PNS.route(prev, state.mouse, state.traceWidth, state.elements, state.activeNet, {
+      mode: mode,
+      clearance: cl,
+      posture: state.routingMode || 0
+    });
+    
+    
     state.activeViolations = Router.getViolations(path, state.traceWidth, state.elements, state.activeNet, cl);
     
     render(); 
