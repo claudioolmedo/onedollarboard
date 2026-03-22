@@ -62,12 +62,14 @@ const Router = {
   
   findConnectedIslands(elements, netName) {
     if (!netName) return [];
+    const targetNet = netName.toUpperCase();
     
     
     const netElts = elements.filter(el => {
-      if (el.net === netName) return true;
+      if (el.net && el.net.toUpperCase() === targetNet) return true;
       if (typeof window.getPadNet === 'function' && (el.type === 'pad' || el.type === 'hole')) {
-        return window.getPadNet(el) === netName;
+        const pNet = window.getPadNet(el);
+        return pNet && pNet.toUpperCase() === targetNet;
       }
       return false;
     });
@@ -75,14 +77,19 @@ const Router = {
     if (netElts.length === 0) return [];
 
     const dsu = new Router.DSU(netElts.length);
-    const EPS = 0.01; 
+    const EPS = 0.05; 
 
     function isPointAt(px, py, el) {
+      if (!el) return false;
       if (el.type === 'pad' || el.type === 'hole' || el.type === 'via') {
-        return Math.hypot(px - el.x, py - el.y) < EPS;
+        const dx = px - el.x, dy = py - el.y;
+        return (dx * dx + dy * dy) < (EPS * EPS);
       }
       if (el.type === 'trace' && el.pts) {
-        return el.pts.some(p => Math.hypot(px - p.x, py - p.y) < EPS);
+        return el.pts.some(p => {
+          const dx = px - p.x, dy = py - p.y;
+          return (dx * dx + dy * dy) < (EPS * EPS);
+        });
       }
       return false;
     }
@@ -108,7 +115,8 @@ const Router = {
         }
         
         else {
-          connected = Math.hypot(e1.x - e2.x, e1.y - e2.y) < EPS;
+          const dx = e1.x - e2.x, dy = e1.y - e2.y;
+          connected = (dx * dx + dy * dy) < (EPS * EPS);
         }
 
         if (connected) dsu.union(i, j);

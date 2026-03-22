@@ -252,13 +252,20 @@ function render() {
 
   
   if (state.tool === 'trace' && state.activeNet) {
-    const netPads = state.elements.filter(el => el.type === 'pad' && window.getPadNet && window.getPadNet(el) === state.activeNet);
+    const netPads = state.elements.filter(el => (el.type === 'pad' || el.type === 'hole') && window.getPadNet && window.getPadNet(el) === state.activeNet);
+    const hit = hitTest(state.mouse.x, state.mouse.y, 1.0);
+    
     netPads.forEach(p => {
+      const isTarget = hit && hit.id === p.id;
       ctx.beginPath();
       ctx.arc(p.x, p.y, (p.w||1.5) * 0.8, 0, Math.PI*2);
-      ctx.strokeStyle = '#ffea00';
-      ctx.lineWidth = 0.2;
+      ctx.strokeStyle = isTarget ? '#ffffff' : '#ffea00';
+      ctx.lineWidth = isTarget ? 0.3 : 0.15;
       ctx.stroke();
+      if (isTarget) {
+        ctx.fillStyle = 'rgba(255, 234, 0, 0.2)';
+        ctx.fill();
+      }
     });
   }
 
@@ -266,7 +273,27 @@ function render() {
   if (state.drawingTrace && state.tracePoints.length > 0) {
     const prev = state.tracePoints[state.tracePoints.length-1];
     const path = Router.getOctilinearPath(prev, state.mouse, state.routingMode || 0);
+    const tip = path[path.length-1];
     
+    
+    if (state.activeNet && state.ratsnest) {
+      const targetNet = state.activeNet.toUpperCase();
+      const relevantRat = state.ratsnest.find(r => r.netName.toUpperCase() === targetNet);
+      if (relevantRat) {
+        
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(tip.x, tip.y);
+        ctx.lineTo(relevantRat.p2.x, relevantRat.p2.y);
+        ctx.strokeStyle = 'rgba(255, 234, 0, 0.5)';
+        ctx.lineWidth = 0.08;
+        ctx.setLineDash([0.3, 0.3]);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
     ctx.beginPath();
     ctx.moveTo(path[0].x, path[0].y);
     for (let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
@@ -591,7 +618,15 @@ function onMouseDown(e) {
     if (!state.drawingTrace) {
       state.drawingTrace = true;
       state.tracePoints = [snapPt];
-      const net = (pad && pad.type === 'pad') ? window.getPadNet?.(pad) : null;
+      
+      
+      let net = (pad && pad.type === 'pad') ? window.getPadNet?.(pad) : null;
+      if (!net && pad && pad.type === 'via') net = pad.net;
+      if (!net) {
+        const hit = hitTest(w.x, w.y);
+        if (hit && hit.net) net = hit.net;
+      }
+      
       state.activeNet = net;
       if (net) setStatus(t('manual_route_msg', net));
     } else {
@@ -1255,7 +1290,33 @@ document.getElementById('btn-new').onclick = () => {
   }, true);
 };
 
+function drawRatsnest(ctx, scale) {
+  if (!state.ratsnest || !state.ratsnest.length) return;
+  
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 204, 0, 0.6)'; 
+  ctx.lineWidth = 0.5 / scale; 
+  ctx.setLineDash([5 / scale, 5 / scale]);
+  
+  const targetNet = (state.drawingTrace && state.activeNet) ? state.activeNet.toUpperCase() : null;
 
+  state.ratsnest.forEach(r => {
+    
+    
+    if (targetNet && r.netName.toUpperCase() === targetNet) return;
+
+    ctx.beginPath();
+    ctx.moveTo(r.p1.x, r.p1.y);
+    ctx.lineTo(r.p2.x, r.p2.y);
+    ctx.stroke();
+
+    
+    ctx.fillStyle = 'rgba(255, 204, 0, 0.7)';
+    ctx.beginPath(); ctx.arc(r.p1.x, r.p1.y, 1.5 / scale, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r.p2.x, r.p2.y, 1.5 / scale, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
 
 
 document.getElementById('btn-drc').onclick = () => {
@@ -1748,7 +1809,6 @@ window.findPadAtRef = function(refStr) {
   return null;
 };
 
-
 window.getPadNet = function(pad) {
   if (!pad || !pad.groupId) return null;
   const parent = state.elements.find(e => e.id === pad.groupId);
@@ -1756,13 +1816,17 @@ window.getPadNet = function(pad) {
   const ref = (parent.ref || parent.label || '').toUpperCase();
   if (!ref) return null;
   
+  const pin = (pad.pin || pad.ref || '').toString().toUpperCase();
   const netlist = (window.schematic && window.schematic.state && window.schematic.state.netlist) ? window.schematic.state.netlist : {};
+  
   for (const netName in netlist) {
-    if (netlist[netName].some(r => r.toUpperCase().includes(ref + '.' ) || r.toUpperCase().includes(ref + ':'))) {
-        const pin = (pad.pin || pad.ref || '').toString();
-        if (netlist[netName].some(r => r.toUpperCase() === `${ref}.${pin}`.toUpperCase() || r.toUpperCase() === `${ref}:${pin}`.toUpperCase())) {
-          return netName;
-        }
+    const refs = netlist[netName];
+    if (refs.some(r => {
+      const r_norm = r.replace(':', '.').toUpperCase();
+      const parts = r_norm.split('.');
+      return parts[0] === ref && (parts[1] === pin || parts[1] === pin.replace('PAD',''));
+    })) {
+      return netName;
     }
   }
   return null;
