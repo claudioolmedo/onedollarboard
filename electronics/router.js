@@ -65,8 +65,10 @@ const Router = {
     const targetNet = netName.toUpperCase();
     
     
-    const netElts = elements.filter(el => {
+    
+    const candidateElts = elements.filter(el => {
       if (el.net && el.net.toUpperCase() === targetNet) return true;
+      if (!el.net && (el.type === 'trace' || el.type === 'via')) return true; 
       if (typeof window.getPadNet === 'function' && (el.type === 'pad' || el.type === 'hole')) {
         const pNet = window.getPadNet(el);
         return pNet && pNet.toUpperCase() === targetNet;
@@ -74,64 +76,69 @@ const Router = {
       return false;
     });
 
-    if (netElts.length === 0) return [];
+    if (candidateElts.length === 0) return [];
 
-    const dsu = new Router.DSU(netElts.length);
-    const EPS = 0.05; 
+    const dsu = new Router.DSU(candidateElts.length);
+    const EPS = 0.1; 
 
-    function isPointAt(px, py, el) {
-      if (!el) return false;
-      if (el.type === 'pad' || el.type === 'hole' || el.type === 'via') {
-        const dx = px - el.x, dy = py - el.y;
-        return (dx * dx + dy * dy) < (EPS * EPS);
+    const isConnected = (e1, e2) => {
+      
+      if (e1.type === 'trace' && (e2.type === 'pad' || e2.type === 'via' || e2.type === 'hole')) {
+        for (let i = 0; i < e1.pts.length - 1; i++) {
+          if (this.distPtToSeg(e2.x, e2.y, e1.pts[i].x, e1.pts[i].y, e1.pts[i+1].x, e1.pts[i+1].y) < (e1.width/2 + EPS)) return true;
+        }
+        
+        return e1.pts.some(p => Math.hypot(p.x - e2.x, p.y - e2.y) < EPS);
       }
-      if (el.type === 'trace' && el.pts) {
-        return el.pts.some(p => {
-          const dx = px - p.x, dy = py - p.y;
-          return (dx * dx + dy * dy) < (EPS * EPS);
-        });
+      if (e2.type === 'trace' && (e1.type === 'pad' || e1.type === 'via' || e1.type === 'hole')) return isConnected(e2, e1);
+      
+      
+      if (e1.type === 'trace' && e2.type === 'trace') {
+        for (let i = 0; i < e1.pts.length - 1; i++) {
+          for (let j = 0; j < e2.pts.length - 1; j++) {
+            if (this.distSegToSeg(e1.pts[i].x, e1.pts[i].y, e1.pts[i+1].x, e1.pts[i+1].y,
+                                 e2.pts[j].x, e2.pts[j].y, e2.pts[j+1].x, e2.pts[j+1].y) < EPS) return true;
+          }
+        }
+        return false;
       }
-      return false;
-    }
+
+      
+      const dx = e1.x - e2.x, dy = e1.y - e2.y;
+      return (dx * dx + dy * dy) < (EPS * EPS);
+    };
 
     
-    for (let i = 0; i < netElts.length; i++) {
-      const e1 = netElts[i];
-      for (let j = i + 1; j < netElts.length; j++) {
-        const e2 = netElts[j];
-        
-        let connected = false;
-
-        
-        if (e1.type === 'trace' && e2.type === 'trace') {
-          connected = e1.pts.some(p => isPointAt(p.x, p.y, e2));
-        } 
-        
-        else if (e1.type === 'trace') {
-          connected = isPointAt(e2.x, e2.y, e1);
+    for (let i = 0; i < candidateElts.length; i++) {
+      for (let j = i + 1; j < candidateElts.length; j++) {
+        if (isConnected(candidateElts[i], candidateElts[j])) {
+          dsu.union(i, j);
         }
-        else if (e2.type === 'trace') {
-          connected = isPointAt(e1.x, e1.y, e2);
-        }
-        
-        else {
-          const dx = e1.x - e2.x, dy = e1.y - e2.y;
-          connected = (dx * dx + dy * dy) < (EPS * EPS);
-        }
-
-        if (connected) dsu.union(i, j);
       }
     }
 
     
     const islandsMap = new Map();
-    netElts.forEach((el, idx) => {
+    candidateElts.forEach((el, idx) => {
       const root = dsu.find(idx);
       if (!islandsMap.has(root)) islandsMap.set(root, []);
       islandsMap.get(root).push(el);
     });
 
-    return Array.from(islandsMap.values());
+    
+    const allIslands = Array.from(islandsMap.values());
+    const validIslands = allIslands.filter(island => {
+       return island.some(el => {
+         if (el.net && el.net.toUpperCase() === targetNet) return true;
+         if (typeof window.getPadNet === 'function' && (el.type === 'pad' || el.type === 'hole')) {
+            const pNet = window.getPadNet(el);
+            return pNet && pNet.toUpperCase() === targetNet;
+         }
+         return false;
+       });
+    });
+
+    return validIslands;
   },
 
   
