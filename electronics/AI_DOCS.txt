@@ -60,6 +60,10 @@ To place components and route traces on the board:
 - **replace**: Clear board and start fresh.
 - **connect**: Auto-route L-shaped traces between pads using logical names (e.g., "RJ45.2").
 
+Connectivity note (important):
+- Nets are considered connected by geometric copper contact (trace/pad/via overlap), not only by endpoint coincidence.
+- After routing touches target copper, ratsnest/airwire should collapse for that connection.
+
 ### 🎨 OCTILINEAR STANDARD (PROFESSIONAL)
 Always prioritize **45-degree corners** (octilinear). Avoid 90-degree or arbitrary angles. All ODB tools and routers follow this standard for professional result. See `ROUTING_SPEC.md` for geometry details.
 
@@ -90,6 +94,7 @@ Always check the current state before patching:
 3. **Wait for marker**: After sending, you can check the node again. When `"_applied": true` appears, the change is live in the user's browser.
 4. **Batch changes**: Put multiple connections in a single `PUT` to `aiPatch.json`.
 5. **Notify User**: After patching, tell the user: "I've updated your schematic/PCB logic via Firebase."
+6. **Prefer logical refs**: Use `"U1.1"` style connections; let the editor compute geometry when possible.
 
 ## ❓ TROUBLESHOOTING
 - **Patch not applying?** Ensure you are using `PUT` and NOT `PATCH`. `PATCH` might merge with an old `_applied: true` state and prevent re-triggering.

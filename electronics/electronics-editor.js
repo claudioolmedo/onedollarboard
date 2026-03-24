@@ -307,12 +307,35 @@ function render() {
     
     if (state.activeNet && state.ratsnest) {
       const targetNet = state.activeNet.toUpperCase();
-      const relevantRat = state.ratsnest.find(r => r.netName.toUpperCase() === targetNet);
-      if (relevantRat) {
+      const anchor = prev;
+      const minAnchorDist = Math.max(0.15, (state.traceWidth || 0.25) * 0.8);
+      const candidates = [];
+
+      state.ratsnest.forEach(r => {
+        if (!r || !r.netName || r.netName.toUpperCase() !== targetNet) return;
+        if (r.p1) candidates.push(r.p1);
+        if (r.p2) candidates.push(r.p2);
+      });
+
+      
+      const filteredCandidates = candidates.filter(p =>
+        p && Number.isFinite(p.x) && Number.isFinite(p.y) &&
+        Math.hypot(p.x - anchor.x, p.y - anchor.y) > minAnchorDist
+      );
+
+      const nearestTarget = (filteredCandidates.length ? filteredCandidates : candidates)
+        .reduce((best, p) => {
+          if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return best;
+          const d = Math.hypot(p.x - tip.x, p.y - tip.y);
+          if (!best || d < best.d) return { p, d };
+          return best;
+        }, null);
+
+      if (nearestTarget?.p) {
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(tip.x, tip.y);
-        ctx.lineTo(relevantRat.p2.x, relevantRat.p2.y);
+        ctx.lineTo(nearestTarget.p.x, nearestTarget.p.y);
         ctx.strokeStyle = 'rgba(255, 234, 0, 0.5)';
         ctx.lineWidth = 0.08;
         ctx.setLineDash([0.3, 0.3]);
@@ -1475,6 +1498,51 @@ window.updateRatsnest = function(schData) {
   const data = schData || (window.schematic && window.schematic.state);
   if (!data || !data.netlist) { state.ratsnest = []; render(); return; }
 
+  const getTracePts = (tr) => {
+    if (window.Router && typeof window.Router.getTracePoints === 'function') {
+      return window.Router.getTracePoints(tr);
+    }
+    return Array.isArray(tr?.pts) ? tr.pts : [];
+  };
+
+  const getIslandAnchorPoints = (island) => {
+    const pts = [];
+    (island || []).forEach(el => {
+      if (!el) return;
+      if ((el.type === 'pad' || el.type === 'hole' || el.type === 'via') && Number.isFinite(el.x) && Number.isFinite(el.y)) {
+        pts.push({ x: el.x, y: el.y });
+        return;
+      }
+      if (el.type === 'trace') {
+        const tpts = getTracePts(el);
+        tpts.forEach(p => {
+          if (Number.isFinite(p?.x) && Number.isFinite(p?.y)) pts.push({ x: p.x, y: p.y });
+        });
+        
+        for (let i = 0; i < tpts.length - 1; i++) {
+          const a = tpts[i], b = tpts[i + 1];
+          pts.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+        }
+      }
+    });
+    return pts;
+  };
+
+  const findClosestPairBetweenIslands = (islandA, islandB) => {
+    const ptsA = getIslandAnchorPoints(islandA);
+    const ptsB = getIslandAnchorPoints(islandB);
+    if (!ptsA.length || !ptsB.length) return null;
+
+    let best = null;
+    ptsA.forEach(a => {
+      ptsB.forEach(b => {
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (!best || d < best.d) best = { p1: a, p2: b, d };
+      });
+    });
+    return best;
+  };
+
   const compMap = {};
   (data.components || []).forEach(c => { 
     compMap[c.id] = (c.ref || ''); 
@@ -1506,13 +1574,13 @@ window.updateRatsnest = function(schData) {
     
     
     
-    const pcbIslandsOfPads = [];
+    const pcbIslands = [];
     const padsAccountedFor = new Set();
 
     islands.forEach(island => {
       const padsInThisIsland = island.filter(el => el.type === 'pad' || el.type === 'hole');
       if (padsInThisIsland.length > 0) {
-        pcbIslandsOfPads.push(padsInThisIsland);
+        pcbIslands.push(island);
         padsInThisIsland.forEach(p => padsAccountedFor.add(p.id));
       }
     });
@@ -1520,17 +1588,19 @@ window.updateRatsnest = function(schData) {
     
     allNetPads.forEach(p => {
       if (!padsAccountedFor.has(p.id)) {
-        pcbIslandsOfPads.push([p]);
+        pcbIslands.push([p]);
       }
     });
 
     
-    if (pcbIslandsOfPads.length > 1) {
-      for (let i = 0; i < pcbIslandsOfPads.length - 1; i++) {
-        newRats.push({ 
-          p1: pcbIslandsOfPads[i][0], 
-          p2: pcbIslandsOfPads[i+1][0], 
-          netName 
+    if (pcbIslands.length > 1) {
+      for (let i = 0; i < pcbIslands.length - 1; i++) {
+        const best = findClosestPairBetweenIslands(pcbIslands[i], pcbIslands[i + 1]);
+        if (!best) continue;
+        newRats.push({
+          p1: best.p1,
+          p2: best.p2,
+          netName
         });
       }
     }

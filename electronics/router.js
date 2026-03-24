@@ -1,6 +1,8 @@
 
 
 const Router = {
+  EPS: 0.1, 
+
   
   getOctilinearPath(p1, p2, mode = 0) {
     const dx = p2.x - p1.x;
@@ -79,34 +81,9 @@ const Router = {
     if (candidateElts.length === 0) return [];
 
     const dsu = new Router.DSU(candidateElts.length);
-    const EPS = 0.1; 
+    const EPS = this.EPS;
 
-    const isConnected = (e1, e2) => {
-      
-      if (e1.type === 'trace' && (e2.type === 'pad' || e2.type === 'via' || e2.type === 'hole')) {
-        for (let i = 0; i < e1.pts.length - 1; i++) {
-          if (this.distPtToSeg(e2.x, e2.y, e1.pts[i].x, e1.pts[i].y, e1.pts[i+1].x, e1.pts[i+1].y) < (e1.width/2 + EPS)) return true;
-        }
-        
-        return e1.pts.some(p => Math.hypot(p.x - e2.x, p.y - e2.y) < EPS);
-      }
-      if (e2.type === 'trace' && (e1.type === 'pad' || e1.type === 'via' || e1.type === 'hole')) return isConnected(e2, e1);
-      
-      
-      if (e1.type === 'trace' && e2.type === 'trace') {
-        for (let i = 0; i < e1.pts.length - 1; i++) {
-          for (let j = 0; j < e2.pts.length - 1; j++) {
-            if (this.distSegToSeg(e1.pts[i].x, e1.pts[i].y, e1.pts[i+1].x, e1.pts[i+1].y,
-                                 e2.pts[j].x, e2.pts[j].y, e2.pts[j+1].x, e2.pts[j+1].y) < EPS) return true;
-          }
-        }
-        return false;
-      }
-
-      
-      const dx = e1.x - e2.x, dy = e1.y - e2.y;
-      return (dx * dx + dy * dy) < (EPS * EPS);
-    };
+    const isConnected = (e1, e2) => this.areElementsConductivelyConnected(e1, e2, EPS);
 
     
     for (let i = 0; i < candidateElts.length; i++) {
@@ -139,6 +116,106 @@ const Router = {
     });
 
     return validIslands;
+  },
+
+  getTracePoints(trace) {
+    if (Array.isArray(trace?.pts) && trace.pts.length > 0) return trace.pts;
+    
+    if (trace && Number.isFinite(trace.x1) && Number.isFinite(trace.y1) && Number.isFinite(trace.x2) && Number.isFinite(trace.y2)) {
+      return [{ x: trace.x1, y: trace.y1 }, { x: trace.x2, y: trace.y2 }];
+    }
+    return [];
+  },
+
+  getElementLayers(el) {
+    if (!el) return [];
+    if (el.type === 'via') return ['F.Cu', 'B.Cu'];
+    if (el.layer === '*' || el.layer === 'All' || el.layer === 'ALL') return ['F.Cu', 'B.Cu'];
+    if (typeof el.layer === 'string' && el.layer) return [el.layer];
+    return ['F.Cu'];
+  },
+
+  layersOverlap(a, b) {
+    const la = this.getElementLayers(a);
+    const lb = this.getElementLayers(b);
+    return la.some(l => lb.includes(l));
+  },
+
+  isPadLike(el) {
+    return el && (el.type === 'pad' || el.type === 'via' || el.type === 'hole');
+  },
+
+  getPadRadius(el) {
+    return (el.pad || Math.max(el.w || 0, el.h || 0) || 1.0) / 2;
+  },
+
+  pointInsidePadCopper(px, py, el) {
+    if (!this.isPadLike(el)) return false;
+    if (el.type === 'pad' && Number.isFinite(el.w) && Number.isFinite(el.h)) {
+      const hw = el.w / 2;
+      const hh = el.h / 2;
+      return Math.abs(px - el.x) <= hw && Math.abs(py - el.y) <= hh;
+    }
+    return Math.hypot(px - el.x, py - el.y) <= this.getPadRadius(el);
+  },
+
+  distPtToPadCopper(px, py, el) {
+    if (!this.isPadLike(el)) return Infinity;
+    if (this.pointInsidePadCopper(px, py, el)) return 0;
+    if (el.type === 'pad' && Number.isFinite(el.w) && Number.isFinite(el.h)) {
+      const hw = el.w / 2;
+      const hh = el.h / 2;
+      const dx = Math.max(Math.abs(px - el.x) - hw, 0);
+      const dy = Math.max(Math.abs(py - el.y) - hh, 0);
+      return Math.hypot(dx, dy);
+    }
+    return Math.max(0, Math.hypot(px - el.x, py - el.y) - this.getPadRadius(el));
+  },
+
+  areElementsConductivelyConnected(e1, e2, eps = 0.1) {
+    if (!e1 || !e2) return false;
+    if (!this.layersOverlap(e1, e2)) return false;
+
+    
+    if (e1.type === 'trace' && this.isPadLike(e2)) {
+      const pts = this.getTracePoints(e1);
+      if (pts.length < 2) return false;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const segDist = this.distPtToSeg(e2.x, e2.y, p1.x, p1.y, p2.x, p2.y);
+        if (segDist <= (e1.width || 0.2) / 2 + this.getPadRadius(e2) + eps) return true;
+        if (this.pointInsidePadCopper(p1.x, p1.y, e2) || this.pointInsidePadCopper(p2.x, p2.y, e2)) return true;
+      }
+      return false;
+    }
+    if (e2.type === 'trace' && this.isPadLike(e1)) return this.areElementsConductivelyConnected(e2, e1, eps);
+
+    
+    if (e1.type === 'trace' && e2.type === 'trace') {
+      const pts1 = this.getTracePoints(e1);
+      const pts2 = this.getTracePoints(e2);
+      if (pts1.length < 2 || pts2.length < 2) return false;
+      for (let i = 0; i < pts1.length - 1; i++) {
+        for (let j = 0; j < pts2.length - 1; j++) {
+          const d = this.distSegToSeg(
+            pts1[i].x, pts1[i].y, pts1[i + 1].x, pts1[i + 1].y,
+            pts2[j].x, pts2[j].y, pts2[j + 1].x, pts2[j + 1].y
+          );
+          const limit = ((e1.width || 0.2) + (e2.width || 0.2)) / 2 + eps;
+          if (d <= limit) return true;
+        }
+      }
+      return false;
+    }
+
+    
+    if (this.isPadLike(e1) && this.isPadLike(e2)) {
+      const d = Math.hypot((e1.x || 0) - (e2.x || 0), (e1.y || 0) - (e2.y || 0));
+      return d <= (this.getPadRadius(e1) + this.getPadRadius(e2) + eps);
+    }
+
+    return false;
   },
 
   
@@ -188,12 +265,21 @@ const Router = {
             let dist = Infinity;
             let radius = 0;
 
-            if (el.type === 'pad' || el.type === 'via') {
-                dist = this.distPtToSeg(el.x, el.y, p1.x, p1.y, p2.x, p2.y);
-                radius = (el.pad || el.w || 1.0) / 2;
+            
+            if (!this.layersOverlap({ type: 'trace', layer: 'F.Cu' }, el) && !this.layersOverlap({ type: 'trace', layer: 'B.Cu' }, el)) {
+                return;
+            }
+
+            if (el.type === 'pad' || el.type === 'via' || el.type === 'hole') {
+                
+                const ds = this.distPtToSeg(el.x, el.y, p1.x, p1.y, p2.x, p2.y);
+                const r = this.getPadRadius(el);
+                dist = Math.max(0, ds - r);
+                radius = 0;
             } else if (el.type === 'trace') {
-                for (let j = 0; j < el.pts.length - 1; j++) {
-                    const e1 = el.pts[j], e2 = el.pts[j+1];
+                const tpts = this.getTracePoints(el);
+                for (let j = 0; j < tpts.length - 1; j++) {
+                    const e1 = tpts[j], e2 = tpts[j+1];
                     dist = Math.min(dist, this.distSegToSeg(p1.x, p1.y, p2.x, p2.y, e1.x, e1.y, e2.x, e2.y));
                 }
                 radius = (el.width || 0.2) / 2;

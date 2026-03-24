@@ -45,9 +45,50 @@
   }
 
   
-  window.DECODED_ELEMENTS_FROM_URL = getElementsFromURL();
+  function getMagicTracesFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('magicTrace');
+    if (!raw) return [];
+
+    const segments = raw.split(';');
+    const elements = [];
+
+    segments.forEach(seg => {
+      
+      const parts = seg.split(':');
+      if (parts.length < 2) return;
+
+      const p1Str = parts[0].split(',');
+      const p2Str = parts[1].split(',');
+      const net = (parts[2] || '').toUpperCase();
+
+      if (p1Str.length === 2 && p2Str.length === 2) {
+        elements.push({
+          type: 'trace',
+          layer: 'F.Cu',
+          width: 0.25,
+          pts: [
+            { x: parseFloat(p1Str[0]), y: parseFloat(p1Str[1]) },
+            { x: parseFloat(p2Str[0]), y: parseFloat(p2Str[1]) }
+          ],
+          net: net
+        });
+      }
+    });
+
+    if (elements.length > 0) {
+      console.log(`[decode.js] ✨ Injected ${elements.length} MagicTraces`);
+    }
+    return elements;
+  }
+
   
-  if (window.DECODED_ELEMENTS_FROM_URL) {
+  const urlElements = getElementsFromURL() || [];
+  const magicElements = getMagicTracesFromURL();
+  
+  window.DECODED_ELEMENTS_FROM_URL = [...urlElements, ...magicElements];
+  
+  if (window.DECODED_ELEMENTS_FROM_URL.length > 0) {
     console.log('[decode.js] 🚀 PCB Elements ready for injection');
   }
 })();
