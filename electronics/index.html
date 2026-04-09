@@ -636,10 +636,30 @@
     </div>
   </header>
 
+  <div id="mobile-feed-hint" aria-hidden="true">
+    <div class="mobile-feed-pill mobile-feed-pill-top">
+      <span class="mobile-feed-arrow">↑</span>
+      <span>Add Components</span>
+    </div>
+    <div class="mobile-feed-pill mobile-feed-pill-center">
+      <span class="mobile-feed-title">Board</span>
+      <span class="mobile-feed-subtitle">Tap to place, drag to move</span>
+    </div>
+    <div class="mobile-feed-pill mobile-feed-pill-bottom">
+      <span>Select Tools</span>
+      <span class="mobile-feed-arrow">↓</span>
+    </div>
+  </div>
+
   
   <div id="app-body">
     
-    <aside id="toolbar">
+    <aside id="toolbar" data-mobile-section="components">
+      <div class="mobile-section-intro">
+        <div class="mobile-section-kicker">Swipe Up Zone</div>
+        <h2>Components</h2>
+        <p>Pick a part, then swipe back to the board and tap where it should go.</p>
+      </div>
       <div class="tool-section-label" data-i18n="library">Library</div>
       <div style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;">
         <button id="btn-import" class="tool-btn" style="border:1.5px dashed var(--accent); color:var(--accent); height:32px; flex-direction:row; justify-content:center; background:rgba(0, 212, 170, 0.05); width: 100%;">
@@ -677,7 +697,7 @@
     </aside>
 
     
-    <main id="canvas-wrap">
+    <main id="canvas-wrap" data-mobile-section="board">
       <canvas id="pcb-canvas"></canvas>
       <div id="coord-display">X: 0.00mm  Y: 0.00mm</div>
       <div id="grid-info" data-i18n="grid_label">Grid: 1.0mm</div>
@@ -700,7 +720,12 @@
     </main>
 
     
-    <aside id="right-panel">
+    <aside id="right-panel" data-mobile-section="tools">
+      <div class="mobile-section-intro">
+        <div class="mobile-section-kicker">Swipe Down Zone</div>
+        <h2>Tools</h2>
+        <p>Choose the action first, then return to the board to keep building fast.</p>
+      </div>
       
       <div class="panel-section">
         <div class="panel-title" data-i18n="layers">Layers</div>

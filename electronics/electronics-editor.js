@@ -47,6 +47,18 @@ const state = {
 const canvas  = document.getElementById('pcb-canvas');
 const ctx     = canvas.getContext('2d');
 const wrap    = document.getElementById('canvas-wrap');
+const appBody = document.getElementById('app-body');
+
+function isMobileFeedMode() {
+  return window.matchMedia('(max-width: 820px) and (pointer: coarse)').matches;
+}
+
+function centerMobileSection(section) {
+  if (!isMobileFeedMode() || !appBody) return;
+  const target = document.querySelector(`[data-mobile-section="${section}"]`);
+  if (!target) return;
+  appBody.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+}
 
 function resizeCanvas() {
   canvas.width  = wrap.clientWidth;
@@ -629,6 +641,18 @@ canvas.addEventListener('wheel',     onWheel, { passive:false });
 canvas.addEventListener('contextmenu', onContextMenu);
 canvas.addEventListener('dblclick',  onDblClick);
 
+let _touchPanStartX = 0;
+let _touchPanStartY = 0;
+let _touchPanOriginX = 0;
+let _touchPanOriginY = 0;
+let _touchDrawing = false;
+let _lastTouchWorld = null;
+
+canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
 function getWorld(e) {
   const r = canvas.getBoundingClientRect();
   return screenToWorld(e.clientX - r.left, e.clientY - r.top);
@@ -780,6 +804,136 @@ function onMouseDown(e) {
       }
     }
   }
+}
+
+function getTouchWorld(touch) {
+  const r = canvas.getBoundingClientRect();
+  return screenToWorld(touch.clientX - r.left, touch.clientY - r.top);
+}
+
+function handleTapToolAction(point) {
+  const snapped = snapPt(point);
+
+  if (state.tool === 'via') {
+    addElement(makeVia(snapped.x, snapped.y, 0.8, 1.6, state.activeNet));
+    render();
+    return true;
+  }
+  if (state.tool === 'pad') {
+    addElement(makePad(snapped.x, snapped.y, 1.5, 1.0, state.activeLayer));
+    render();
+    return true;
+  }
+  if (state.tool === 'hole') {
+    addElement(makeHole(snapped.x, snapped.y));
+    render();
+    return true;
+  }
+  if (state.tool === 'text') {
+    showTextInput(snapped);
+    return true;
+  }
+  if (state.tool.startsWith('comp-')) {
+    const grp = makeComponent(state.tool, snapped.x, snapped.y);
+    if (grp) {
+      addElement(grp);
+      render();
+      centerMobileSection('board');
+    }
+    return true;
+  }
+  return false;
+}
+
+function onTouchStart(e) {
+  if (!e.touches.length) return;
+  hideContextMenu();
+  const touch = e.touches[0];
+  const w = getTouchWorld(touch);
+  _lastTouchWorld = w;
+  _touchDrawing = false;
+
+  if (e.touches.length === 2) {
+    state.panning = true;
+    _touchPanStartX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    _touchPanStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    _touchPanOriginX = state.panX;
+    _touchPanOriginY = state.panY;
+    wrap.classList.add('panning');
+    e.preventDefault();
+    return;
+  }
+
+  if (state.tool === 'trace') {
+    _touchDrawing = true;
+    onMouseDown({ button: 0, clientX: touch.clientX, clientY: touch.clientY, shiftKey: false, preventDefault() {} });
+    e.preventDefault();
+    return;
+  }
+
+  if (handleTapToolAction(w)) {
+    e.preventDefault();
+    return;
+  }
+
+  const hit = hitTest(w.x, w.y);
+  if (hit && state.tool === 'select') {
+    onMouseDown({ button: 0, clientX: touch.clientX, clientY: touch.clientY, shiftKey: false, preventDefault() {} });
+    e.preventDefault();
+    return;
+  }
+
+  if (isMobileFeedMode()) return;
+
+  state.panning = true;
+  _touchPanStartX = touch.clientX;
+  _touchPanStartY = touch.clientY;
+  _touchPanOriginX = state.panX;
+  _touchPanOriginY = state.panY;
+  wrap.classList.add('panning');
+  e.preventDefault();
+}
+
+function onTouchMove(e) {
+  if (!e.touches.length) return;
+  const touch = e.touches[0];
+  const w = getTouchWorld(touch);
+  _lastTouchWorld = w;
+
+  if (state.panning) {
+    const refTouch = e.touches.length === 2
+      ? { clientX: (e.touches[0].clientX + e.touches[1].clientX) / 2, clientY: (e.touches[0].clientY + e.touches[1].clientY) / 2 }
+      : touch;
+    state.panX = _touchPanOriginX + (refTouch.clientX - _touchPanStartX);
+    state.panY = _touchPanOriginY + (refTouch.clientY - _touchPanStartY);
+    render();
+    e.preventDefault();
+    return;
+  }
+
+  if (_touchDrawing) {
+    onMouseMove({ clientX: touch.clientX, clientY: touch.clientY, buttons: 1 });
+    e.preventDefault();
+    return;
+  }
+
+  if (state.dragging || state.selectionBox || state.rectStart) {
+    onMouseMove({ clientX: touch.clientX, clientY: touch.clientY, buttons: 1 });
+    e.preventDefault();
+  }
+}
+
+function onTouchEnd() {
+  if (_touchDrawing && _lastTouchWorld) {
+    onMouseUp({ button: 0, preventDefault() {} });
+  } else if (state.dragging || state.selectionBox || state.rectStart) {
+    onMouseUp({ button: 0, preventDefault() {} });
+  }
+
+  state.panning = false;
+  wrap.classList.remove('panning');
+  _touchDrawing = false;
+  _lastTouchWorld = null;
 }
 
 function onMouseMove(e) {
@@ -1139,6 +1293,7 @@ function setTool(tool) {
   }
   
   document.getElementById('status-tool').textContent = t('tool_status', t(toolKey));
+  if (isMobileFeedMode() && tool !== 'select') centerMobileSection('board');
   render();
 }
 document.querySelectorAll('.tool-btn').forEach(b => {
@@ -1448,11 +1603,22 @@ function updateUI() {
 const welcomeOverlay = document.getElementById('welcome-overlay');
 if (localStorage.getItem('odb_pcb_welcome_seen')) {
   welcomeOverlay.style.display = 'none';
+  setTimeout(() => centerMobileSection('board'), 50);
 }
 document.getElementById('welcome-close').onclick = () => {
   welcomeOverlay.style.display = 'none';
   localStorage.setItem('odb_pcb_welcome_seen', 'true');
+  centerMobileSection('board');
 };
+
+document.querySelectorAll('[data-mobile-section]').forEach((sectionEl) => {
+  const name = sectionEl.getAttribute('data-mobile-section');
+  if (!name) return;
+  const pill = document.querySelector(`.mobile-feed-pill-${name === 'components' ? 'top' : name === 'tools' ? 'bottom' : 'center'}`);
+  if (!pill) return;
+  pill.style.pointerEvents = 'auto';
+  pill.addEventListener('click', () => centerMobileSection(name));
+});
 
 
 
