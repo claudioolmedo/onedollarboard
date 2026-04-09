@@ -942,15 +942,19 @@
   
   <div id="autotrace-modal">
     <div class="autotrace-modal-content">
-      <div class="autotrace-loader"></div>
+      <div class="autotrace-loader" id="autotrace-spinner"></div>
       <div class="autotrace-title">Auto-Trace Running</div>
-      <div class="autotrace-text">
-        The server is processing your design's connections. 
-        Depending on circuit complexity, this process can take from a few seconds to several minutes.
+      <div id="autotrace-status-text" class="autotrace-text" style="margin-bottom:20px;">
+        The server is processing your design's connections...
+      </div>
+      <div id="autotrace-timeout-msg" style="display:none; color:#ff6b6b; font-size:13px; margin: 0 auto 20px; border:1px solid rgba(255,107,107,0.2); padding:12px; border-radius:12px; background:rgba(255,107,107,0.05); max-width:320px; text-align:left; line-height:1.4;">
+        ⚠️ <b>Autotracer not responding.</b><br>
+        No worker picked up the job after 15 seconds. Please check if the `autotrace-node` service is running or try again.
       </div>
       <div class="autotrace-warning">
         ⚠️ <b>Notice:</b> Please wait for completion to avoid conflicts with manual traces and ensure netlist integrity.
       </div>
+      <button id="autotrace-cancel" style="margin-top:25px; background:rgba(255,255,255,0.05); border:1px solid #30363d; color:#8b949e; padding:10px 24px; border-radius:12px; cursor:pointer; font-size:13px; font-weight:600; display:none; transition: all 0.2s;">Cancel & Close</button>
     </div>
   </div>
 
@@ -1374,30 +1378,69 @@
     
     
     
-    const LIB_PATH = '/library/pcb';
+    
+    const LIB_PATH = `${DATABASE_PATH}/library`;
+    const LEGACY_LIB_PATH = '/library/pcb';
     window._pcbLibrary = [];
 
+    function mergeLibraryRecords(...sources) {
+      const merged = new Map();
+      sources.flat().forEach((comp) => {
+        if (!comp) return;
+        const key = comp.lcsc || comp.name;
+        if (!key) return;
+        merged.set(key, comp);
+      });
+      return Array.from(merged.values());
+    }
+
     
-    async function loadLibraryFromFirebase() {
+    function syncLibraryFromFirebase() {
+      if (!database) return;
       try {
-        const resp = await fetch(`${DATABASE_URL}${LIB_PATH}.json`);
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data) {
-            window._pcbLibrary = Object.values(data);
-            
-            localStorage.setItem('odb_pcb_library', JSON.stringify(window._pcbLibrary));
-            console.log(`📚 Library loaded: ${window._pcbLibrary.length} components`);
-            if (typeof window.renderLibrary === 'function') window.renderLibrary();
+        const syncState = { project: [], legacy: [] };
+        const applyLibraryState = () => {
+          window._pcbLibrary = mergeLibraryRecords(syncState.legacy, syncState.project);
+          localStorage.setItem('odb_pcb_library', JSON.stringify(window._pcbLibrary));
+          console.log(`📚 Library synced: ${window._pcbLibrary.length} components`);
+          if (typeof window.renderLibrary === 'function') window.renderLibrary();
+
+          if (window.schematic && window.schematic.state) {
+            checkSchematicLibrarySync(window.schematic.state.components);
+          }
+        };
+
+        const bindSync = (path, key) => {
+          const libRef = ref(database, path);
+          onValue(libRef, (snapshot) => {
+            const data = snapshot.val();
+            syncState[key] = data ? Object.values(data) : [];
+            applyLibraryState();
+          }, (error) => {
+            console.warn(`⚠️ Library sync error at ${path}:`, error);
+          });
+        };
+
+        bindSync(LIB_PATH, 'project');
+        bindSync(LEGACY_LIB_PATH, 'legacy');
+      } catch (error) {
+        console.warn('⚠️ Could not sync library from Firebase:', error);
+      }
+    }
+
+    
+    async function checkSchematicLibrarySync(components) {
+      if (!components || !Array.isArray(components)) return;
+      if (typeof window.fetchAndSaveComponent === 'function') {
+        const currentLcscs = new Set(window._pcbLibrary.map(c => c.lcsc));
+        for (const comp of components) {
+          if (comp.lcsc && !currentLcscs.has(comp.lcsc)) {
+            console.log(`🔍 Schematic component ${comp.lcsc} missing from library. Auto-fetching...`);
+            try {
+              await window.fetchAndSaveComponent(comp.lcsc);
+            } catch(e) { console.error(`Failed to auto-fetch ${comp.lcsc}:`, e); }
           }
         }
-      } catch (error) {
-        console.warn('⚠️ Could not load library from Firebase:', error);
-        
-        try {
-          window._pcbLibrary = JSON.parse(localStorage.getItem('odb_pcb_library') || '[]');
-          if (typeof window.renderLibrary === 'function') window.renderLibrary();
-        } catch(e) {  }
       }
     }
 
@@ -1454,13 +1497,17 @@
 
       
       try {
-        const url = `${DATABASE_URL}${LIB_PATH}/${componentKey}.json`;
-        const resp = await fetch(url, { method: 'DELETE' });
-        if (resp.ok) {
+        const urls = [
+          `${DATABASE_URL}${LIB_PATH}/${componentKey}.json`,
+          `${DATABASE_URL}${LEGACY_LIB_PATH}/${componentKey}.json`,
+        ];
+        const results = await Promise.allSettled(urls.map((url) => fetch(url, { method: 'DELETE' })));
+        const anyOk = results.some((result) => result.status === 'fulfilled' && result.value.ok);
+        if (anyOk) {
           console.log(`✅ Component ${componentKey} removed from Firebase library`);
           showFbStatus('Library updated', 'synced');
         } else {
-          console.warn(`⚠️ Firebase delete returned ${resp.status}`);
+          console.warn('⚠️ Firebase delete did not succeed in project or legacy library paths');
         }
       } catch (error) {
         console.error('⚠️ Could not sync deletion with Firebase (offline or CORS):', error);
@@ -1468,7 +1515,9 @@
     };
 
     
-    loadLibraryFromFirebase();
+    syncLibraryFromFirebase();
+
+    
 
     
     window.addEventListener('DOMContentLoaded', () => {
@@ -1668,29 +1717,62 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
     }
 
     const autotraceModal = document.getElementById('autotrace-modal');
+    const autotraceStatusText = document.getElementById('autotrace-status-text');
+    const autotraceTimeoutMsg = document.getElementById('autotrace-timeout-msg');
+    const autotraceCancelBtn = document.getElementById('autotrace-cancel');
+    let autotraceTimeoutTimer = null;
 
     onValue(autotraceProjectStatusRef, (snapshot) => {
-      if (!snapshot.exists()) return;
-      const status = snapshot.val() || {};
-      const current = (status.status || '').toLowerCase();
+      const status = snapshot.exists() ? snapshot.val() : {};
+      const current = (status.status || 'idle').toLowerCase();
       
       if (current === 'pending' || current === 'processing') {
         if (autotraceModal) autotraceModal.style.display = 'flex';
-      } else {
-        if (autotraceModal) autotraceModal.style.display = 'none';
-      }
+        
+        
+        if (!autotraceTimeoutTimer) {
+          autotraceTimeoutTimer = setTimeout(() => {
+            if (autotraceTimeoutMsg) autotraceTimeoutMsg.style.display = 'block';
+            if (autotraceCancelBtn) autotraceCancelBtn.style.display = 'inline-block';
+            if (autotraceStatusText) autotraceStatusText.style.color = '#ff6b6b';
+          }, 15000); 
+        }
 
-      if (current === 'pending') {
-        setAutotraceStatus('⏳ Auto-Trace queued', 'Waiting for autotrace server...');
-      } else if (current === 'processing') {
-        setAutotraceStatus('⚙️ Auto-Trace processing', 'Worker is routing nets...');
-      } else if (current === 'success') {
-        const added = Number.isFinite(status.tracesAdded) ? status.tracesAdded : 0;
-        setAutotraceStatus(`✅ Auto-Trace complete`, `${added} trace(s) added`);
-      } else if (current === 'error') {
-        setAutotraceStatus('❌ Auto-Trace failed', status.error || 'Worker error', 'error');
+        if (current === 'pending') {
+          if (autotraceStatusText) autotraceStatusText.textContent = '⏳ Waiting for autotrace server...';
+          setAutotraceStatus('⏳ Auto-Trace queued', 'Waiting for autotrace server...');
+        } else if (current === 'processing') {
+          if (autotraceStatusText) autotraceStatusText.textContent = '⚙️ Worker is routing nets...';
+          setAutotraceStatus('⚙️ Auto-Trace processing', 'Worker is routing nets...');
+        }
+      } else {
+        
+        if (autotraceModal) autotraceModal.style.display = 'none';
+        if (autotraceTimeoutMsg) autotraceTimeoutMsg.style.display = 'none';
+        if (autotraceCancelBtn) autotraceCancelBtn.style.display = 'none';
+        if (autotraceStatusText) autotraceStatusText.style.color = '';
+        clearTimeout(autotraceTimeoutTimer);
+        autotraceTimeoutTimer = null;
+
+        if (current === 'success') {
+          const added = Number.isFinite(status.tracesAdded) ? status.tracesAdded : 0;
+          setAutotraceStatus(`✅ Auto-Trace complete`, `${added} trace(s) added`);
+        } else if (current === 'error') {
+          setAutotraceStatus('❌ Auto-Trace failed', status.error || 'Worker error', 'error');
+        }
       }
     });
+
+    if (autotraceCancelBtn) {
+      autotraceCancelBtn.onclick = async () => {
+        await set(autotraceProjectStatusRef, { 
+          status: 'cancelled', 
+          updatedAt: Date.now(),
+          error: 'Cancelled by user' 
+        });
+        if (autotraceModal) autotraceModal.style.display = 'none';
+      };
+    }
 
     if (btnAutotrace) {
       btnAutotrace.onclick = async () => {
@@ -1787,6 +1869,10 @@ Follow the standards at https://onedollarboard.com/electronics/AI_DOCS.txt to im
         }
         if (typeof window.updateRatsnest === 'function') {
           window.updateRatsnest(data);
+        }
+        
+        if (typeof checkSchematicLibrarySync === 'function') {
+          checkSchematicLibrarySync(data.components);
         }
       });
       

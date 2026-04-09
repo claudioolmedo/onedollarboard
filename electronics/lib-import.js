@@ -130,34 +130,21 @@
 
     throw new Error(
       'Could not fetch component data. Please run the PCB editor via the dev server:\n' +
-      '  npm run dev-server\n' +
-      'Then open http://localhost:3000/electronics/'
+      '  npm run electronics\n' +
+      'Then open http://localhost:3001/'
     );
   }
 
-  btnFetch.addEventListener('click', async () => {
-    let partNum = inputEl.value.trim().toUpperCase();
+  async function fetchAndSaveComponent(partNum) {
+    if (!partNum) return;
+    partNum = partNum.trim().toUpperCase();
     if (!partNum.startsWith('C')) partNum = 'C' + partNum;
-
-    clearProgress();
-    previewEl.classList.remove('active');
-    btnSave.style.display = 'none';
-    currentParsed = null;
-    btnFetch.disabled = true;
-
-    logProgress(`🔍 Fetching component ${partNum} from EasyEDA...`);
 
     try {
       const data = await fetchComponentData(partNum);
-
-      if (!data.success || !data.result) {
-        throw new Error('Component not found on LCSC/EasyEDA');
-      }
+      if (!data.success || !data.result) throw new Error('Component not found');
 
       const result = data.result;
-      logProgress(`✅ Found: ${result.title}`, 'ok');
-
-      
       const componentInfo = {
         lcsc: partNum,
         name: result.title,
@@ -171,33 +158,37 @@
         prefix: result.dataStr?.head?.c_para?.pre || 'U?',
       };
 
-      
       const pkg = result.packageDetail;
-      if (!pkg || !pkg.dataStr || !pkg.dataStr.shape) {
-        throw new Error('No footprint data found for this component');
-      }
+      if (!pkg || !pkg.dataStr || !pkg.dataStr.shape) throw new Error('No footprint data');
 
-      logProgress(`📐 Package: ${pkg.title}`);
-      logProgress(`🔧 Parsing footprint shapes...`);
-
-      const footprint = parseEasyEDAFootprint(pkg.dataStr);
       componentInfo.packageName = pkg.title;
-      componentInfo.footprint = footprint;
-
-      logProgress(`✅ Parsed: ${footprint.pads.length} pads, ${footprint.outlines.length} outlines, ${footprint.holes.length} holes`, 'ok');
-
-      currentParsed = componentInfo;
-
+      componentInfo.footprint = parseEasyEDAFootprint(pkg.dataStr);
       
-      showPreview(componentInfo);
-      btnSave.style.display = 'block';
+      if (typeof window.saveComponentToLibrary === 'function') {
+        await window.saveComponentToLibrary(componentInfo);
+      }
+      return componentInfo;
+    } catch (e) {
+      console.error(`Fetch failed for ${partNum}:`, e);
+      throw e;
+    }
+  }
 
+  btnFetch.addEventListener('click', async () => {
+    let partNum = inputEl.value.trim().toUpperCase();
+    clearProgress();
+    previewEl.classList.remove('active');
+    btnSave.style.display = 'none';
+    currentParsed = null;
+    btnFetch.disabled = true;
+
+    logProgress(`🔍 Fetching component ${partNum}...`);
+    try {
+      const info = await fetchAndSaveComponent(partNum);
+      logProgress(`✅ Found and saved: ${info.name}`, 'ok');
+      showPreview(info);
     } catch (error) {
       logProgress(`❌ Error: ${error.message}`, 'err');
-      if (window.location.protocol === 'file:') {
-        logProgress('💡 Tip: Run "npm run dev-server" and open http://localhost:3000/electronics/', '');
-      }
-      console.error('Import error:', error);
     } finally {
       btnFetch.disabled = false;
     }
@@ -736,6 +727,7 @@
   window.renderLibrary = renderLibrary;
   window.openImportModal = openImportModal;
   window.getLibrary = getLibrary;
+  window.fetchAndSaveComponent = fetchAndSaveComponent;
 
   
   document.addEventListener('DOMContentLoaded', () => {
