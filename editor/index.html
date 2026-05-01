@@ -2310,20 +2310,35 @@ ${productionProjectUrl}&code=BASE64_UTF8_CODE
 Return updated code first, then the Magic Link, then a brief summary.`;
 
         const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+        const qrPrompt = `Help me program the One Dollar Board. Follow ${docsUrl}. projectID ${projectID}, aiToken ${aiToken}. Generate only complete CH32V003 C/C++ firmware using #include "onedollarboard.h" and int main(). No JavaScript, Firebase client code, async browser code, setTimeout, or processBoardUpdate. If you cannot PATCH Firebase, return a Magic Load Link using ${productionProjectUrl}&code=BASE64_UTF8_C_FIRMWARE.`;
+        const qrChatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(qrPrompt)}`;
 
         
         qrcodeContainer.innerHTML = '';
         
         
         
-        qrcode = new QRCode(qrcodeContainer, {
-          text: chatGPTUrl,
-          width: 200,
-          height: 200,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
+        try {
+          qrcode = new QRCode(qrcodeContainer, {
+            text: qrChatGPTUrl,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
+          });
+        } catch (e) {
+          console.warn('QR code generation failed, falling back to project link:', e);
+          qrcodeContainer.innerHTML = '';
+          qrcode = new QRCode(qrcodeContainer, {
+            text: productionProjectUrl,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
+          });
+        }
 
         
         linkChatGPT.href = chatGPTUrl;
