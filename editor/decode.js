@@ -5,7 +5,8 @@
   function decodeBase64(encoded) {
     try {
       
-      const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      
+      const normalized = encoded.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
       const padded = normalized + '=='.slice(0, (4 - normalized.length % 4) % 4);
       
       const binary = atob(padded);

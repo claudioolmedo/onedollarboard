@@ -503,13 +503,19 @@
     This editor runs C/C++ code on the CH32V003 RISC-V microcontroller (One Dollar Board).
 
     TO SEND CODE TO THIS EDITOR VIA LINK:
-    1. Write C/C++ code for the CH32V003 using the onedollarboard.h API.
+    1. Write a complete C/C++ firmware file for the CH32V003 using the onedollarboard.h API.
     2. Encode the source code as Base64.
     3. Build the URL: https://EDITOR_HOST/index.html?code=BASE64_CODE
     4. Share that URL with the user — opening it will load the code directly into the editor.
 
+    STRICT OUTPUT RULES:
+      - The code must start with #include "onedollarboard.h" unless the user requests otherwise.
+      - The code must include a complete int main() function.
+      - Never put JavaScript, TypeScript, Firebase code, async functions, setTimeout,
+        processBoardUpdate, or web-editor automation in the code parameter.
+
     JAVASCRIPT ENCODING (recommended approach for AI):
-      const encoded = btoa(unescape(encodeURIComponent(sourceCode)));
+      const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(sourceCode))));
       const url = `https://EDITOR_HOST/index.html?code=${encoded}`;
 
     PYTHON ENCODING:
@@ -1287,6 +1293,7 @@
     
     if (database && currentProjectCode) {
       codeRef = ref(database, `${DATABASE_PATH}/code`);
+
     }
 
     
@@ -1627,8 +1634,11 @@ int main()
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               content: urlCode,
-              language: 'cpp',
+              code: urlCode,
+              projectID: currentProjectCode,
+              language: 'c',
               lastModified: new Date().toISOString(),
+              updated: new Date().toISOString(),
               timestamp: Date.now(),
               size: urlCode.length
               
@@ -2238,6 +2248,8 @@ int main()
       let qrcode = null;
 
       btnAIHelp.addEventListener('click', () => {
+        const currentSource = editor ? editor.getValue() : '';
+
         
         const aiToken = Math.random().toString(36).substring(2, 8).toUpperCase();
         
@@ -2278,7 +2290,18 @@ int main()
 
 1. Protocol: Follow the "AI Integration Standard" in ${docsUrl}
 2. Context: projectID ${projectID} | aiToken ${aiToken}
-3. Action: Review the code and APPLY improvements.
+3. Action: Review the current firmware code below and APPLY improvements.
+
+STRICT OUTPUT RULES:
+- Generate ONLY complete CH32V003 C/C++ firmware source for the editor.
+- The source must start with #include "onedollarboard.h" and include int main().
+- Do NOT generate JavaScript, TypeScript, browser code, Firebase code, async functions, setTimeout, or processBoardUpdate.
+- The Magic Load Link code= parameter must contain Base64 of the C/C++ firmware source only.
+
+CURRENT FIRMWARE SOURCE:
+\`\`\`c
+${currentSource}
+\`\`\`
 
 Priority 1: Update via Firebase PATCH if possible.
 Priority 2: Provide the "Magic Load Link" for one-click sync:
@@ -2290,7 +2313,6 @@ Return updated code first, then the Magic Link, then a brief summary.`;
 
         
         qrcodeContainer.innerHTML = '';
-        
         
         
         

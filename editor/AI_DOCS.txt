@@ -3,6 +3,14 @@
 ## AI ASSISTANT MANDATORY PROTOCOL
 To provide a seamless experience, you MUST follow this hierarchy of actions:
 
+### 0. [NON-NEGOTIABLE] OUTPUT ONLY FIRMWARE SOURCE
+The editor compiles firmware for the CH32V003. The code you generate MUST be a complete C/C++ source file for the microcontroller.
+- Start the source with `#include "onedollarboard.h"` unless the user explicitly asks for a different header.
+- Include a complete `int main()` function.
+- Use `SystemInit()`, `Delay_Ms()`, `RCC`, `GPIOA/GPIOC/GPIOD`, `CFGLR`, and `BSHR` for hardware control.
+- NEVER generate JavaScript, TypeScript, browser automation, Firebase client code, async functions, `setTimeout`, `processBoardUpdate`, or code that runs inside the web editor.
+- The `code` field and `code=` URL parameter must contain only the firmware C/C++ source.
+
 ### 1. [PRIORITY A] DIRECT SYNCHRONIZATION (via Firebase PATCH)
 If you can perform HTTP requests, immediately update the user's project:
 - **Endpoint**: `https://onedollarboard-1b26a-default-rtdb.firebaseio.com/projects/{PROJECT_ID}/code.json`
@@ -13,7 +21,7 @@ If you can perform HTTP requests, immediately update the user's project:
 ### 2. [PRIORITY B] MAGIC LOAD LINK (Direct URL)
 If you cannot perform a PATCH, you MUST provide a "Magic Link" so the user can sync with one click:
 - **URL Format**: `https://onedollarboard.com/editor/?projectID={PROJECT_ID}&aiToken={TOKEN}&code={BASE64_CODE}`
-- **Encoding**: Use standard Base64 (UTF-8) for the code. Ensure it is URL-safe.
+- **Encoding**: Encode the firmware C/C++ source as UTF-8 Base64. URL-encode the Base64 value, or use Base64URL (`+` -> `-`, `/` -> `_`, omit padding).
 
 ### 3. [RESPONSE FORMAT]
 When you reply, keep it ultra-short:
@@ -48,6 +56,7 @@ When guiding the user on wiring or connections, strictly use this physical refer
 - **NO placeholder comments.** Wrap all code in a single, complete, compilable block.
 - **NO truncated code.** If the code is too long, strictly use Priority A (Firebase Patch).
 - **NO syntax errors.** Use standard CH32V003/wch-embedded headers logic.
+- **NO web/editor code.** The answer and Magic Link must load C/C++ firmware, not JavaScript.
 
 ---
 
